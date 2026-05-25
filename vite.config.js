@@ -44,9 +44,9 @@ export default defineConfig({
         ],
         shortcuts: [
           {
-            name: 'Daily Check-in',
-            short_name: 'Check-in',
-            description: 'Complete your daily check-in',
+            name: 'Daily Text',
+            short_name: 'Daily Text',
+            description: 'Read today\'s text',
             url: '/?focus=dailytext',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           },

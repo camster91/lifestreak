@@ -3,6 +3,7 @@
  * Provides haptic feedback, status bar control, and platform detection
  */
 
+import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -239,6 +240,23 @@ export const splash = {
 };
 
 /**
+ * In-App Browser
+ * Opens URL in native in-app browser (native) or new tab (web)
+ */
+export const openBrowser = async (url) => {
+  if (!isNative) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+    return;
+  }
+  try {
+    await Browser.open({ url, presentationStyle: 'fullscreen' });
+  } catch (e) {
+    console.warn('Browser not available:', e);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+
+/**
  * Initialize native features
  * Call this once on app startup
  */
@@ -273,5 +291,6 @@ export default {
   keyboard,
   appLifecycle,
   splash,
+  openBrowser,
   initializeNative,
 };

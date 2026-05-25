@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { BookOpen, CheckCircle2, Flame, PenLine, Save } from 'lucide-react';
+import { BookOpen, CheckCircle2, PenLine, Save, ExternalLink } from 'lucide-react';
 import useProgressStore from '../stores/progressStore.js';
-import useNewsStore from '../stores/newsStore.js';
 import useMemoriesStore from '../stores/memoriesStore.js';
 import useGamificationStore from '../stores/gamificationStore.js';
-import { haptics } from '../utils/native.js';
+import { haptics, openBrowser } from '../utils/native.js';
+
+function getDailyTextUrl(date = new Date()) {
+  const yyyy = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `https://wol.jw.org/en/wol/dt/r1/lp-e/${yyyy}/${m}/${d}`;
+}
 
 function DailyTasksSection() {
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -21,12 +27,8 @@ function DailyTasksSection() {
 
   const dailyTextProgress = getDailyTextProgress(today);
 
-  const { getHasCheckedToday, checkToday, getStreak } = useNewsStore();
-  const hasCheckedToday = getHasCheckedToday();
-  const dailyCheckStreak = getStreak();
-
   const { saveReflection, getReflection } = useMemoriesStore();
-  const { recordDailyTextCompletion, recordReflection, recordNewsRead } = useGamificationStore();
+  const { recordDailyTextCompletion, recordReflection } = useGamificationStore();
 
   const existingReflection = getReflection(today);
 
@@ -37,11 +39,12 @@ function DailyTasksSection() {
     }
   }, [existingReflection, noteText]);
 
-  const handleDailyCheck = () => {
+  const handleOpenDailyText = async () => {
     haptics.light();
-    if (!hasCheckedToday) {
-      checkToday();
-      recordNewsRead();
+    try {
+      await openBrowser(getDailyTextUrl());
+    } catch {
+      window.open(getDailyTextUrl(), '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -69,6 +72,8 @@ function DailyTasksSection() {
     }
   };
 
+  const dailyTextUrl = getDailyTextUrl();
+
   return (
     <div className="space-y-4">
       {/* Daily Text */}
@@ -78,6 +83,18 @@ function DailyTasksSection() {
             <BookOpen className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-lg">Daily Text</h3>
           </div>
+          <p className="text-sm text-base-content/60 mb-3">
+            {format(new Date(), 'EEEE, MMMM d')}
+          </p>
+
+          <button
+            onClick={handleOpenDailyText}
+            className="btn btn-primary w-full gap-2 mb-3"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Open Daily Text
+          </button>
+
           <button
             onClick={handleDailyTextCheck}
             className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${
@@ -86,36 +103,8 @@ function DailyTasksSection() {
                 : 'bg-base-200'
             }`}
           >
-            <span className="font-medium">Read today's text</span>
+            <span className="font-medium">I've read today's text</span>
             {dailyTextProgress.readScripture ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-base-content/20" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Daily Check-in */}
-      <div className="card bg-base-100 shadow-md">
-        <div className="card-body p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <Flame className="w-5 h-5 text-warning" />
-              <h3 className="font-semibold text-lg">Daily Check-in</h3>
-            </div>
-            {dailyCheckStreak > 0 && (
-              <div className="flex items-center gap-1 text-sm font-bold text-warning">
-                <Flame className="w-4 h-4" /> {dailyCheckStreak} day streak
-              </div>
-            )}
-          </div>
-          <p className="text-sm text-base-content/60 mb-3">
-            {hasCheckedToday
-              ? "You checked in today! Great job keeping your streak."
-              : "Check in to keep your streak going."}
-          </p>
-          <button
-            onClick={handleDailyCheck}
-            className={`btn w-full gap-2 ${hasCheckedToday ? 'btn-outline btn-sm' : 'btn-primary'}`}
-          >
-            {hasCheckedToday ? 'Checked in' : 'Check in now'}
           </button>
         </div>
       </div>

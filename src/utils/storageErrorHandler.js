@@ -15,7 +15,7 @@ export function createStorageErrorHandler(storeName) {
 
       try {
         // LRU eviction: remove oldest app-owned keys first, keep recent data
-        const appPrefixes = ['jw-', 'jw-habits-'];
+        const appPrefixes = ['ls-', 'lifestreak-'];
         const appKeys = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);

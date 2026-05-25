@@ -37,25 +37,13 @@ self.addEventListener('notificationclick', (event) => {
 
 // ── Runtime caching strategies ───────────────────────────────────
 
-// JW.org pages — NetworkFirst
+// App assets — StaleWhileRevalidate
 registerRoute(
-  ({ url }) => url.hostname === 'www.jw.org',
-  new NetworkFirst({
-    cacheName: 'jw-org-cache',
+  ({ url }) => self.location.origin === url.origin,
+  new StaleWhileRevalidate({
+    cacheName: 'ls-assets-cache',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 7 * 24 * 60 * 60 }),
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-    ],
-  })
-);
-
-// Watchtower Online Library — NetworkFirst
-registerRoute(
-  ({ url }) => url.hostname === 'wol.jw.org',
-  new NetworkFirst({
-    cacheName: 'wol-cache',
-    plugins: [
-      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 }),
+      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 7 * 24 * 60 * 60 }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   })

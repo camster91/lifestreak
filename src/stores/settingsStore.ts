@@ -150,8 +150,8 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
         })),
     }),
     {
-      name: 'jw-progress-settings',
-      storage: createSafeStorage('jw-progress-settings') as any,
+      name: 'ls-progress-settings',
+      storage: createSafeStorage('ls-progress-settings') as any,
     }
   )
 );

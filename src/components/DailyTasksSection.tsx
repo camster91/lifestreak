@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { BookOpen, CheckCircle2, Flame, PenLine, Save, BookHeart, Globe, ExternalLink } from 'lucide-react';
+import { BookOpen, CheckCircle2, Flame, PenLine, Save } from 'lucide-react';
 import useProgressStore from '../stores/progressStore.js';
 import useNewsStore from '../stores/newsStore.js';
 import useMemoriesStore from '../stores/memoriesStore.js';
 import useGamificationStore from '../stores/gamificationStore.js';
-import { getDailyTextLink } from '../utils/jwLibraryLinks.js';
 import { haptics } from '../utils/native.js';
 
 function DailyTasksSection() {
@@ -21,7 +20,6 @@ function DailyTasksSection() {
   } = useProgressStore();
 
   const dailyTextProgress = getDailyTextProgress(today);
-  const dailyTextLink = getDailyTextLink(new Date());
 
   const { getHasCheckedToday, checkToday, getStreak } = useNewsStore();
   const hasCheckedToday = getHasCheckedToday();
@@ -39,20 +37,12 @@ function DailyTasksSection() {
     }
   }, [existingReflection, noteText]);
 
-  const JW_WHATS_NEW = 'https://www.jw.org/en/whats-new/';
-
   const handleDailyCheck = () => {
     haptics.light();
     if (!hasCheckedToday) {
       checkToday();
       recordNewsRead();
     }
-    window.open(JW_WHATS_NEW, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleOpenJW = () => {
-    haptics.light();
-    window.open(dailyTextLink, '_blank', 'noopener,noreferrer');
   };
 
   const handleDailyTextCheck = () => {
@@ -99,9 +89,6 @@ function DailyTasksSection() {
             <span className="font-medium">Read today's text</span>
             {dailyTextProgress.readScripture ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-base-content/20" />}
           </button>
-          <button onClick={handleOpenJW} className="btn btn-outline btn-sm mt-2 w-full gap-2">
-            <Globe className="w-4 h-4" /> Open on JW.org
-          </button>
         </div>
       </div>
 
@@ -121,15 +108,14 @@ function DailyTasksSection() {
           </div>
           <p className="text-sm text-base-content/60 mb-3">
             {hasCheckedToday
-              ? "You checked in today! Tap to see what's new."
-              : "Check in and see what's new on JW.org."}
+              ? "You checked in today! Great job keeping your streak."
+              : "Check in to keep your streak going."}
           </p>
           <button
             onClick={handleDailyCheck}
             className={`btn w-full gap-2 ${hasCheckedToday ? 'btn-outline btn-sm' : 'btn-primary'}`}
           >
-            <ExternalLink className="w-4 h-4" />
-            {hasCheckedToday ? "What's New" : 'Check in now'}
+            {hasCheckedToday ? 'Checked in' : 'Check in now'}
           </button>
         </div>
       </div>
@@ -141,7 +127,7 @@ function DailyTasksSection() {
             onClick={() => setShowNotes(!showNotes)}
             className="flex items-center gap-3 w-full"
           >
-            <BookHeart className="w-5 h-5 text-accent" />
+            <PenLine className="w-5 h-5 text-accent" />
             <h3 className="font-semibold text-lg flex-1 text-left">Daily Reflection</h3>
             <span className="text-xs text-base-content/50">
               {showNotes ? 'Hide' : noteSaved ? 'Saved' : 'Optional'}

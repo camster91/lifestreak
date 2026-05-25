@@ -123,12 +123,12 @@ function Settings() {
   };
 
   const STORAGE_KEYS = [
-    'jw-progress-storage',
-    'jw-progress-settings',
-    'jw-gamification-storage',
-    'jw-goals-storage',
-    'jw-memories-storage',
-    'jw-news-store',
+    'ls-progress-storage',
+    'ls-progress-settings',
+    'ls-gamification-storage',
+    'ls-goals-storage',
+    'ls-memories-storage',
+    'ls-news-store',
   ];
 
   const handleExportData = () => {
@@ -146,7 +146,7 @@ function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `jw-habits-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `lifestreak-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Data exported');
@@ -208,8 +208,8 @@ function Settings() {
       });
     } else if (isOldFormat) {
       // Legacy format support
-      if (storeData.progress) localStorage.setItem('jw-progress-storage', JSON.stringify(storeData.progress));
-      if (storeData.settings) localStorage.setItem('jw-progress-settings', JSON.stringify(storeData.settings));
+      if (storeData.progress) localStorage.setItem('ls-progress-storage', JSON.stringify(storeData.progress));
+      if (storeData.settings) localStorage.setItem('ls-progress-settings', JSON.stringify(storeData.settings));
     }
 
     setImportModal(null);

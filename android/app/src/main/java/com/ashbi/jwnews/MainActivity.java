@@ -1,4 +1,4 @@
-package com.ashbi.jwnews;
+package com.ashbi.lifestreak;
 
 import com.getcapacitor.BridgeActivity;
 

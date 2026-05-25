@@ -85,8 +85,8 @@ const useNewsStore = create<NewsStore>()(
       resetAll: () => set({ lastChecked: null, streak: 0, history: [], totalChecks: 0 }),
     }),
     {
-      name: 'jw-news-store',
-      storage: createSafeStorage('jw-news-store') as any,
+      name: 'ls-news-store',
+      storage: createSafeStorage('ls-news-store') as any,
       partialize: (state) => ({
         lastChecked: state.lastChecked,
         streak: state.streak,

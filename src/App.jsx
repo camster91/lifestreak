@@ -13,10 +13,11 @@ import useNotificationReminders from './hooks/useNotificationReminders';
 
 // Lazy load non-critical pages for better initial load performance
 const Study = lazy(() => import('./pages/Study'));
+const Service = lazy(() => import('./pages/Service'));
+const Reading = lazy(() => import('./pages/Reading'));
 const Goals = lazy(() => import('./pages/Goals'));
 const Stats = lazy(() => import('./pages/Stats'));
 const Settings = lazy(() => import('./pages/Settings'));
-const Links = lazy(() => import('./pages/Links'));
 const SharePage = lazy(() => import('./pages/Share'));
 
 // Loading fallback component
@@ -45,9 +46,10 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/study" element={<Study />} />
+                  <Route path="/service" element={<Service />} />
+                  <Route path="/reading" element={<Reading />} />
                   <Route path="/goals" element={<Goals />} />
                   <Route path="/stats" element={<Stats />} />
-                  <Route path="/links" element={<Links />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/share" element={<SharePage />} />
                 </Routes>

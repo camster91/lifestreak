@@ -43,11 +43,11 @@ class ErrorBoundary extends Component {
     };
 
     try {
-      const existingLogs = JSON.parse(localStorage.getItem('jw-error-logs') || '[]');
+      const existingLogs = JSON.parse(localStorage.getItem('ls-error-logs') || '[]');
       existingLogs.push(errorLog);
       // Keep only the last 10 errors
       const recentLogs = existingLogs.slice(-10);
-      localStorage.setItem('jw-error-logs', JSON.stringify(recentLogs));
+      localStorage.setItem('ls-error-logs', JSON.stringify(recentLogs));
     } catch {
       // Ignore storage errors
     }

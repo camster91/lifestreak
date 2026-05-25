@@ -84,9 +84,9 @@ const useMemoriesStore = create<MemoriesState & MemoriesActions>()(
       },
     }),
     {
-      name: 'jw-memories-storage',
+      name: 'ls-memories-storage',
       version: 1,
-      storage: createSafeStorage('jw-memories-storage') as any,
+      storage: createSafeStorage('ls-memories-storage') as any,
       partialize: (state) => ({
         reflections: state.reflections,
       }),

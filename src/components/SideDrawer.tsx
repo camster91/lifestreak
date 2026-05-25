@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, Link2, Settings, X } from 'lucide-react';
+import { BarChart3, Settings, X } from 'lucide-react';
 import { haptics } from '../utils/native.js';
 import { DrawerContext } from '../hooks/useDrawer.js';
 
@@ -14,7 +14,6 @@ interface DrawerItem {
 
 const DRAWER_ITEMS: DrawerItem[] = [
   { path: '/stats', icon: BarChart3, label: 'Statistics', description: 'View your progress data' },
-  { path: '/links', icon: Link2, label: 'Quick Links', description: 'JW.org resources' },
   { path: '/settings', icon: Settings, label: 'Settings', description: 'App preferences' },
 ];
 

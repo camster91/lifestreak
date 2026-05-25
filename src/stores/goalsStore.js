@@ -151,8 +151,8 @@ const useGoalsStore = create(
       },
     }),
     {
-      name: 'jw-goals-storage',
-      storage: createSafeStorage('jw-goals-storage'),
+      name: 'ls-goals-storage',
+      storage: createSafeStorage('ls-goals-storage'),
       version: 2,
       migrate: (persistedState, version) => {
         if (version === 1) {

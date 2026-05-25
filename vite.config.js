@@ -13,9 +13,9 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.js',
       manifest: {
-        name: 'JW Habits',
-        short_name: 'JW Habits',
-        description: 'Build daily spiritual habits: daily text, Bible reading, meeting prep, and more',
+        name: 'LifeStreak',
+        short_name: 'LifeStreak',
+        description: 'Track habits, service, reading, and goals — all in one place',
         theme_color: '#4A6FA4',
         background_color: '#ffffff',
         display: 'standalone',
@@ -44,24 +44,24 @@ export default defineConfig({
         ],
         shortcuts: [
           {
-            name: 'Daily Text',
-            short_name: 'Text',
-            description: 'Read today\'s daily text',
+            name: 'Daily Check-in',
+            short_name: 'Check-in',
+            description: 'Complete your daily check-in',
             url: '/?focus=dailytext',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           },
           {
             name: 'Study',
             short_name: 'Study',
-            description: 'Meeting prep & deeper study',
+            description: 'Log study sessions',
             url: '/study',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           },
           {
-            name: 'View Stats',
-            short_name: 'Stats',
-            description: 'View your progress statistics',
-            url: '/stats',
+            name: 'Service',
+            short_name: 'Service',
+            description: 'Log service hours',
+            url: '/service',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           },
           {

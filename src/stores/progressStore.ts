@@ -508,8 +508,8 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
       clearAll: () => set({ dailyTexts: {}, prayers: {}, familyWorship: {}, bibleReadings: {}, bibleChapters: {}, meetings: {}, weeklyReadings: {} }),
     }),
     {
-      name: 'jw-progress-storage',
-      storage: createSafeStorage('jw-progress-storage') as any,
+      name: 'ls-progress-storage',
+      storage: createSafeStorage('ls-progress-storage') as any,
       partialize: (state) => ({
         dailyTexts: state.dailyTexts,
         prayers: state.prayers,

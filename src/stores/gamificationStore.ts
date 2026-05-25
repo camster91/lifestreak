@@ -401,8 +401,8 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
       clearRecentAchievements: () => set({ recentAchievements: [] }),
     }),
     {
-      name: 'jw-gamification-storage',
-      storage: createSafeStorage('jw-gamification-storage') as any,
+      name: 'ls-gamification-storage',
+      storage: createSafeStorage('ls-gamification-storage') as any,
       version: 1,
       migrate: (persistedState, version) => {
         if (version === undefined || version === 0) {

@@ -128,7 +128,6 @@ function Settings() {
     'ls-gamification-storage',
     'ls-goals-storage',
     'ls-memories-storage',
-    'ls-news-store',
   ];
 
   const handleExportData = () => {

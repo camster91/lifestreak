@@ -31,9 +31,6 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'reflections_10', name: 'Deep Thinker', description: 'Write 10 reflections', icon: '💭', points: 50, category: 'reflection' },
   { id: 'reflections_50', name: 'Contemplative', description: 'Write 50 reflections', icon: '📚', points: 150, category: 'reflection' },
   { id: 'reflections_100', name: 'Wisdom Keeper', description: 'Write 100 reflections', icon: '🦉', points: 300, category: 'reflection' },
-  { id: 'news_reader', name: 'Informed', description: 'Read 10 news articles', icon: '📰', points: 25, category: 'news' },
-  { id: 'news_enthusiast', name: 'News Enthusiast', description: 'Read 50 news articles', icon: '🗞️', points: 100, category: 'news' },
-  { id: 'news_master', name: 'Always Updated', description: 'Read 100 news articles', icon: '📡', points: 200, category: 'news' },
   { id: 'bible_reader', name: 'Bible Student', description: 'Complete daily Bible reading 7 times', icon: '📖', points: 50, category: 'study' },
   { id: 'bible_scholar', name: 'Bible Scholar', description: 'Complete daily Bible reading 30 times', icon: '🎓', points: 200, category: 'study' },
   { id: 'bible_master', name: 'Scripture Master', description: 'Complete daily Bible reading 100 times', icon: '🏛️', points: 500, category: 'study' },
@@ -73,7 +70,6 @@ interface GamificationState {
   longestFamilyWorshipStreak: number;
   dailyTextCompletions: number;
   reflectionsWritten: number;
-  newsRead: number;
   bibleReadingsCompleted: number;
   goalsCompleted: number;
   projectsCompleted: number;
@@ -97,7 +93,6 @@ interface GamificationStats {
   prayersCompleted: number;
   familyWorshipCompleted: number;
   reflectionsWritten: number;
-  newsRead: number;
   goalsCompleted: number;
   projectsCompleted: number;
   meetingsPrepared: number;
@@ -117,7 +112,6 @@ interface GamificationActions {
   getAllAchievements: () => AchievementWithStatus[];
   recordDailyTextCompletion: () => void;
   recordReflection: () => void;
-  recordNewsRead: () => void;
   recordBibleReading: () => void;
   recordGoalCompleted: () => void;
   recordProjectCompleted: () => void;
@@ -143,7 +137,6 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
       longestFamilyWorshipStreak: 0,
       dailyTextCompletions: 0,
       reflectionsWritten: 0,
-      newsRead: 0,
       bibleReadingsCompleted: 0,
       goalsCompleted: 0,
       projectsCompleted: 0,
@@ -219,7 +212,6 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
           bibleReading: 'bibleReadingsCompleted',
           prayer: 'prayersCompleted',
           reflection: 'reflectionsWritten',
-          news: 'newsRead',
           goal: 'goalsCompleted',
           project: 'projectsCompleted',
           meeting: 'meetingsPrepared',
@@ -250,7 +242,6 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
           prayersCompleted: state.prayersCompleted,
           familyWorshipCompleted: state.familyWorshipStreak,
           reflectionsWritten: state.reflectionsWritten,
-          newsRead: state.newsRead,
           goalsCompleted: state.goalsCompleted,
           projectsCompleted: state.projectsCompleted,
           meetingsPrepared: state.meetingsPrepared,
@@ -283,10 +274,6 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
         get().addPoints(5);
       },
 
-      recordNewsRead: () => {
-        get().incrementActivity('news');
-        get().addPoints(5);
-      },
 
       recordBibleReading: () => {
         get().incrementActivity('bibleReading');
@@ -353,9 +340,6 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
           reflections_10: state.reflectionsWritten >= 10,
           reflections_50: state.reflectionsWritten >= 50,
           reflections_100: state.reflectionsWritten >= 100,
-          news_reader: state.newsRead >= 10,
-          news_enthusiast: state.newsRead >= 50,
-          news_master: state.newsRead >= 100,
           bible_reader: state.bibleReadingsCompleted >= 7,
           bible_scholar: state.bibleReadingsCompleted >= 30,
           bible_master: state.bibleReadingsCompleted >= 100,
@@ -422,7 +406,6 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
         longestFamilyWorshipStreak: state.longestFamilyWorshipStreak,
         dailyTextCompletions: state.dailyTextCompletions,
         reflectionsWritten: state.reflectionsWritten,
-        newsRead: state.newsRead,
         bibleReadingsCompleted: state.bibleReadingsCompleted,
         goalsCompleted: state.goalsCompleted,
         projectsCompleted: state.projectsCompleted,

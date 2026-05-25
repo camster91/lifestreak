@@ -65,6 +65,13 @@ export default defineConfig({
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           },
           {
+            name: 'Reading',
+            short_name: 'Reading',
+            description: 'Track reading progress',
+            url: '/reading',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
             name: 'Settings',
             short_name: 'Settings',
             description: 'Configure app settings',

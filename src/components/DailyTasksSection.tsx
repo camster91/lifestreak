@@ -1,0 +1,173 @@
+import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { BookOpen, CheckCircle2, Flame, PenLine, Save, BookHeart, Globe, ExternalLink } from 'lucide-react';
+import useProgressStore from '../stores/progressStore.js';
+import useNewsStore from '../stores/newsStore.js';
+import useMemoriesStore from '../stores/memoriesStore.js';
+import useGamificationStore from '../stores/gamificationStore.js';
+import { getDailyTextLink } from '../utils/jwLibraryLinks.js';
+import { haptics } from '../utils/native.js';
+
+function DailyTasksSection() {
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  const [showNotes, setShowNotes] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [noteSaved, setNoteSaved] = useState(false);
+
+  const {
+    getDailyTextProgress,
+    updateDailyTextProgress,
+  } = useProgressStore();
+
+  const dailyTextProgress = getDailyTextProgress(today);
+  const dailyTextLink = getDailyTextLink(new Date());
+
+  const { getHasCheckedToday, checkToday, getStreak } = useNewsStore();
+  const hasCheckedToday = getHasCheckedToday();
+  const dailyCheckStreak = getStreak();
+
+  const { saveReflection, getReflection } = useMemoriesStore();
+  const { recordDailyTextCompletion, recordReflection, recordNewsRead } = useGamificationStore();
+
+  const existingReflection = getReflection(today);
+
+  useEffect(() => {
+    if (existingReflection && !noteText) {
+      setNoteText(existingReflection);
+      setNoteSaved(true);
+    }
+  }, [existingReflection, noteText]);
+
+  const JW_WHATS_NEW = 'https://www.jw.org/en/whats-new/';
+
+  const handleDailyCheck = () => {
+    haptics.light();
+    if (!hasCheckedToday) {
+      checkToday();
+      recordNewsRead();
+    }
+    window.open(JW_WHATS_NEW, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenJW = () => {
+    haptics.light();
+    window.open(dailyTextLink, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleDailyTextCheck = () => {
+    haptics.light();
+    const newValue = !dailyTextProgress.readScripture;
+    updateDailyTextProgress(today, 'readScripture', newValue);
+
+    if (newValue) {
+      setTimeout(() => {
+        haptics.success();
+        recordDailyTextCompletion();
+      }, 100);
+    }
+  };
+
+  const handleSaveNote = () => {
+    if (noteText.trim()) {
+      haptics.success();
+      saveReflection(today, noteText.trim());
+      setNoteSaved(true);
+      if (!existingReflection) {
+        recordReflection();
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Daily Text */}
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <BookOpen className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-lg">Daily Text</h3>
+          </div>
+          <button
+            onClick={handleDailyTextCheck}
+            className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${
+              dailyTextProgress.readScripture
+                ? 'bg-success/10 text-success-content'
+                : 'bg-base-200'
+            }`}
+          >
+            <span className="font-medium">Read today's text</span>
+            {dailyTextProgress.readScripture ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-base-content/20" />}
+          </button>
+          <button onClick={handleOpenJW} className="btn btn-outline btn-sm mt-2 w-full gap-2">
+            <Globe className="w-4 h-4" /> Open on JW.org
+          </button>
+        </div>
+      </div>
+
+      {/* Daily Check-in */}
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <Flame className="w-5 h-5 text-warning" />
+              <h3 className="font-semibold text-lg">Daily Check-in</h3>
+            </div>
+            {dailyCheckStreak > 0 && (
+              <div className="flex items-center gap-1 text-sm font-bold text-warning">
+                <Flame className="w-4 h-4" /> {dailyCheckStreak} day streak
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-base-content/60 mb-3">
+            {hasCheckedToday
+              ? "You checked in today! Tap to see what's new."
+              : "Check in and see what's new on JW.org."}
+          </p>
+          <button
+            onClick={handleDailyCheck}
+            className={`btn w-full gap-2 ${hasCheckedToday ? 'btn-outline btn-sm' : 'btn-primary'}`}
+          >
+            <ExternalLink className="w-4 h-4" />
+            {hasCheckedToday ? "What's New" : 'Check in now'}
+          </button>
+        </div>
+      </div>
+
+      {/* Daily Reflection */}
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body p-4">
+          <button
+            onClick={() => setShowNotes(!showNotes)}
+            className="flex items-center gap-3 w-full"
+          >
+            <BookHeart className="w-5 h-5 text-accent" />
+            <h3 className="font-semibold text-lg flex-1 text-left">Daily Reflection</h3>
+            <span className="text-xs text-base-content/50">
+              {showNotes ? 'Hide' : noteSaved ? 'Saved' : 'Optional'}
+            </span>
+          </button>
+          {showNotes && (
+            <div className="mt-3 space-y-2">
+              <textarea
+                value={noteText}
+                onChange={(e) => {
+                  setNoteText(e.target.value);
+                  setNoteSaved(false);
+                }}
+                className="textarea textarea-bordered w-full"
+                placeholder="What did you learn today?"
+                rows={3}
+              />
+              <button onClick={handleSaveNote} className={`btn btn-sm w-full ${noteSaved ? 'btn-success' : 'btn-primary'}`}>
+                <Save className="w-4 h-4" /> {noteSaved ? 'Saved' : 'Save'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default DailyTasksSection;

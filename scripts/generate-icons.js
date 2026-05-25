@@ -1,24 +1,23 @@
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { Buffer } from 'node:buffer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const publicDir = join(__dirname, '..', 'public');
+const iosDir = join(__dirname, '..', 'ios/App/App/Assets.xcassets/AppIcon.appiconset');
+const androidDir = join(__dirname, '..', 'android/app/src/main/res');
 
-// JW blue color
 const primaryColor = '#4A6FA4';
 const textColor = '#FFFFFF';
 
-// Create SVG with "JW" text
-function createSvg(size) {
-  const fontSize = Math.round(size * 0.4);
-  const padding = Math.round(size * 0.15);
-
+// Create SVG with "LS" text for LifeStreak
+function createSvg(size, text = 'LS', cornerRadius = null) {
+  const fontSize = Math.round(size * 0.45);
+  const rx = cornerRadius ?? Math.round(size * 0.18);
   return `
     <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${size}" height="${size}" rx="${padding}" fill="${primaryColor}"/>
+      <rect width="${size}" height="${size}" rx="${rx}" fill="${primaryColor}"></rect>
       <text
         x="50%"
         y="55%"
@@ -28,38 +27,93 @@ function createSvg(size) {
         fill="${textColor}"
         text-anchor="middle"
         dominant-baseline="middle"
-      >JW</text>
+      >${text}</text>
+    </svg>
+  `;
+}
+
+// Create a maskable version with safe zone padding
+function createMaskableSvg(size) {
+  const padding = Math.round(size * 0.1);
+  const innerSize = size - padding * 2;
+  const fontSize = Math.round(innerSize * 0.45);
+  const rx = Math.round(innerSize * 0.18);
+  return `
+    <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="${padding}" y="${padding}" width="${innerSize}" height="${innerSize}" rx="${rx}" fill="${primaryColor}"></rect>
+      <text
+        x="50%"
+        y="55%"
+        font-family="Arial, sans-serif"
+        font-size="${fontSize}"
+        font-weight="bold"
+        fill="${textColor}"
+        text-anchor="middle"
+        dominant-baseline="middle"
+      >LS</text>
     </svg>
   `;
 }
 
 async function generateIcons() {
-  const sizes = [192, 512];
+  // Public icons
+  const publicIcons = [
+    { name: 'pwa-192x192.png', size: 192 },
+    { name: 'pwa-512x512.png', size: 512 },
+    { name: 'apple-touch-icon.png', size: 180 },
+    { name: 'favicon-16x16.png', size: 16 },
+    { name: 'favicon-32x32.png', size: 32 },
+  ];
 
-  for (const size of sizes) {
+  for (const { name, size } of publicIcons) {
     const svg = createSvg(size);
-    const outputPath = join(publicDir, `pwa-${size}x${size}.png`);
-
     await sharp(Buffer.from(svg))
       .png()
-      .toFile(outputPath);
-
-    console.log(`Generated: pwa-${size}x${size}.png`);
+      .toFile(join(publicDir, name));
+    console.log(`Generated ${name}`);
   }
 
-  // Also create apple-touch-icon (180x180)
-  const appleSvg = createSvg(180);
-  await sharp(Buffer.from(appleSvg))
+  // Maskable icon
+  const maskableSvg = createMaskableSvg(512);
+  await sharp(Buffer.from(maskableSvg))
     .png()
-    .toFile(join(publicDir, 'apple-touch-icon.png'));
-  console.log('Generated: apple-touch-icon.png');
+    .toFile(join(publicDir, 'pwa-maskable-512x512.png'));
+  console.log('Generated pwa-maskable-512x512.png');
 
-  // Create favicon
-  const faviconSvg = createSvg(32);
-  await sharp(Buffer.from(faviconSvg))
+  // iOS app icon (1024x1024)
+  const iosSvg = createSvg(1024, 'LS', 180);
+  await sharp(Buffer.from(iosSvg))
     .png()
-    .toFile(join(publicDir, 'favicon.ico'));
-  console.log('Generated: favicon.ico');
+    .toFile(join(iosDir, 'AppIcon-512@2x.png'));
+  console.log('Generated ios/AppIcon-512@2x.png');
+
+  // Android launcher icons
+  const androidSizes = [
+    { dir: 'mipmap-mdpi', size: 48 },
+    { dir: 'mipmap-hdpi', size: 72 },
+    { dir: 'mipmap-xhdpi', size: 96 },
+    { dir: 'mipmap-xxhdpi', size: 144 },
+    { dir: 'mipmap-xxxhdpi', size: 192 },
+  ];
+
+  for (const { dir, size } of androidSizes) {
+    const svg = createSvg(size, 'LS', Math.round(size * 0.2));
+    const png = await sharp(Buffer.from(svg)).png().toBuffer();
+
+    await sharp(png)
+      .toFile(join(androidDir, dir, 'ic_launcher.png'));
+    await sharp(png)
+      .toFile(join(androidDir, dir, 'ic_launcher_round.png'));
+    await sharp(png)
+      .toFile(join(androidDir, dir, 'ic_launcher_foreground.png'));
+
+    console.log(`Generated android/${dir} icons`);
+  }
+
+  console.log('All icons generated successfully!');
 }
 
-generateIcons().catch(console.error);
+generateIcons().catch(err => {
+  console.error('Error generating icons:', err);
+  process.exit(1);
+});

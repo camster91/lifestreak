@@ -1,32 +1,32 @@
-# Privacy Policy — JW News
+# Privacy Policy — LifeStreak
 
-**Effective Date:** March 17, 2026
-**App:** JW News
+**Effective Date:** May 24, 2026
+**App:** LifeStreak
 **Developer:** Ashbi Design (cameron@ashbi.ca)
 
 ---
 
 ## Summary
 
-JW News is a simple, private app. **We collect no personal data. Everything stays on your device.**
+LifeStreak is a simple, private habit and goal tracker. **We collect no personal data. Everything stays on your device.**
 
 ---
 
 ## Data Collection
 
-JW News does **not** collect, transmit, or share any personal information. Specifically:
+LifeStreak does **not** collect, transmit, or share any personal information. Specifically:
 
-- ❌ No account required
-- ❌ No analytics or tracking
-- ❌ No crash reporting sent off-device
-- ❌ No advertising
-- ❌ No third-party SDKs that collect data
+- No account required
+- No analytics or tracking
+- No crash reporting sent off-device
+- No advertising
+- No third-party SDKs that collect data
 
 ---
 
 ## Data Storage
 
-All app data (your progress, settings, habits, notes) is stored **locally on your device only** using your device's built-in storage.
+All app data (your progress, settings, habits, notes, service hours, reading list) is stored **locally on your device only** using your device's built-in storage.
 
 - Your data never leaves your device
 - Uninstalling the app removes all associated data
@@ -36,31 +36,33 @@ All app data (your progress, settings, habits, notes) is stored **locally on you
 
 ## Permissions
 
-JW News may request the following device permissions:
+LifeStreak may request the following device permissions:
 
 | Permission | Purpose |
-|------------|---------|
-| Notifications | Send daily reminders (optional, user-controlled) |
-| Storage | Save your progress data locally |
+|-----------|---------|
+| **Local Notifications** | Reminders for daily check-ins, habits, and scheduled activities |
+
+These permissions are optional and can be disabled in your device settings at any time.
 
 ---
 
-## Children's Privacy
+## Data Export
 
-JW News does not collect any data from anyone, including children under 13. The app is safe for all ages.
-
----
-
-## Changes
-
-If we ever change this policy, we will update the effective date above. Given the nature of this app (no data collection), significant changes are unlikely.
+You may export your data at any time via the Settings screen. The exported file is a plain JSON file saved to your device. You control where it goes.
 
 ---
 
 ## Contact
 
-Questions? Email: cameron@ashbi.ca
+If you have any questions about this privacy policy, contact:
+
+**Ashbi Design**
+Email: cameron@ashbi.ca
 
 ---
 
-**Live Privacy Policy:** https://ashbi.ca/privacy/jw-news.html
+## Changes
+
+We may update this privacy policy from time to time. Any changes will be posted within the app.
+
+**This privacy policy is intentionally short because we don't collect your data.**

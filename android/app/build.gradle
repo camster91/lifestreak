@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.ashbi.jwnews"
+    namespace = "com.ashbi.lifestreak"
     compileSdk = rootProject.ext.compileSdkVersion
     buildToolsVersion = "36.1.0"
     defaultConfig {
-        applicationId "com.ashbi.jwnews"
+        applicationId "com.ashbi.lifestreak"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 400

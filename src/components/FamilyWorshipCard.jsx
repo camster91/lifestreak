@@ -223,14 +223,14 @@ function FamilyWorshipCard() {
                   type="text"
                   value={newLinkTitle}
                   onChange={(e) => setNewLinkTitle(e.target.value)}
-                  placeholder="Link title (e.g., 'Watchtower Article')"
+                  placeholder="Link title (e.g., 'Article Notes')"
                   className="input input-bordered input-sm w-full"
                 />
                 <input
                   type="url"
                   value={newLinkUrl}
                   onChange={(e) => setNewLinkUrl(e.target.value)}
-                  placeholder="URL (e.g., jw.org/...)"
+                  placeholder="URL (optional)"
                   className="input input-bordered input-sm w-full"
                 />
                 <div className="flex gap-2">

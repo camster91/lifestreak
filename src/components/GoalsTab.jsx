@@ -10,47 +10,47 @@ const CATEGORIES = [
   { id: 'personal', label: 'Personal', color: 'badge-accent', icon: Heart },
 ];
 
-// Suggested goals based on JW.org spiritual activities
+// Suggested goals for spiritual and personal growth
 const SUGGESTED_GOALS = [
   {
     title: 'Read the Bible daily for 30 days',
-    description: 'Build a habit of daily Bible reading using the schedule on jw.org',
+    description: 'Build a habit of daily Bible reading',
     category: 'spiritual',
     icon: '📖',
   },
   {
-    title: 'Complete "Enjoy Life Forever!" book',
-    description: 'Work through the interactive Bible course',
+    title: 'Complete a Bible study course',
+    description: 'Work through a structured Bible study program',
     category: 'spiritual',
     icon: '📚',
   },
   {
     title: 'Attend all meetings for a month',
-    description: 'Midweek and weekend meetings - in person or online',
+    description: 'Midweek and weekend meetings — in person or online',
     category: 'spiritual',
     icon: '🏛️',
   },
   {
-    title: 'Start a Bible study',
+    title: 'Start a Bible study with someone',
     description: 'Help someone learn about the Bible',
     category: 'ministry',
     icon: '👥',
   },
   {
-    title: 'Auxiliary pioneer for one month',
-    description: 'Set aside extra time for the ministry',
+    title: 'Increase service hours this month',
+    description: 'Set aside extra time for teaching and outreach',
     category: 'ministry',
     icon: '🚶',
   },
   {
-    title: 'Learn a new theocratic skill',
+    title: 'Learn a new teaching skill',
     description: 'Improve at public speaking, teaching, or another skill',
     category: 'personal',
     icon: '🎯',
   },
   {
     title: 'Memorize 10 key scriptures',
-    description: 'Build your scripture arsenal for teaching',
+    description: 'Build your scripture knowledge for teaching',
     category: 'spiritual',
     icon: '💭',
   },

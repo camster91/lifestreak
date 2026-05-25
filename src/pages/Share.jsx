@@ -123,7 +123,7 @@ function SharePage() {
             </div>
             <h2 className="text-xl font-bold text-base-content/70">No Shared Content</h2>
             <p className="text-sm text-base-content/50 mt-2 max-w-xs mx-auto">
-              This page receives content shared from other apps. Try sharing a link or text to JW Habits.
+              This page receives content shared from other apps. Try sharing a link or text to LifeStreak.
             </p>
             <button
               onClick={handleBack}

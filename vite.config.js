@@ -88,7 +88,7 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'JW Habits Home Screen'
+            label: 'LifeStreak Home Screen'
           }
         ],
       },

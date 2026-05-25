@@ -114,7 +114,7 @@ function SideDrawer({ children }: SideDrawerProps) {
             {/* Footer */}
             <div className="p-4 border-t border-base-200">
               <p className="text-xs text-base-content/40 text-center">
-                JW Habits
+                LifeStreak
               </p>
             </div>
           </aside>

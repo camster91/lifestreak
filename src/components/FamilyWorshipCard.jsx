@@ -3,7 +3,6 @@ import { format, startOfWeek, endOfWeek } from 'date-fns';
 import {
   Users,
   Check,
-  CheckCircle2,
   Plus,
   Link2,
   Trash2,
@@ -106,91 +105,87 @@ function FamilyWorshipCard() {
   };
 
   return (
-    <article className="card bg-base-100 shadow-sm rounded-2xl overflow-hidden">
-      {/* Header - Tappable to expand */}
+    <article className="ios-grouped shadow-sm">
+      {/* Row 1: Header - tappable to expand */}
       <button
         onClick={() => {
           haptics.light();
           setExpanded(!expanded);
         }}
-        className="flex items-center gap-3 p-4 w-full active:bg-base-200/50 transition-colors"
+        className={`ios-row w-full text-left active:bg-base-200/50 transition-colors ${worship.completed ? 'done' : ''}`}
       >
-        <div className={`p-3 rounded-2xl ${worship.completed ? 'bg-success/10' : 'bg-purple-500/10'}`}>
-          <Users className={`w-6 h-6 ${worship.completed ? 'text-success' : 'text-purple-500'}`} />
+        <div className="ios-icon orange">
+          <Users className="w-4 h-4" />
         </div>
-        <div className="flex-1 text-left">
-          <h3 className="font-bold">Family Worship</h3>
-          <p className="text-sm text-base-content/50">
-            Week of {weekLabel}
-          </p>
+        <div className="body">
+          <div className="title">Family Worship</div>
+          <div className="sub">Week of {weekLabel}</div>
         </div>
         {worshipStreak > 0 && (
-          <div className="badge badge-warning gap-1 mr-2">
-            <Flame className="w-3 h-3 animate-flame" />
-            {worshipStreak} week{worshipStreak !== 1 ? 's' : ''}
+          <div className="flex items-center gap-1 mr-2">
+            <Flame className="w-3 h-3 text-warning animate-flame" />
+            <span className="text-xs text-warning font-medium">{worshipStreak}w</span>
           </div>
         )}
         {worship.completed ? (
-          <CheckCircle2 className="w-6 h-6 text-success" />
+          <div className="ios-check done">
+            <Check className="w-4 h-4" />
+          </div>
         ) : expanded ? (
-          <ChevronUp className="w-5 h-5 text-base-content/30" />
+          <ChevronUp className="ios-chev" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-base-content/30" />
+          <ChevronDown className="ios-chev" />
         )}
       </button>
 
-      {/* Completion Toggle */}
-      <div className="px-4 pb-3">
-        <button
-          onClick={handleToggleComplete}
-          className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all active:scale-[0.98] ${
-            worship.completed
-              ? 'bg-success/10'
-              : 'bg-base-200/50 active:bg-base-200'
-          }`}
-        >
-          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-            worship.completed
-              ? 'bg-success border-success'
-              : 'border-base-content/20'
-          }`}>
-            {worship.completed && <Check className="w-4 h-4 text-white" />}
-          </div>
-          <span className={`font-medium ${worship.completed ? 'text-success' : ''}`}>
+      {/* Row 2: Completion toggle */}
+      <button
+        onClick={handleToggleComplete}
+        className="ios-row w-full text-left active:bg-base-200/50 transition-colors"
+      >
+        <div className="body">
+          <div className={`title ${worship.completed ? 'text-success' : ''}`}>
             {worship.completed ? 'Completed this week!' : 'Mark as complete'}
-          </span>
-        </button>
-      </div>
+          </div>
+        </div>
+        <div className={`ios-check ${worship.completed ? 'done' : ''}`}>
+          {worship.completed && <Check className="w-4 h-4" />}
+        </div>
+      </button>
 
-      {/* Expanded Content */}
+      {/* Expanded Content - additional rows */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-base-200 pt-4">
-          {/* Topic/Theme */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-base-content/70">
-              <BookOpen className="w-4 h-4" />
-              Topic / Theme
-            </label>
-            <input
-              type="text"
-              value={topicText}
-              onChange={(e) => setTopicText(e.target.value)}
-              onBlur={handleSaveTopic}
-              placeholder="What will you study this week?"
-              className="input input-bordered w-full"
-            />
+        <>
+          {/* Topic/Theme row */}
+          <div className="ios-row">
+            <div className="body">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-4 h-4 text-base-content/50" />
+                <span className="text-sm text-base-content/70">Topic / Theme</span>
+              </div>
+              <input
+                type="text"
+                value={topicText}
+                onChange={(e) => setTopicText(e.target.value)}
+                onBlur={handleSaveTopic}
+                placeholder="What will you study this week?"
+                className="input input-bordered w-full"
+              />
+            </div>
           </div>
 
-          {/* Study Links Section */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-base-content/70">
-              <Link2 className="w-4 h-4" />
-              Study Links
-            </label>
+          {/* Study Links row */}
+          <div className="ios-row flex-col items-start">
+            <div className="w-full mb-2">
+              <div className="flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-base-content/50" />
+                <span className="text-sm text-base-content/70">Study Links</span>
+              </div>
+            </div>
 
             {/* Existing Links */}
             {worship.studyLinks && worship.studyLinks.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-2 w-full">
                 {worship.studyLinks.map((link) => (
                   <div
                     key={link.id}
@@ -218,7 +213,7 @@ function FamilyWorshipCard() {
 
             {/* Add Link Form */}
             {showAddLink ? (
-              <div className="space-y-2 p-3 bg-base-200/30 rounded-xl">
+              <div className="space-y-2 p-3 bg-base-200/30 rounded-xl w-full">
                 <input
                   type="text"
                   value={newLinkTitle}
@@ -267,12 +262,14 @@ function FamilyWorshipCard() {
             )}
           </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-base-content/70">
-              <PenLine className="w-4 h-4" />
-              Notes
-            </label>
+          {/* Notes row */}
+          <div className="ios-row flex-col items-start">
+            <div className="w-full mb-2">
+              <div className="flex items-center gap-2">
+                <PenLine className="w-4 h-4 text-base-content/50" />
+                <span className="text-sm text-base-content/70">Notes</span>
+              </div>
+            </div>
             <textarea
               value={notesText}
               onChange={(e) => setNotesText(e.target.value)}
@@ -282,7 +279,7 @@ function FamilyWorshipCard() {
               rows={3}
             />
           </div>
-        </div>
+        </>
       )}
     </article>
   );

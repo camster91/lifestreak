@@ -24,7 +24,7 @@ function Reading() {
   const [totalUnits, setTotalUnits] = useState('');
   const [unitLabel, setUnitLabel] = useState('chapters');
 
-  const { items, addItem, updateProgress, finishItem, deleteItem, getInProgress, getCompleted } =
+  const { addItem, updateProgress, finishItem, deleteItem, getInProgress, getCompleted } =
     useReadingStore();
 
   const inProgress = getInProgress();

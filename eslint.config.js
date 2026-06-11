@@ -28,7 +28,8 @@ export default defineConfig([
     },
   },
   {
-    files: ['api-server.js', 'simple-api-server.js', '**/*.server.js'],
+    // Node.js scripts (build, dev, etc.) need node globals
+    files: ['scripts/**/*.{js,mjs,cjs}', '*.server.js', 'api-server.js', 'simple-api-server.js', '**/*.server.js'],
     extends: [js.configs.recommended],
     languageOptions: {
       ecmaVersion: 2020,

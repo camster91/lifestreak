@@ -5,7 +5,6 @@ import useProgressStore from '../stores/progressStore';
 import useGamificationStore from '../stores/gamificationStore';
 
 function BibleReadingCard() {
-  const [chaptersRead, setChaptersRead] = useState(0);
   const [notes, setNotes] = useState('');
 
   const {

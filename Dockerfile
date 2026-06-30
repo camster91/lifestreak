@@ -14,7 +14,7 @@ RUN \
     corepack enable && corepack prepare pnpm@latest --activate && \
     pnpm install --frozen-lockfile; \
   else \
-    npm install --no-audit --no-fund --include=dev; \
+    npm install --no-audit --no-fund --include=dev --legacy-peer-deps; \
   fi
 
 COPY . .

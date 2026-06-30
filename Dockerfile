@@ -1,14 +1,31 @@
-FROM nginx:alpine
+# lifestreak Dockerfile — multi-stage Vite PWA build + nginx serve
+# Stage 1: build the Vite SPA into dist/
+# Stage 2: serve dist/ via nginx
 
-# Copy built PWA files
-COPY dist/ /usr/share/nginx/html/
+# ─── Stage 1: build ─────────────────────────────────────────────────────
+FROM node:20-alpine AS build
 
-# Copy nginx config
+WORKDIR /app
+
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+RUN \
+  if [ -f pnpm-lock.yaml ]; then \
+    corepack enable && corepack prepare pnpm@latest --activate && \
+    pnpm install --frozen-lockfile; \
+  else \
+    npm install --no-audit --no-fund --include=dev; \
+  fi
+
+COPY . .
+RUN npm run build
+
+# ─── Stage 2: serve ─────────────────────────────────────────────────────
+FROM nginx:alpine AS production
+
+COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
 EXPOSE 80
 
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:80/ || exit 1
+CMD ["nginx", "-g", "daemon off;"]

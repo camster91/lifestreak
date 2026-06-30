@@ -3,7 +3,7 @@
   "private": true,
   "version": "4.0.0",
   "type": "module",
-  "description": "Track habits, service, reading, and goals — all in one place",
+  "description": "Track habits, service, reading, and goals \u2014 all in one place",
   "scripts": {
     "dev": "vite",
     "start": "npm run dev:full",
@@ -68,7 +68,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
+    "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.23",
     "concurrently": "^10.0.3",
     "cors": "^2.8.6",

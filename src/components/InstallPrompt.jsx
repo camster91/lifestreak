@@ -59,7 +59,7 @@ function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
-      <div className="card bg-gradient-to-r from-primary to-secondary text-white shadow-xl">
+      <div className="card bg-linear-to-r from-primary to-secondary text-white shadow-xl">
         <div className="card-body p-4">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-white/20 rounded-xl">
@@ -87,10 +87,7 @@ function InstallPrompt() {
               <Download className="w-4 h-4" />
               Install App
             </button>
-            <button
-              onClick={handleDismiss}
-              className="btn btn-sm btn-ghost text-white"
-            >
+            <button onClick={handleDismiss} className="btn btn-sm btn-ghost text-white">
               Maybe Later
             </button>
           </div>

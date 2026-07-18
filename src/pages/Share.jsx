@@ -32,7 +32,7 @@ function SharePage() {
     <div className="min-h-screen bg-base-200 pb-24">
       {/* Header */}
       <header
-        className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg"
+        className="relative bg-linear-to-br from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         {/* Decorative blurs */}
@@ -63,7 +63,9 @@ function SharePage() {
                   <div className="flex items-start gap-3">
                     <FileText className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">Title</p>
+                      <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
+                        Title
+                      </p>
                       <p className="font-semibold text-base-content mt-0.5">{title}</p>
                     </div>
                   </div>
@@ -74,7 +76,9 @@ function SharePage() {
                   <div className="flex items-start gap-3">
                     <FileText className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">Text</p>
+                      <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
+                        Text
+                      </p>
                       <p className="text-base-content/80 mt-0.5 whitespace-pre-wrap">{text}</p>
                     </div>
                   </div>
@@ -85,7 +89,9 @@ function SharePage() {
                   <div className="flex items-start gap-3">
                     <LinkIcon className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">URL</p>
+                      <p className="text-xs font-medium text-base-content/50 uppercase tracking-wider">
+                        URL
+                      </p>
                       <p className="text-primary mt-0.5 break-all text-sm">{url}</p>
                     </div>
                   </div>
@@ -94,10 +100,7 @@ function SharePage() {
                 {/* Open Link Button */}
                 {url && (
                   <div className="pt-2">
-                    <button
-                      onClick={handleOpenLink}
-                      className="btn btn-primary btn-block gap-2"
-                    >
+                    <button onClick={handleOpenLink} className="btn btn-primary btn-block gap-2">
                       <ExternalLink className="w-4 h-4" />
                       Open Link
                     </button>
@@ -107,10 +110,7 @@ function SharePage() {
             </div>
 
             {/* Back to Home */}
-            <button
-              onClick={handleBack}
-              className="btn btn-outline btn-block gap-2"
-            >
+            <button onClick={handleBack} className="btn btn-outline btn-block gap-2">
               <Home className="w-4 h-4" />
               Back to Home
             </button>
@@ -118,17 +118,15 @@ function SharePage() {
         ) : (
           /* Empty State */
           <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-linear-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
               <Share2 className="w-10 h-10 text-blue-400" />
             </div>
             <h2 className="text-xl font-bold text-base-content/70">No Shared Content</h2>
             <p className="text-sm text-base-content/50 mt-2 max-w-xs mx-auto">
-              This page receives content shared from other apps. Try sharing a link or text to LifeStreak.
+              This page receives content shared from other apps. Try sharing a link or text to
+              LifeStreak.
             </p>
-            <button
-              onClick={handleBack}
-              className="btn btn-primary mt-6 gap-2"
-            >
+            <button onClick={handleBack} className="btn btn-primary mt-6 gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back to Home
             </button>

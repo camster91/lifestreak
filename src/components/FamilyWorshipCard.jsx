@@ -11,7 +11,7 @@ import {
   ChevronUp,
   PenLine,
   Flame,
-  BookOpen
+  BookOpen,
 } from 'lucide-react';
 import useProgressStore from '../stores/progressStore';
 import useGamificationStore from '../stores/gamificationStore';
@@ -36,12 +36,8 @@ function FamilyWorshipCard() {
   const [topicText, setTopicText] = useState(() => worship?.topic || '');
   const [notesText, setNotesText] = useState(() => worship?.notes || '');
 
-  const {
-    toggleFamilyWorshipComplete,
-    updateFamilyWorship,
-    addStudyLink,
-    removeStudyLink,
-  } = progressStore;
+  const { toggleFamilyWorshipComplete, updateFamilyWorship, addStudyLink, removeStudyLink } =
+    progressStore;
 
   const gamificationStore = useGamificationStore();
   const { recordFamilyWorshipCompletion } = gamificationStore;
@@ -195,7 +191,7 @@ function FamilyWorshipCard() {
                       onClick={() => handleOpenLink(link.url)}
                       className="flex-1 flex items-center gap-2 text-left active:opacity-70"
                     >
-                      <ExternalLink className="w-4 h-4 text-primary flex-shrink-0" />
+                      <ExternalLink className="w-4 h-4 text-primary shrink-0" />
                       <span className="text-sm font-medium text-primary truncate">
                         {link.title}
                       </span>

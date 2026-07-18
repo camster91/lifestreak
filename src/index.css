@@ -1,13 +1,125 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+/*
+  daisyUI 5 (CSS-first): built-in theme application is disabled here and
+  re-declared below via `@plugin "daisyui/theme"` so the project's custom
+  color overrides are merged over the built-in light/dark themes.
+  (`light --default, dark --prefersdark` matches the old v4 config semantics.)
+*/
+@plugin "daisyui" {
+  themes: false;
+}
+
+@plugin "daisyui/theme" {
+  name: 'light';
+  default: true;
+  color-scheme: light;
+  --color-primary: #4a6fa4;
+  --color-secondary: #71bc37;
+  --color-accent: #f59e0b;
+  --color-neutral: #374151;
+  --color-base-100: #ffffff;
+  --color-base-200: #f3f4f6;
+  --color-base-300: #e5e7eb;
+}
+
+@plugin "daisyui/theme" {
+  name: 'dark';
+  prefersdark: true;
+  color-scheme: dark;
+  --color-primary: #5b8fd9;
+  --color-secondary: #84d94a;
+  --color-accent: #fbbf24;
+}
+
+@theme {
+  --color-jw-blue: #4a6fa4;
+  --color-jw-green: #71bc37;
+
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-slide-up: slideUp 0.5s ease-out;
+  --animate-slide-in: slideIn 0.3s ease-out;
+  --animate-bounce-subtle: bounceSubtle 2s ease-in-out infinite;
+
+  --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
+  --background-image-gradient-conic: conic-gradient(
+    from 180deg at 50% 50%,
+    var(--tw-gradient-stops)
+  );
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 5px rgba(74, 111, 164, 0.5);
+    }
+    to {
+      box-shadow: 0 0 20px rgba(74, 111, 164, 0.8);
+    }
+  }
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes bounceSubtle {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 /* Base styles */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
@@ -19,115 +131,130 @@ html {
   scroll-behavior: smooth;
 }
 
-@layer components {
+/*
+  NOTE: daisyUI 5 component/color classes (btn, bg-base-100, text-primary, …)
+  are plain CSS classes, not Tailwind utilities, so they can't be used with
+  @apply. The custom utilities below use daisyUI's CSS variables instead.
+*/
+
+@utility card-elevated {
   /* Elevated cards with press feedback */
-  .card-elevated {
-    @apply shadow-lg hover:shadow-xl transition-all duration-200;
-  }
+  @apply shadow-lg hover:shadow-xl transition-all duration-200;
+}
 
-  .btn-primary-custom {
-    @apply bg-jw-blue hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
-  }
+@utility btn-primary-custom {
+  @apply bg-jw-blue hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-sm;
+}
 
+@utility card-mobile {
   /* Mobile-optimized card */
-  .card-mobile {
-    @apply bg-base-100 rounded-2xl shadow-sm border border-base-200/50;
-    @apply active:scale-[0.98] transition-transform duration-150;
-  }
+  @apply rounded-2xl shadow-xs border active:scale-[0.98] transition-transform duration-150;
+  background-color: var(--color-base-100);
+  border-color: color-mix(in oklab, var(--color-base-200) 50%, transparent);
+}
 
+@utility btn-touch {
   /* Touch-friendly button */
-  .btn-touch {
-    @apply min-h-[44px] min-w-[44px];
-    @apply active:scale-95 transition-transform duration-100;
-  }
+  @apply min-h-[44px] min-w-[44px] active:scale-95 transition-transform duration-100;
+}
 
+@utility tab-content {
   /* Smooth tab transitions */
-  .tab-content {
-    @apply transition-opacity duration-200 ease-out;
-  }
+  @apply transition-opacity duration-200 ease-out;
+}
 
+@utility pull-indicator {
   /* Pull indicator */
-  .pull-indicator {
-    @apply w-10 h-1 bg-base-300 rounded-full mx-auto;
-  }
+  @apply w-10 h-1 rounded-full mx-auto;
+  background-color: var(--color-base-300);
+}
 
+@utility header-glass {
   /* Glass effect header */
-  .header-glass {
-    @apply backdrop-blur-lg bg-primary/95;
-  }
+  @apply backdrop-blur-lg;
+  background-color: color-mix(in oklab, var(--color-primary) 95%, transparent);
+}
 
-  /* Floating action button */
-  .fab {
-    @apply fixed bottom-24 right-4 z-50;
-    @apply btn btn-circle btn-primary btn-lg shadow-lg;
-    @apply active:scale-90 transition-transform duration-100;
-  }
+@utility fab {
+  /*
+    Floating action button. daisyUI 5 classes can't be @apply'd — compose
+    `fab btn btn-circle btn-primary btn-lg` in markup if this is ever used.
+  */
+  @apply fixed bottom-24 right-4 z-50 shadow-lg;
+  @apply active:scale-90 transition-transform duration-100;
+}
 
+@utility slide-up {
   /* Slide-up animation */
-  .slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
+  animation: slideUp 0.3s ease-out;
+}
 
+@utility fade-in {
   /* Fade in animation */
-  .fade-in {
-    animation: fadeIn 0.2s ease-out;
-  }
+  animation: fadeIn 0.2s ease-out;
+}
 
+@utility progress-gradient {
   /* Progress bar with gradient */
-  .progress-gradient {
-    @apply bg-gradient-to-r from-primary to-secondary;
-  }
+  background-image: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+}
 
+@utility checkbox-touch {
   /* Checkbox with better touch target */
-  .checkbox-touch {
-    @apply w-5 h-5 cursor-pointer;
-  }
+  @apply w-5 h-5 cursor-pointer;
+}
 
+@utility badge-pulse {
   /* Badge pulse animation */
-  .badge-pulse {
-    animation: pulse 2s infinite;
+  animation: pulse 2s infinite;
+}
+
+@utility pt-safe {
+  /* Safe area utilities */
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left);
+}
+
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right);
+}
+
+@utility safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility scrollbar-hide {
+  /* Hide scrollbar but keep functionality */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
-@layer utilities {
-  /* Safe area utilities */
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
-  }
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  .pl-safe {
-    padding-left: env(safe-area-inset-left);
-  }
-  .pr-safe {
-    padding-right: env(safe-area-inset-right);
-  }
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top);
-  }
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  /* Hide scrollbar but keep functionality */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
+@utility press-effect {
   /* Smooth press effect */
-  .press-effect {
-    @apply active:bg-base-200/50 transition-colors duration-100;
+  @apply transition-colors duration-100;
+  &:active {
+    background-color: color-mix(in oklab, var(--color-base-200) 50%, transparent);
   }
+}
 
+@utility text-gradient {
   /* Gradient text */
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
-  }
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(to right, var(--color-primary), var(--color-secondary));
 }
 
 /* Keyframes */
@@ -157,7 +284,8 @@ html {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -167,7 +295,8 @@ html {
 
 /* Swipe gesture hint */
 @keyframes swipeHint {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
   50% {
@@ -175,8 +304,8 @@ html {
   }
 }
 
-/* DaisyUI customizations */
-.tabs-boxed {
+/* DaisyUI customizations (`tabs-boxed` was renamed to `tabs-box` in daisyUI 5) */
+.tabs-box {
   @apply rounded-xl p-1;
 }
 
@@ -185,16 +314,16 @@ html {
 }
 
 .tab-active {
-  @apply shadow-sm;
+  @apply shadow-xs;
 }
 
 /* Better range input for mobile */
-input[type="range"] {
+input[type='range'] {
   @apply h-2 cursor-pointer;
   -webkit-appearance: none;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type='range']::-webkit-slider-thumb {
   @apply w-5 h-5 rounded-full bg-current shadow-md;
   -webkit-appearance: none;
   margin-top: -6px;
@@ -224,7 +353,8 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* Bottom nav improvements */
 .btm-nav {
-  @apply backdrop-blur-lg bg-base-200/90;
+  @apply backdrop-blur-lg;
+  background-color: color-mix(in oklab, var(--color-base-200) 90%, transparent);
 }
 
 .btm-nav > * {
@@ -232,7 +362,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .btm-nav > *.active {
-  @apply text-primary scale-105;
+  @apply scale-105;
+  color: var(--color-primary);
 }
 
 /* Loading skeleton shimmer */
@@ -287,7 +418,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 @keyframes wiggle {
-  0%, 100% {
+  0%,
+  100% {
     transform: rotate(-5deg);
   }
   50% {
@@ -300,7 +432,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 @keyframes bounce-subtle {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -364,7 +497,8 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* Streak fire animation */
 @keyframes flame {
-  0%, 100% {
+  0%,
+  100% {
     transform: scaleY(1) translateY(0);
     filter: brightness(1);
   }

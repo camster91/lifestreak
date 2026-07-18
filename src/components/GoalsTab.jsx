@@ -1,5 +1,17 @@
 import { useState } from 'react';
-import { Target, Plus, Check, Trash2, ChevronDown, ChevronUp, Star, BookOpen, Users, Heart, Clock } from 'lucide-react';
+import {
+  Target,
+  Plus,
+  Check,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  Star,
+  BookOpen,
+  Users,
+  Heart,
+  Clock,
+} from 'lucide-react';
 import useGoalsStore from '../stores/goalsStore';
 import useGamificationStore from '../stores/gamificationStore';
 import { haptics } from '../utils/native';
@@ -103,7 +115,7 @@ function GoalsTab() {
 
   const handleToggleComplete = (id) => {
     haptics.medium();
-    const goal = goals.find(g => g.id === id);
+    const goal = goals.find((g) => g.id === id);
     toggleGoalComplete(id);
     if (goal && !goal.completed) {
       recordGoalCompleted();
@@ -115,7 +127,7 @@ function GoalsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl">
+          <div className="p-2 bg-linear-to-br from-amber-400 to-orange-500 rounded-xl">
             <Target className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -151,7 +163,7 @@ function GoalsTab() {
 
       {/* Suggestions Panel */}
       {showSuggestions && (
-        <div className="card bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+        <div className="card bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200">
           <div className="card-body p-4">
             <h4 className="font-semibold text-amber-800 flex items-center gap-2">
               <Star className="w-4 h-4" />
@@ -159,7 +171,7 @@ function GoalsTab() {
             </h4>
             <div className="grid gap-2 mt-2">
               {SUGGESTED_GOALS.map((suggested, index) => {
-                const isAlreadyAdded = goals.some(g => g.title === suggested.title);
+                const isAlreadyAdded = goals.some((g) => g.title === suggested.title);
                 return (
                   <button
                     key={index}
@@ -174,7 +186,9 @@ function GoalsTab() {
                     <span className="text-2xl">{suggested.icon}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{suggested.title}</p>
-                      <p className="text-xs text-base-content/60 truncate">{suggested.description}</p>
+                      <p className="text-xs text-base-content/60 truncate">
+                        {suggested.description}
+                      </p>
                     </div>
                     {isAlreadyAdded ? (
                       <Check className="w-4 h-4 text-success" />
@@ -224,7 +238,11 @@ function GoalsTab() {
             })}
           </div>
           <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setShowAddForm(false)} className="btn btn-ghost btn-sm">
+            <button
+              type="button"
+              onClick={() => setShowAddForm(false)}
+              className="btn btn-ghost btn-sm"
+            >
               Cancel
             </button>
             <button type="submit" className="btn btn-primary btn-sm">
@@ -237,15 +255,12 @@ function GoalsTab() {
       {/* Active Goals */}
       {activeGoals.length === 0 && !showAddForm && !showSuggestions ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-amber-100 to-orange-100 flex items-center justify-center">
             <Target className="w-8 h-8 text-amber-500" />
           </div>
           <p className="font-medium text-base-content/70">No goals yet</p>
           <p className="text-sm text-base-content/50 mt-1">Set a spiritual goal to work toward</p>
-          <button
-            onClick={() => setShowSuggestions(true)}
-            className="btn btn-primary btn-sm mt-4"
-          >
+          <button onClick={() => setShowSuggestions(true)} className="btn btn-primary btn-sm mt-4">
             <Star className="w-4 h-4" />
             Browse Ideas
           </button>
@@ -256,19 +271,26 @@ function GoalsTab() {
             const categoryInfo = CATEGORIES.find((c) => c.id === goal.category);
             const Icon = categoryInfo?.icon || Target;
             return (
-              <div key={goal.id} className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+              <div
+                key={goal.id}
+                className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow"
+              >
                 <div className="card-body p-4">
                   <div className="flex items-start gap-3">
                     <button
                       onClick={() => handleToggleComplete(goal.id)}
-                      className="mt-0.5 flex-shrink-0"
+                      className="mt-0.5 shrink-0"
                     >
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        goal.progress === 100
-                          ? 'border-success bg-success'
-                          : 'border-base-300 hover:border-primary'
-                      }`}>
-                        {goal.progress === 100 && <Check className="w-4 h-4 text-success-content" />}
+                      <div
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                          goal.progress === 100
+                            ? 'border-success bg-success'
+                            : 'border-base-300 hover:border-primary'
+                        }`}
+                      >
+                        {goal.progress === 100 && (
+                          <Check className="w-4 h-4 text-success-content" />
+                        )}
                       </div>
                     </button>
                     <div className="flex-1 min-w-0">
@@ -293,7 +315,9 @@ function GoalsTab() {
                             style={{ width: `${goal.progress}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium w-12 text-right">{goal.progress}%</span>
+                        <span className="text-sm font-medium w-12 text-right">
+                          {goal.progress}%
+                        </span>
                       </div>
                       <input
                         type="range"
@@ -337,7 +361,11 @@ function GoalsTab() {
               <Check className="w-4 h-4" />
               Completed ({completedGoals.length})
             </span>
-            {showCompleted ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {showCompleted ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
           </button>
 
           {showCompleted && (

@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { TrendingUp, Calendar, Target, Trophy, Star, Flame, Lock, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  TrendingUp,
+  Calendar,
+  Target,
+  Trophy,
+  Star,
+  Flame,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import useProgressStore from '../stores/progressStore';
 import useGamificationStore from '../stores/gamificationStore';
 import { haptics } from '../utils/native';
@@ -32,8 +42,8 @@ function Stats() {
   const level = getLevel();
   const pointsToNext = getPointsToNextLevel();
   const achievements = getAllAchievements();
-  const unlockedAchievements = achievements.filter(a => a.unlocked);
-  const lockedAchievements = achievements.filter(a => !a.unlocked);
+  const unlockedAchievements = achievements.filter((a) => a.unlocked);
+  const lockedAchievements = achievements.filter((a) => !a.unlocked);
 
   const displayedAchievements = showAllAchievements
     ? achievements
@@ -55,7 +65,7 @@ function Stats() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6 space-y-6 max-w-2xl">
         {/* Level & XP Card */}
-        <div className="card bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-xl animate-fade-in-up">
+        <div className="card bg-linear-to-br from-amber-400 to-orange-500 text-white shadow-xl animate-fade-in-up">
           <div className="card-body">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -85,7 +95,10 @@ function Stats() {
         </div>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-4 gap-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+        <div
+          className="grid grid-cols-4 gap-2 animate-fade-in-up"
+          style={{ animationDelay: '100ms' }}
+        >
           <div className="bg-base-100 rounded-xl p-3 text-center shadow">
             <p className="text-2xl font-bold text-primary">{dailyTextStreak}</p>
             <p className="text-xs text-base-content/60">Streak</p>
@@ -105,7 +118,10 @@ function Stats() {
         </div>
 
         {/* Achievements Card */}
-        <div className="card bg-base-100 shadow-xl animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+        <div
+          className="card bg-base-100 shadow-xl animate-fade-in-up"
+          style={{ animationDelay: '200ms' }}
+        >
           <div className="card-body">
             <div className="flex items-center justify-between">
               <h2 className="card-title">
@@ -132,16 +148,24 @@ function Stats() {
                 >
                   <div className="flex items-start gap-2">
                     <span className="text-2xl">
-                      {achievement.unlocked ? achievement.icon : <Lock className="w-6 h-6 text-base-content/30" />}
+                      {achievement.unlocked ? (
+                        achievement.icon
+                      ) : (
+                        <Lock className="w-6 h-6 text-base-content/30" />
+                      )}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold text-sm truncate ${!achievement.unlocked && 'text-base-content/50'}`}>
+                      <p
+                        className={`font-semibold text-sm truncate ${!achievement.unlocked && 'text-base-content/50'}`}
+                      >
                         {achievement.name}
                       </p>
                       <p className="text-xs text-base-content/60 line-clamp-2">
                         {achievement.description}
                       </p>
-                      <p className={`text-xs mt-1 font-medium ${achievement.unlocked ? 'text-amber-600' : 'text-base-content/40'}`}>
+                      <p
+                        className={`text-xs mt-1 font-medium ${achievement.unlocked ? 'text-amber-600' : 'text-base-content/40'}`}
+                      >
                         +{achievement.points} XP
                       </p>
                     </div>
@@ -159,16 +183,23 @@ function Stats() {
               className="btn btn-ghost btn-sm w-full mt-2"
             >
               {showAllAchievements ? (
-                <>Show Less <ChevronUp className="w-4 h-4 ml-1" /></>
+                <>
+                  Show Less <ChevronUp className="w-4 h-4 ml-1" />
+                </>
               ) : (
-                <>Show All ({achievements.length}) <ChevronDown className="w-4 h-4 ml-1" /></>
+                <>
+                  Show All ({achievements.length}) <ChevronDown className="w-4 h-4 ml-1" />
+                </>
               )}
             </button>
           </div>
         </div>
 
         {/* Current Streaks */}
-        <div className="card bg-base-100 shadow-xl animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+        <div
+          className="card bg-base-100 shadow-xl animate-fade-in-up"
+          style={{ animationDelay: '300ms' }}
+        >
           <div className="card-body">
             <h2 className="card-title">
               <Flame className="w-5 h-5 text-orange-500 animate-flame" />
@@ -181,9 +212,7 @@ function Stats() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-medium">Daily Text</span>
-                  <span className="text-2xl font-bold text-primary">
-                    {dailyTextStreak} days
-                  </span>
+                  <span className="text-2xl font-bold text-primary">{dailyTextStreak} days</span>
                 </div>
                 <progress
                   className="progress progress-primary w-full transition-all duration-500"
@@ -209,9 +238,7 @@ function Stats() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-medium">Daily Prayers</span>
-                  <span className="text-2xl font-bold text-pink-500">
-                    {prayerStreak} days
-                  </span>
+                  <span className="text-2xl font-bold text-pink-500">{prayerStreak} days</span>
                 </div>
                 <progress
                   className="progress progress-accent w-full transition-all duration-500"
@@ -238,7 +265,8 @@ function Stats() {
                 <div className="flex items-center justify-center gap-2 p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl animate-pulse">
                   <Trophy className="w-5 h-5 text-amber-600" />
                   <span className="font-medium text-amber-800 dark:text-amber-200">
-                    Best Current Streak: {Math.max(dailyTextStreak, bibleReadingStreak, prayerStreak)} days
+                    Best Current Streak:{' '}
+                    {Math.max(dailyTextStreak, bibleReadingStreak, prayerStreak)} days
                   </span>
                 </div>
               )}
@@ -247,7 +275,10 @@ function Stats() {
         </div>
 
         {/* Completion Rates */}
-        <div className="card bg-base-100 shadow-xl animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+        <div
+          className="card bg-base-100 shadow-xl animate-fade-in-up"
+          style={{ animationDelay: '400ms' }}
+        >
           <div className="card-body">
             <h2 className="card-title">
               <Target className="w-5 h-5" />
@@ -259,37 +290,32 @@ function Stats() {
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 rounded-lg bg-primary/10">
                 <div className="text-3xl font-bold text-primary">{dailyText7Day}%</div>
-                <div className="text-sm text-base-content/70 mt-1">
-                  Daily Text (7 days)
-                </div>
+                <div className="text-sm text-base-content/70 mt-1">Daily Text (7 days)</div>
               </div>
 
               <div className="text-center p-4 rounded-lg bg-primary/10">
                 <div className="text-3xl font-bold text-primary">{dailyText30Day}%</div>
-                <div className="text-sm text-base-content/70 mt-1">
-                  Daily Text (30 days)
-                </div>
+                <div className="text-sm text-base-content/70 mt-1">Daily Text (30 days)</div>
               </div>
 
               <div className="text-center p-4 rounded-lg bg-secondary/10">
                 <div className="text-3xl font-bold text-secondary">{bibleReading7Day}%</div>
-                <div className="text-sm text-base-content/70 mt-1">
-                  Bible Reading (7 days)
-                </div>
+                <div className="text-sm text-base-content/70 mt-1">Bible Reading (7 days)</div>
               </div>
 
               <div className="text-center p-4 rounded-lg bg-secondary/10">
                 <div className="text-3xl font-bold text-secondary">{bibleReading30Day}%</div>
-                <div className="text-sm text-base-content/70 mt-1">
-                  Bible Reading (30 days)
-                </div>
+                <div className="text-sm text-base-content/70 mt-1">Bible Reading (30 days)</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Activity Summary */}
-        <div className="card bg-base-100 shadow-xl animate-fade-in-up" style={{ animationDelay: '500ms' }}>
+        <div
+          className="card bg-base-100 shadow-xl animate-fade-in-up"
+          style={{ animationDelay: '500ms' }}
+        >
           <div className="card-body">
             <h2 className="card-title">
               <Calendar className="w-5 h-5" />
@@ -300,14 +326,38 @@ function Stats() {
 
             <div className="space-y-3">
               {[
-                { label: 'Daily Texts Completed', value: stats.dailyTextCompletions, color: 'text-primary' },
-                { label: 'Bible Readings Completed', value: stats.bibleReadingsCompleted, color: 'text-secondary' },
-                { label: 'Prayers Completed', value: stats.prayersCompleted || 0, color: 'text-pink-500' },
-                { label: 'Family Worship Sessions', value: stats.familyWorshipCompleted || 0, color: 'text-purple-500' },
-                { label: 'Reflections Written', value: stats.reflectionsWritten, color: 'text-accent' },
+                {
+                  label: 'Daily Texts Completed',
+                  value: stats.dailyTextCompletions,
+                  color: 'text-primary',
+                },
+                {
+                  label: 'Bible Readings Completed',
+                  value: stats.bibleReadingsCompleted,
+                  color: 'text-secondary',
+                },
+                {
+                  label: 'Prayers Completed',
+                  value: stats.prayersCompleted || 0,
+                  color: 'text-pink-500',
+                },
+                {
+                  label: 'Family Worship Sessions',
+                  value: stats.familyWorshipCompleted || 0,
+                  color: 'text-purple-500',
+                },
+                {
+                  label: 'Reflections Written',
+                  value: stats.reflectionsWritten,
+                  color: 'text-accent',
+                },
                 { label: 'News Articles Read', value: stats.newsRead, color: 'text-info' },
                 { label: 'Goals Completed', value: stats.goalsCompleted, color: 'text-success' },
-                { label: 'Projects Completed', value: stats.projectsCompleted, color: 'text-warning' },
+                {
+                  label: 'Projects Completed',
+                  value: stats.projectsCompleted,
+                  color: 'text-warning',
+                },
               ].map((item, index) => (
                 <div
                   key={item.label}
@@ -323,25 +373,28 @@ function Stats() {
         </div>
 
         {/* Motivational Message */}
-        <div className="card bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-xl animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+        <div
+          className="card bg-linear-to-br from-purple-500 to-pink-500 text-white shadow-xl animate-fade-in-up"
+          style={{ animationDelay: '600ms' }}
+        >
           <div className="card-body text-center">
             <h3 className="text-xl font-bold mb-2">
               {level >= 10
-                ? "🏆 Outstanding Achievement!"
+                ? '🏆 Outstanding Achievement!'
                 : level >= 5
-                ? "🎯 You're on fire!"
-                : level >= 2
-                ? "💪 Keep up the momentum!"
-                : "🌱 Every journey begins with a single step"}
+                  ? "🎯 You're on fire!"
+                  : level >= 2
+                    ? '💪 Keep up the momentum!'
+                    : '🌱 Every journey begins with a single step'}
             </h3>
             <p className="text-sm opacity-90">
               {level >= 10
-                ? "Your dedication to spiritual routine is truly inspiring!"
+                ? 'Your dedication to spiritual routine is truly inspiring!'
                 : level >= 5
-                ? "You're building excellent spiritual habits!"
-                : level >= 2
-                ? "Great progress! Consistency is the key to success."
-                : "Start today and watch your spiritual routine flourish!"}
+                  ? "You're building excellent spiritual habits!"
+                  : level >= 2
+                    ? 'Great progress! Consistency is the key to success.'
+                    : 'Start today and watch your spiritual routine flourish!'}
             </p>
           </div>
         </div>

@@ -42,19 +42,19 @@ export default function PageHeader({
 }) {
   const blurClass = BLUR_VARIANTS[blurColor] || BLUR_VARIANTS.blue;
 
-  const defaultSubtitleClass = Icon
-    ? 'text-white/70 text-sm'
-    : 'text-sm opacity-80 mt-1';
+  const defaultSubtitleClass = Icon ? 'text-white/70 text-sm' : 'text-sm opacity-80 mt-1';
 
   return (
     <header
-      className={`relative bg-gradient-to-br ${gradient} text-primary-content${shadow ? ' shadow-lg' : ''}`}
+      className={`relative bg-linear-to-br ${gradient} text-primary-content${shadow ? ' shadow-lg' : ''}`}
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {!noBlurs && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-4 right-4 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-          <div className={`absolute bottom-0 left-0 w-48 h-48 ${blurClass} rounded-full blur-3xl`} />
+          <div
+            className={`absolute bottom-0 left-0 w-48 h-48 ${blurClass} rounded-full blur-3xl`}
+          />
         </div>
       )}
 
@@ -73,17 +73,13 @@ export default function PageHeader({
               )}
               <div>
                 <h1 className={`${titleSize} font-bold tracking-tight`}>{title}</h1>
-                {subtitle && (
-                  <p className={subtitleClass || defaultSubtitleClass}>{subtitle}</p>
-                )}
+                {subtitle && <p className={subtitleClass || defaultSubtitleClass}>{subtitle}</p>}
               </div>
             </div>
           ) : (
             <div>
               <h1 className={`${titleSize} font-bold tracking-tight`}>{title}</h1>
-              {subtitle && (
-                <p className={subtitleClass || defaultSubtitleClass}>{subtitle}</p>
-              )}
+              {subtitle && <p className={subtitleClass || defaultSubtitleClass}>{subtitle}</p>}
             </div>
           )}
 

@@ -52,12 +52,17 @@ function AchievementPopup() {
 
   useEffect(() => {
     if (currentAchievement) {
-      setParticles(Array.from({ length: 20 }, (_, i): Particle => ({
-        id: i,
-        delay: i * 50,
-        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length] ?? '#FFD700',
-        left: Math.random() * 100,
-      })));
+      setParticles(
+        Array.from(
+          { length: 20 },
+          (_, i): Particle => ({
+            id: i,
+            delay: i * 50,
+            color: CONFETTI_COLORS[i % CONFETTI_COLORS.length] ?? '#FFD700',
+            left: Math.random() * 100,
+          })
+        )
+      );
     }
   }, [currentAchievement]);
 
@@ -101,7 +106,7 @@ function AchievementPopup() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
@@ -124,7 +129,7 @@ function AchievementPopup() {
 
       {/* Achievement card */}
       <div
-        className={`relative bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300 ${
+        className={`relative bg-linear-to-br from-amber-400 via-yellow-500 to-orange-500 rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300 ${
           isExiting ? 'scale-90 opacity-0' : 'animate-achievement-pop'
         }`}
       >
@@ -176,7 +181,10 @@ function AchievementPopup() {
             Level {level}
           </div>
 
-          <div className="flex gap-3 justify-center animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+          <div
+            className="flex gap-3 justify-center animate-fade-in-up"
+            style={{ animationDelay: '400ms' }}
+          >
             {recentAchievements.length > 1 && (
               <div className="text-white/60 text-sm self-center">
                 {currentIndex + 1} of {recentAchievements.length}
@@ -190,7 +198,7 @@ function AchievementPopup() {
             </button>
           </div>
         </div>
-        <div className="h-2 bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-400" />
+        <div className="h-2 bg-linear-to-r from-yellow-300 via-amber-400 to-orange-400" />
       </div>
     </div>
   );

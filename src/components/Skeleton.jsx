@@ -4,12 +4,7 @@
 
 // Basic skeleton pulse animation
 export function Skeleton({ className = '', ...props }) {
-  return (
-    <div
-      className={`animate-shimmer bg-base-300 rounded ${className}`}
-      {...props}
-    />
-  );
+  return <div className={`animate-shimmer bg-base-300 rounded ${className}`} {...props} />;
 }
 
 // Card skeleton
@@ -24,10 +19,7 @@ export function CardSkeleton({ lines = 3 }) {
           <Skeleton className="h-4 w-24" />
         </div>
         {Array.from({ length: lines }).map((_, i) => (
-          <Skeleton
-            key={i}
-            className={`h-3 ${SKELETON_WIDTHS[i % SKELETON_WIDTHS.length]}`}
-          />
+          <Skeleton key={i} className={`h-3 ${SKELETON_WIDTHS[i % SKELETON_WIDTHS.length]}`} />
         ))}
       </div>
     </div>
@@ -38,7 +30,7 @@ export function CardSkeleton({ lines = 3 }) {
 export function ListItemSkeleton() {
   return (
     <div className="flex items-center gap-3 p-3">
-      <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+      <Skeleton className="w-10 h-10 rounded-lg shrink-0" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-3 w-1/2" />
@@ -51,7 +43,7 @@ export function ListItemSkeleton() {
 export function NewsCardSkeleton() {
   return (
     <div className="flex gap-3 p-3">
-      <Skeleton className="w-20 h-20 rounded-lg flex-shrink-0" />
+      <Skeleton className="w-20 h-20 rounded-lg shrink-0" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-3 w-16" />
         <Skeleton className="h-4 w-full" />

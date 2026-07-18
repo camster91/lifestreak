@@ -1,5 +1,16 @@
 import { useState } from 'react';
-import { FolderKanban, Plus, Trash2, ChevronDown, ChevronRight, Star, Lightbulb, Users, BookOpen, Mic } from 'lucide-react';
+import {
+  FolderKanban,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Star,
+  Lightbulb,
+  Users,
+  BookOpen,
+  Mic,
+} from 'lucide-react';
 import useGoalsStore from '../stores/goalsStore';
 import useGamificationStore from '../stores/gamificationStore';
 import { haptics } from '../utils/native';
@@ -121,7 +132,11 @@ const SUGGESTED_PROJECTS = [
 function ProjectsTab() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [newProject, setNewProject] = useState({ title: '', description: '', category: 'personal' });
+  const [newProject, setNewProject] = useState({
+    title: '',
+    description: '',
+    category: 'personal',
+  });
   const [expandedProject, setExpandedProject] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
@@ -181,7 +196,7 @@ function ProjectsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl">
+          <div className="p-2 bg-linear-to-br from-purple-400 to-pink-500 rounded-xl">
             <FolderKanban className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -217,7 +232,7 @@ function ProjectsTab() {
 
       {/* Suggestions Panel */}
       {showSuggestions && (
-        <div className="card bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
+        <div className="card bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200">
           <div className="card-body p-4">
             <h4 className="font-semibold text-purple-800 flex items-center gap-2">
               <Star className="w-4 h-4" />
@@ -225,7 +240,7 @@ function ProjectsTab() {
             </h4>
             <div className="grid gap-2 mt-2">
               {SUGGESTED_PROJECTS.map((suggested, index) => {
-                const isAlreadyAdded = projects.some(p => p.title === suggested.title);
+                const isAlreadyAdded = projects.some((p) => p.title === suggested.title);
                 return (
                   <button
                     key={index}
@@ -240,9 +255,13 @@ function ProjectsTab() {
                     <span className="text-2xl">{suggested.icon}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{suggested.title}</p>
-                      <p className="text-xs text-base-content/60 truncate">{suggested.description}</p>
+                      <p className="text-xs text-base-content/60 truncate">
+                        {suggested.description}
+                      </p>
                       {suggested.tasks && (
-                        <p className="text-xs text-purple-600 mt-1">{suggested.tasks.length} tasks included</p>
+                        <p className="text-xs text-purple-600 mt-1">
+                          {suggested.tasks.length} tasks included
+                        </p>
                       )}
                     </div>
                     {isAlreadyAdded ? (
@@ -293,7 +312,11 @@ function ProjectsTab() {
             })}
           </div>
           <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setShowAddForm(false)} className="btn btn-ghost btn-sm">
+            <button
+              type="button"
+              onClick={() => setShowAddForm(false)}
+              className="btn btn-ghost btn-sm"
+            >
               Cancel
             </button>
             <button type="submit" className="btn btn-primary btn-sm">
@@ -306,15 +329,12 @@ function ProjectsTab() {
       {/* Projects List */}
       {activeProjects.length === 0 && !showAddForm && !showSuggestions ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-purple-100 to-pink-100 flex items-center justify-center">
             <FolderKanban className="w-8 h-8 text-purple-500" />
           </div>
           <p className="font-medium text-base-content/70">No projects yet</p>
           <p className="text-sm text-base-content/50 mt-1">Start a project to organize tasks</p>
-          <button
-            onClick={() => setShowSuggestions(true)}
-            className="btn btn-primary btn-sm mt-4"
-          >
+          <button onClick={() => setShowSuggestions(true)} className="btn btn-primary btn-sm mt-4">
             <Lightbulb className="w-4 h-4" />
             Browse Ideas
           </button>
@@ -399,8 +419,10 @@ function ProjectsTab() {
                                   haptics.light();
                                   toggleProjectTask(project.id, task.id);
                                   if (!task.completed) {
-                                    const otherTasks = project.tasks.filter(t => t.id !== task.id);
-                                    const allOthersDone = otherTasks.every(t => t.completed);
+                                    const otherTasks = project.tasks.filter(
+                                      (t) => t.id !== task.id
+                                    );
+                                    const allOthersDone = otherTasks.every((t) => t.completed);
                                     if (allOthersDone) {
                                       recordProjectCompleted();
                                     }
@@ -427,10 +449,7 @@ function ProjectsTab() {
                       )}
 
                       {/* Add Task Form */}
-                      <form
-                        onSubmit={(e) => handleAddTask(project.id, e)}
-                        className="flex gap-2"
-                      >
+                      <form onSubmit={(e) => handleAddTask(project.id, e)} className="flex gap-2">
                         <input
                           type="text"
                           placeholder="Add a task..."

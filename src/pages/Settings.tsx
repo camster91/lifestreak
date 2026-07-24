@@ -13,6 +13,12 @@ import {
 } from '../utils/notifications.js';
 import { NotificationItem, WeeklyNotificationItem } from '../components/settings/NotificationItems.js';
 import { validateOllamaBaseUrl } from '../utils/safeNavigation.js';
+import {
+  BACKUP_STORAGE_KEYS,
+  MAX_BACKUP_BYTES,
+  validateBackupStoreData,
+  validateLegacyBackup,
+} from '../utils/backupValidation.js';
 
 function Settings() {
   const toast = useToast();
@@ -134,13 +140,7 @@ function Settings() {
     }
   };
 
-  const STORAGE_KEYS = [
-    'ls-progress-storage',
-    'ls-progress-settings',
-    'ls-gamification-storage',
-    'ls-goals-storage',
-    'ls-memories-storage',
-  ];
+  const STORAGE_KEYS = BACKUP_STORAGE_KEYS;
 
   const handleExportData = () => {
     try {
@@ -185,6 +185,10 @@ function Settings() {
     input.onchange = async (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
+      if (file.size > MAX_BACKUP_BYTES) {
+        toast.error('Backup file is too large');
+        return;
+      }
       try {
         const text = await file.text();
         const parsed = JSON.parse(text);
@@ -205,14 +209,30 @@ function Settings() {
           isOldFormat = !!(parsed.progress || parsed.settings);
         }
 
-        const hasKnownKeys = STORAGE_KEYS.some((key) => key in storeData);
-        if (!isOldFormat && !hasKnownKeys) {
-          toast.error('Invalid backup file format');
-          return;
+        if (isOldFormat) {
+          const legacy = validateLegacyBackup(storeData);
+          if (!legacy.ok) {
+            toast.error(legacy.reason);
+            return;
+          }
+          pendingImportData.current = {
+            storeData: legacy.sanitized,
+            isOldFormat: true,
+            versionMismatch,
+          };
+        } else {
+          const validated = validateBackupStoreData(storeData);
+          if (!validated.ok) {
+            toast.error(validated.reason);
+            return;
+          }
+          pendingImportData.current = {
+            storeData: validated.sanitized,
+            isOldFormat: false,
+            versionMismatch,
+          };
         }
 
-        // Store parsed data and show confirmation modal
-        pendingImportData.current = { storeData, isOldFormat, versionMismatch };
         setImportModal({ data: parsed, isOldFormat, versionMismatch });
       } catch {
         toast.error('Failed to import data');
@@ -225,7 +245,17 @@ function Settings() {
     if (!pendingImportData.current) return;
     const { storeData, isOldFormat } = pendingImportData.current;
 
-    if (STORAGE_KEYS.some((key) => key in storeData)) {
+    if (isOldFormat) {
+      if (storeData.progress) {
+        localStorage.setItem('ls-progress-storage', JSON.stringify(storeData.progress));
+      }
+      if (storeData.settings) {
+        localStorage.setItem(
+          'ls-progress-settings',
+          JSON.stringify(redactSettingsSecrets(storeData.settings))
+        );
+      }
+    } else {
       STORAGE_KEYS.forEach((key) => {
         if (!storeData[key]) return;
         const payload =
@@ -234,15 +264,6 @@ function Settings() {
             : storeData[key];
         localStorage.setItem(key, JSON.stringify(payload));
       });
-    } else if (isOldFormat) {
-      // Legacy format support — still strip secrets from settings
-      if (storeData.progress) localStorage.setItem('ls-progress-storage', JSON.stringify(storeData.progress));
-      if (storeData.settings) {
-        localStorage.setItem(
-          'ls-progress-settings',
-          JSON.stringify(redactSettingsSecrets(storeData.settings))
-        );
-      }
     }
 
     setImportModal(null);

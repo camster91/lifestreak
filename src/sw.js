@@ -47,7 +47,7 @@ registerRoute(
     cacheName: 'ls-assets-cache',
     plugins: [
       new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 7 * 24 * 60 * 60 }),
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new CacheableResponsePlugin({ statuses: [200] }),
     ],
   })
 );
@@ -59,7 +59,7 @@ registerRoute(
     cacheName: 'images-cache',
     plugins: [
       new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }),
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new CacheableResponsePlugin({ statuses: [200] }),
     ],
   })
 );
@@ -71,7 +71,7 @@ registerRoute(
     cacheName: 'fonts-cache',
     plugins: [
       new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 }),
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new CacheableResponsePlugin({ statuses: [200] }),
     ],
   })
 );
@@ -94,7 +94,7 @@ registerRoute(
     cacheName: 'google-fonts-webfonts',
     plugins: [
       new ExpirationPlugin({ maxEntries: 30, maxAgeSeconds: 365 * 24 * 60 * 60 }),
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new CacheableResponsePlugin({ statuses: [200] }),
     ],
   })
 );
@@ -106,7 +106,7 @@ registerRoute(
     cacheName: 'api-cache',
     plugins: [
       new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 }),
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new CacheableResponsePlugin({ statuses: [200] }),
     ],
   })
 );

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Trophy, X, Star } from 'lucide-react';
 import useGamificationStore from '../stores/gamificationStore.js';
 import { haptics } from '../utils/native.js';
@@ -49,6 +49,15 @@ function AchievementPopup() {
 
   const currentAchievement = recentAchievements[currentIndex];
   const level = getLevel();
+  const nextTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (currentAchievement) {
@@ -80,7 +89,8 @@ function AchievementPopup() {
     haptics.light();
     if (currentIndex < recentAchievements.length - 1) {
       setIsExiting(true);
-      setTimeout(() => {
+      if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
+      nextTimerRef.current = setTimeout(() => {
         setCurrentIndex(currentIndex + 1);
         setIsExiting(false);
         haptics.success();
@@ -93,7 +103,8 @@ function AchievementPopup() {
   const handleClose = () => {
     haptics.light();
     setIsExiting(true);
-    setTimeout(() => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => {
       setIsVisible(false);
       setCurrentIndex(0);
       setIsExiting(false);

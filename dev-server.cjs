@@ -2,28 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const path = require('path');
+const { createCorsOriginDelegate } = require('./cors-origins.cjs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const VITE_PORT = process.env.VITE_PORT || 5174;
 
-const allowedOrigins = [
-  'https://budget.ashbi.ca',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  'http://localhost:3009',
-];
-
-// Enable CORS for allowed origins only
+// Enable CORS for allowlisted origins only (no budget.ashbi.ca; no blank-origin in prod)
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: createCorsOriginDelegate({
+    allowMissingOrigin: process.env.NODE_ENV !== 'production',
+    includeLocalDev: true,
+  }),
 }));
 
 // Parse JSON bodies

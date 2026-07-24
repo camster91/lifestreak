@@ -1,27 +1,17 @@
+import { createRequire } from 'module';
 import express from 'express';
 import cors from 'cors';
+
+const require = createRequire(import.meta.url);
+const { createCorsOriginDelegate } = require('./cors-origins.cjs');
 
 const app = express();
 const PORT = 3009;
 
-const allowedOrigins = [
-  'https://budget.ashbi.ca',
-  ...(process.env.NODE_ENV !== 'production' ? [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:3000',
-    'http://localhost:3009',
-  ] : []),
-];
-
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: createCorsOriginDelegate({
+    allowMissingOrigin: process.env.NODE_ENV !== 'production',
+  }),
 }));
 app.use(express.json({ limit: '1mb' }));
 

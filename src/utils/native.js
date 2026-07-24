@@ -244,15 +244,22 @@ export const splash = {
  * Opens URL in native in-app browser (native) or new tab (web)
  */
 export const openBrowser = async (url) => {
+  const { validateExternalUrl } = await import('./safeNavigation.js');
+  const check = validateExternalUrl(url);
+  if (!check.ok) {
+    console.warn('Blocked unsafe URL:', check.reason, url);
+    return;
+  }
+
   if (!isNative) {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(check.href, '_blank', 'noopener,noreferrer');
     return;
   }
   try {
-    await Browser.open({ url, presentationStyle: 'fullscreen' });
+    await Browser.open({ url: check.href, presentationStyle: 'fullscreen' });
   } catch (e) {
     console.warn('Browser not available:', e);
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(check.href, '_blank', 'noopener,noreferrer');
   }
 };
 

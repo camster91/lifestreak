@@ -1,6 +1,7 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Share2, ExternalLink, Home, Link as LinkIcon, FileText, ArrowLeft } from 'lucide-react';
 import { haptics } from '../utils/native';
+import { validateExternalUrl } from '../utils/safeNavigation.js';
 
 function SharePage() {
   const [searchParams] = useSearchParams();
@@ -11,6 +12,8 @@ function SharePage() {
   const url = searchParams.get('url') || '';
 
   const hasContent = title || text || url;
+  const urlCheck = url ? validateExternalUrl(url) : null;
+  const canOpenUrl = !!(urlCheck && urlCheck.ok);
 
   const handleBack = () => {
     haptics.light();
@@ -18,14 +21,9 @@ function SharePage() {
   };
 
   const handleOpenLink = () => {
-    if (url) {
-      haptics.light();
-      // Prevent XSS: only allow http/https URLs
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        return;
-      }
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
+    if (!urlCheck?.ok) return;
+    haptics.light();
+    window.open(urlCheck.href, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -98,13 +96,18 @@ function SharePage() {
                 )}
 
                 {/* Open Link Button */}
-                {url && (
+                {url && canOpenUrl && (
                   <div className="pt-2">
                     <button onClick={handleOpenLink} className="btn btn-primary btn-block gap-2">
                       <ExternalLink className="w-4 h-4" />
                       Open Link
                     </button>
                   </div>
+                )}
+                {url && !canOpenUrl && (
+                  <p className="text-sm text-warning pt-2">
+                    This link host is blocked for safety. Only JW.org and ashbi.ca links can be opened.
+                  </p>
                 )}
               </div>
             </div>

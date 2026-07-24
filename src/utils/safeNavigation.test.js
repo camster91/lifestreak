@@ -49,3 +49,17 @@ describe('validateOllamaBaseUrl', () => {
     expect(validateOllamaBaseUrl('http://ollama.com').ok).toBe(false);
   });
 });
+
+describe('validateExternalUrl', () => {
+  it('allows JW.org https links', async () => {
+    const { validateExternalUrl } = await import('./safeNavigation.js');
+    expect(validateExternalUrl('https://www.jw.org/en/library/').ok).toBe(true);
+    expect(validateExternalUrl('wol.jw.org/en').ok).toBe(true);
+  });
+
+  it('rejects unknown hosts and dangerous schemes', async () => {
+    const { validateExternalUrl } = await import('./safeNavigation.js');
+    expect(validateExternalUrl('https://evil.example/phish').ok).toBe(false);
+    expect(validateExternalUrl('javascript:alert(1)').ok).toBe(false);
+  });
+});

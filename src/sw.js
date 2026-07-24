@@ -1,8 +1,9 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
+import { sanitizeSameOriginPath } from './utils/safeNavigation.js';
 
 // Precache all assets from vite build
 precacheAndRoute(self.__WB_MANIFEST);
@@ -18,13 +19,15 @@ self.clients.claim();
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+  // Only allow same-origin relative paths (blocks open-redirect phishing)
+  const path = sanitizeSameOriginPath(event.notification.data?.url || '/', self.location.origin);
+  const urlToOpen = new URL(path, self.location.origin).href;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // If a window is already open, focus it and navigate
       for (const client of clientList) {
-        if (client.url === self.location.origin && 'focus' in client) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
           client.navigate(urlToOpen);
           return client.focus();
         }

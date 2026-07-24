@@ -76,6 +76,44 @@ const DEFAULT_BIBLE_READING_SETTINGS: BibleReadingSchedule = {
   readingPace: 1,
 };
 
+/** Session-only storage for AI API keys — never written to localStorage / backups. */
+export const AI_API_KEY_SESSION_STORAGE = 'ls-ai-api-key-session';
+
+function readSessionApiKey(): string {
+  try {
+    return sessionStorage.getItem(AI_API_KEY_SESSION_STORAGE) || '';
+  } catch {
+    return '';
+  }
+}
+
+function writeSessionApiKey(key: string) {
+  try {
+    if (key) sessionStorage.setItem(AI_API_KEY_SESSION_STORAGE, key);
+    else sessionStorage.removeItem(AI_API_KEY_SESSION_STORAGE);
+  } catch {
+    // Ignore quota / private-mode failures
+  }
+}
+
+/** Strip secrets from settings payloads before export or import. */
+export function redactSettingsSecrets<T>(value: T): T {
+  if (!value || typeof value !== 'object') return value;
+  const clone = structuredClone(value) as Record<string, unknown>;
+
+  // Zustand persist shape: { state: { ai: { ollamaApiKey } }, version }
+  const state = (clone.state && typeof clone.state === 'object'
+    ? (clone.state as Record<string, unknown>)
+    : clone) as Record<string, unknown>;
+
+  if (state.ai && typeof state.ai === 'object') {
+    const ai = { ...(state.ai as Record<string, unknown>), ollamaApiKey: '' };
+    state.ai = ai;
+  }
+
+  return clone as T;
+}
+
 const useSettingsStore = create<SettingsState & SettingsActions>()(
   persist(
     (set, get) => ({
@@ -86,7 +124,7 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
       ai: {
         provider: 'none',
         ollamaBaseUrl: 'https://ollama.com',
-        ollamaApiKey: '',
+        ollamaApiKey: readSessionApiKey(),
         ollamaModel: 'llama3.2',
       },
 
@@ -144,14 +182,49 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
         })),
       resetBibleReadingSchedule: () =>
         set({ bibleReadingSchedule: DEFAULT_BIBLE_READING_SETTINGS }),
-      setAiSettings: (settings) =>
+      setAiSettings: (settings) => {
+        if (Object.prototype.hasOwnProperty.call(settings, 'ollamaApiKey')) {
+          writeSessionApiKey(settings.ollamaApiKey || '');
+        }
         set((state) => ({
           ai: { ...state.ai, ...settings },
-        })),
+        }));
+      },
     }),
     {
       name: 'ls-progress-settings',
+      version: 1,
       storage: createSafeStorage('ls-progress-settings') as any,
+      // Never persist API keys to localStorage (exports, Android backups, XSS blast radius)
+      partialize: (state) => ({
+        notifications: state.notifications,
+        bibleReadingSchedule: state.bibleReadingSchedule,
+        notificationsEnabled: state.notificationsEnabled,
+        theme: state.theme,
+        ai: {
+          provider: state.ai.provider,
+          ollamaBaseUrl: state.ai.ollamaBaseUrl,
+          ollamaModel: state.ai.ollamaModel,
+        },
+      }),
+      migrate: (persisted) => {
+        const data = persisted as Record<string, unknown> | null;
+        if (data?.ai && typeof data.ai === 'object') {
+          const ai = data.ai as Record<string, unknown>;
+          if (typeof ai.ollamaApiKey === 'string' && ai.ollamaApiKey) {
+            writeSessionApiKey(ai.ollamaApiKey);
+          }
+          delete ai.ollamaApiKey;
+        }
+        return data as SettingsState;
+      },
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const sessionKey = readSessionApiKey();
+        if (sessionKey) {
+          state.ai.ollamaApiKey = sessionKey;
+        }
+      },
     }
   )
 );

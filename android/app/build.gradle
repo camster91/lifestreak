@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def releaseStorePassword = System.getenv('KEYSTORE_PASSWORD') ?: keystoreProperties['storePassword']
+def releaseKeyPassword = System.getenv('KEY_PASSWORD') ?: keystoreProperties['keyPassword']
+def releaseKeyAlias = keystoreProperties['keyAlias'] ?: 'jw-habits'
+def releaseStoreFilePath = keystoreProperties['storeFile'] ?: 'app/jw-habits-release.keystore'
+def hasReleaseSigning = releaseStorePassword && releaseKeyPassword
+
 android {
     namespace = "com.ashbi.lifestreak"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -25,15 +37,19 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file('jw-habits-release.keystore')
-            storePassword 'JWHabits2026!'
-            keyAlias 'jw-habits'
-            keyPassword 'JWHabits2026!'
+            if (hasReleaseSigning) {
+                storeFile rootProject.file(releaseStoreFilePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
         }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

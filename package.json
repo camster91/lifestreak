@@ -53,7 +53,7 @@
     "@capacitor/status-bar": "^8.0.2",
     "@xmldom/xmldom": "^0.9.10",
     "date-fns": "^4.4.0",
-    "lucide-react": "^1.25.0",
+    "lucide-react": "^1.27.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.12.0",

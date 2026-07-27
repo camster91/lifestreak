@@ -4,6 +4,7 @@ import './index.css';
 import App from './App.jsx';
 import { logWebVitals } from './utils/webVitals.js';
 import { initializeNative, isNative, appLifecycle } from './utils/native.js';
+import { sanitizeSameOriginPath } from './utils/safeNavigation.js';
 
 // Global error logging function
 function logGlobalError(type, message, source, error) {
@@ -92,10 +93,15 @@ if ('serviceWorker' in navigator) {
     window.location.reload();
   });
 
-  // Handle notification clicks — focus app window
+  // Handle notification clicks — focus app window (same-origin paths only)
   navigator.serviceWorker.addEventListener('message', (event) => {
+    // Only accept messages from our own service worker controller
+    if (event.source && navigator.serviceWorker.controller
+        && event.source !== navigator.serviceWorker.controller) {
+      return;
+    }
     if (event.data?.type === 'NOTIFICATION_CLICK') {
-      const url = event.data.url || '/';
+      const url = sanitizeSameOriginPath(event.data.url || '/');
       window.focus();
       window.location.href = url;
     }

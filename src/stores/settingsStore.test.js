@@ -173,3 +173,18 @@ describe('settingsStore', () => {
     });
   });
 });
+describe('redactSettingsSecrets', () => {
+  it('strips ollamaApiKey from zustand persist payloads', async () => {
+    const { redactSettingsSecrets } = await import('./settingsStore.ts');
+    const redacted = redactSettingsSecrets({
+      state: {
+        theme: 'dark',
+        ai: { provider: 'ollama', ollamaApiKey: 'secret-key', ollamaBaseUrl: 'https://ollama.com' },
+      },
+      version: 1,
+    });
+    expect(redacted.state.ai.ollamaApiKey).toBe('');
+    expect(redacted.state.ai.provider).toBe('ollama');
+    expect(redacted.state.theme).toBe('dark');
+  });
+});

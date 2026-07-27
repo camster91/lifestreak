@@ -62,34 +62,60 @@ export function usePWA() {
 
   // Listen for service worker updates
   useEffect(() => {
-    if (!isPWACapable()) return;
+    if (!isPWACapable() || !('serviceWorker' in navigator)) return;
+
+    let cancelled = false;
+    let registration = null;
+    let installingWorker = null;
 
     const handleControllerChange = () => {
       setUpdateAvailable(true);
     };
 
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-
-    // Check for waiting service worker
-    navigator.serviceWorker.ready.then((registration) => {
-      if (registration.waiting) {
+    const handleStateChange = () => {
+      if (
+        installingWorker?.state === 'installed' &&
+        navigator.serviceWorker.controller
+      ) {
         setUpdateAvailable(true);
       }
+    };
 
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              setUpdateAvailable(true);
-            }
-          });
+    const handleUpdateFound = () => {
+      if (!registration) return;
+      if (installingWorker) {
+        installingWorker.removeEventListener('statechange', handleStateChange);
+      }
+      installingWorker = registration.installing;
+      if (installingWorker) {
+        installingWorker.addEventListener('statechange', handleStateChange);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+    navigator.serviceWorker.ready
+      .then((reg) => {
+        if (cancelled) return;
+        registration = reg;
+        if (registration.waiting) {
+          setUpdateAvailable(true);
         }
+        registration.addEventListener('updatefound', handleUpdateFound);
+      })
+      .catch(() => {
+        // Ignore SW readiness failures (private mode, etc.)
       });
-    });
 
     return () => {
+      cancelled = true;
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      if (registration) {
+        registration.removeEventListener('updatefound', handleUpdateFound);
+      }
+      if (installingWorker) {
+        installingWorker.removeEventListener('statechange', handleStateChange);
+      }
     };
   }, []);
 

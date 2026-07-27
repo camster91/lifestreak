@@ -4,15 +4,24 @@
  * Supports both Ollama Cloud (ollama.com) and local Ollama servers.
  * Uses the native /api/chat endpoint format.
  *
- * Configuration:
- *   VITE_OLLAMA_BASE_URL - Base URL (default: https://ollama.com for cloud, http://localhost:11434 for local)
- *   VITE_OLLAMA_API_KEY  - API key for Ollama Cloud (required for cloud, not needed for local)
- *   VITE_OLLAMA_MODEL    - Default model (default: llama3.2)
+ * Prefer Settings AI config at runtime. Build-time VITE_* keys are fallbacks only
+ * and should not be used for production secrets (they ship in the client bundle).
  */
+
+import { validateOllamaBaseUrl } from './safeNavigation.js';
 
 const OLLAMA_BASE_URL = import.meta.env.VITE_OLLAMA_BASE_URL || 'https://ollama.com';
 const OLLAMA_API_KEY = import.meta.env.VITE_OLLAMA_API_KEY || '';
 const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'llama3.2';
+
+function resolveBaseUrl(override) {
+  const candidate = override || OLLAMA_BASE_URL;
+  const check = validateOllamaBaseUrl(candidate);
+  if (!check.ok) {
+    throw new Error(check.reason);
+  }
+  return check.url.origin;
+}
 
 /**
  * Check if Ollama Cloud is configured (has an API key)
@@ -30,10 +39,11 @@ export async function listModels() {
     headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`;
   }
 
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, { headers });
+  const base = resolveBaseUrl();
+  const response = await fetch(`${base}/api/tags`, { headers });
 
   if (!response.ok) {
-    throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+    throw new Error(`Ollama API error: ${response.status}`);
   }
 
   const data = await response.json();
@@ -83,22 +93,16 @@ export async function chatWithOllama(messages, userMessage, options = {}) {
     ...(options.options && { options: options.options }),
   };
 
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+  const base = resolveBaseUrl(options.baseUrl);
+  const response = await fetch(`${base}/api/chat`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    let errorMessage = `Ollama API error ${response.status}`;
-    try {
-      const errorJson = JSON.parse(errorText);
-      errorMessage += `: ${errorJson.error || errorJson.message || ''}`;
-    } catch {
-      errorMessage += `: ${errorText.substring(0, 200)}`;
-    }
-    throw new Error(errorMessage);
+    // Avoid leaking raw backend payloads to callers / UI
+    throw new Error(`Ollama API error ${response.status}`);
   }
 
   const data = await response.json();
@@ -123,9 +127,9 @@ export async function chatWithOllamaOpenAI(messages, options = {}) {
     headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`;
   }
 
-  const baseUrl = OLLAMA_BASE_URL.replace('/api', '').replace(':11434', ':11434');
+  const base = resolveBaseUrl(options.baseUrl);
 
-  const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+  const response = await fetch(`${base}/v1/chat/completions`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -138,8 +142,7 @@ export async function chatWithOllamaOpenAI(messages, options = {}) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Ollama OpenAI API error ${response.status}: ${errorText.substring(0, 200)}`);
+    throw new Error(`Ollama OpenAI API error ${response.status}`);
   }
 
   return response.json();

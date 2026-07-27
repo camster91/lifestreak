@@ -16,6 +16,7 @@ import {
 import useProgressStore from '../stores/progressStore';
 import useGamificationStore from '../stores/gamificationStore';
 import { haptics } from '../utils/native';
+import { validateExternalUrl } from '../utils/safeNavigation.js';
 
 function FamilyWorshipCard() {
   const today = new Date();
@@ -55,16 +56,12 @@ function FamilyWorshipCard() {
   const handleAddLink = () => {
     if (newLinkTitle.trim() && newLinkUrl.trim()) {
       haptics.light();
-      let url = newLinkUrl.trim();
-      // Block dangerous schemes
-      if (url.startsWith('javascript:') || url.startsWith('data:') || url.startsWith('vbscript:')) {
+      const check = validateExternalUrl(newLinkUrl.trim());
+      if (!check.ok) {
+        console.warn('Blocked unsafe study link:', check.reason);
         return;
       }
-      // Ensure URL has protocol
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-      }
-      addStudyLink(weekKey, { title: newLinkTitle.trim(), url });
+      addStudyLink(weekKey, { title: newLinkTitle.trim(), url: check.href });
       setNewLinkTitle('');
       setNewLinkUrl('');
       setShowAddLink(false);
@@ -78,12 +75,12 @@ function FamilyWorshipCard() {
 
   const handleOpenLink = (url) => {
     haptics.light();
-    // Prevent XSS: only allow http/https URLs
-    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-      console.warn('Blocked unsafe URL:', url);
+    const check = validateExternalUrl(url);
+    if (!check.ok) {
+      console.warn('Blocked unsafe URL:', check.reason, url);
       return;
     }
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(check.href, '_blank', 'noopener,noreferrer');
   };
 
   const handleSaveTopic = () => {

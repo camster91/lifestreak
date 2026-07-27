@@ -100,6 +100,41 @@ interface ProgressActions {
   updateMeetingPartProgress: (weekOf: string, meetingType: string, partKey: string, completed: boolean) => void;
   initMeetingParts: (weekOf: string, meetingType: string, partKeys: string[]) => void;
   clearAll: () => void;
+  pruneOldEntries: () => void;
+}
+
+/** Keep ~13 months of daily keys and ~2 years of weekly keys to bound localStorage growth. */
+export const MAX_DAILY_PROGRESS_ENTRIES = 400;
+export const MAX_WEEKLY_PROGRESS_ENTRIES = 110;
+export const MAX_BIBLE_DAY_ENTRIES = 400;
+export const MAX_MEETING_ENTRIES = 220;
+
+export function pruneRecordBySortedKeys<T>(
+  record: Record<string, T>,
+  maxEntries: number
+): Record<string, T> {
+  const keys = Object.keys(record);
+  if (keys.length <= maxEntries) return record;
+  const sorted = keys.slice().sort();
+  const dropCount = sorted.length - maxEntries;
+  const next = { ...record };
+  for (let i = 0; i < dropCount; i++) {
+    delete next[sorted[i]];
+  }
+  return next;
+}
+
+export function pruneProgressMaps<T extends ProgressState>(state: T): T {
+  return {
+    ...state,
+    dailyTexts: pruneRecordBySortedKeys(state.dailyTexts, MAX_DAILY_PROGRESS_ENTRIES),
+    prayers: pruneRecordBySortedKeys(state.prayers, MAX_DAILY_PROGRESS_ENTRIES),
+    familyWorship: pruneRecordBySortedKeys(state.familyWorship, MAX_WEEKLY_PROGRESS_ENTRIES),
+    weeklyReadings: pruneRecordBySortedKeys(state.weeklyReadings, MAX_WEEKLY_PROGRESS_ENTRIES),
+    bibleReadings: pruneRecordBySortedKeys(state.bibleReadings, MAX_BIBLE_DAY_ENTRIES),
+    bibleChapters: pruneRecordBySortedKeys(state.bibleChapters, MAX_BIBLE_DAY_ENTRIES),
+    meetings: pruneRecordBySortedKeys(state.meetings, MAX_MEETING_ENTRIES),
+  };
 }
 
 const useProgressStore = create<ProgressState & ProgressActions>()(
@@ -506,19 +541,29 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
       }),
 
       clearAll: () => set({ dailyTexts: {}, prayers: {}, familyWorship: {}, bibleReadings: {}, bibleChapters: {}, meetings: {}, weeklyReadings: {} }),
+
+      pruneOldEntries: () => set((state) => pruneProgressMaps(state)),
     }),
     {
       name: 'ls-progress-storage',
       storage: createSafeStorage('ls-progress-storage') as any,
-      partialize: (state) => ({
-        dailyTexts: state.dailyTexts,
-        prayers: state.prayers,
-        familyWorship: state.familyWorship,
-        bibleReadings: state.bibleReadings,
-        bibleChapters: state.bibleChapters,
-        meetings: state.meetings,
-        weeklyReadings: state.weeklyReadings,
-      }),
+      partialize: (state) => {
+        const pruned = pruneProgressMaps(state);
+        return {
+          dailyTexts: pruned.dailyTexts,
+          prayers: pruned.prayers,
+          familyWorship: pruned.familyWorship,
+          bibleReadings: pruned.bibleReadings,
+          bibleChapters: pruned.bibleChapters,
+          meetings: pruned.meetings,
+          weeklyReadings: pruned.weeklyReadings,
+        };
+      },
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const pruned = pruneProgressMaps(state);
+        Object.assign(state, pruned);
+      },
     }
   )
 );

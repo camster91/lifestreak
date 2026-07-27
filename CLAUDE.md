@@ -175,7 +175,7 @@ npm run test:coverage    # Vitest with v8 coverage
 
 - Do not remove the `READING_PACE_OPTIONS` export from `settingsStore.ts`
 - Do not change the import path of `useDrawer` back to `SideDrawer`
-- Do not commit the keystore password (`JWHabits2026!`) to git
+- Do not commit keystore passwords or `android/keystore.properties` — use env vars `KEYSTORE_PASSWORD` / `KEY_PASSWORD`
 - Do not delete `android/app/jw-habits-release.keystore`
 - Do not change the app ID from `com.ashbi.jwnews` without updating both `capacitor.config.json` and Android build files
 

@@ -1,7 +1,7 @@
 import { Trash2, Download, Upload, Moon, Sun, Bell, BellOff, Clock, Flame, BookOpen, Heart, Users, Calendar, ChevronDown, ChevronUp, RefreshCw, AlertTriangle, X, Bot, Eye, EyeOff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import useProgressStore from '../stores/progressStore.js';
-import useSettingsStore, { type Notifications } from '../stores/settingsStore.js';
+import useSettingsStore, { redactSettingsSecrets, type Notifications } from '../stores/settingsStore.js';
 import { useToast } from '../components/Toast.jsx';
 import { haptics } from '../utils/native.js';
 import PageHeader from '../components/PageHeader.jsx';
@@ -12,6 +12,13 @@ import {
   initializeReminders
 } from '../utils/notifications.js';
 import { NotificationItem, WeeklyNotificationItem } from '../components/settings/NotificationItems.js';
+import { validateOllamaBaseUrl } from '../utils/safeNavigation.js';
+import {
+  BACKUP_STORAGE_KEYS,
+  MAX_BACKUP_BYTES,
+  validateBackupStoreData,
+  validateLegacyBackup,
+} from '../utils/backupValidation.js';
 
 function Settings() {
   const toast = useToast();
@@ -79,24 +86,35 @@ function Settings() {
   };
 
   const handleUpdateApp = async () => {
-    if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => caches.delete(name)));
+    try {
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      toast.success('Checking for updates...');
+      window.location.reload();
+    } catch (error) {
+      console.error('Update check failed:', error);
+      toast.error('Could not clear cache. Try again.');
     }
-    window.location.reload();
-    toast.success('Checking for updates...');
   };
 
   const handleTestAi = async () => {
     setAiTestStatus('testing');
     try {
-      const { chatWithOllama } = await import('../utils/ollama.js');
       const baseUrl = ai.ollamaBaseUrl || 'https://ollama.com';
+      const urlCheck = validateOllamaBaseUrl(baseUrl);
+      if (!urlCheck.ok) {
+        setAiTestStatus('error');
+        toast.error(urlCheck.reason);
+        return;
+      }
+
       const apiKey = ai.ollamaApiKey;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
-      const response = await fetch(`${baseUrl}/api/chat`, {
+      const response = await fetch(`${urlCheck.url.origin}/api/chat`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -122,33 +140,39 @@ function Settings() {
     }
   };
 
-  const STORAGE_KEYS = [
-    'ls-progress-storage',
-    'ls-progress-settings',
-    'ls-gamification-storage',
-    'ls-goals-storage',
-    'ls-memories-storage',
-  ];
+  const STORAGE_KEYS = BACKUP_STORAGE_KEYS;
 
   const handleExportData = () => {
-    const storeData: Record<string, unknown> = {};
-    STORAGE_KEYS.forEach((key) => {
-      const raw = localStorage.getItem(key);
-      if (raw) storeData[key] = JSON.parse(raw);
-    });
-    const exportData = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      data: storeData,
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `lifestreak-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Data exported');
+    try {
+      const storeData: Record<string, unknown> = {};
+      STORAGE_KEYS.forEach((key) => {
+        const raw = localStorage.getItem(key);
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          storeData[key] =
+            key === 'ls-progress-settings' ? redactSettingsSecrets(parsed) : parsed;
+        } catch {
+          // Skip corrupt keys rather than failing the whole export
+        }
+      });
+      const exportData = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: storeData,
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lifestreak-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Data exported (API keys excluded)');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Could not export data');
+    }
   };
 
   const [importModal, setImportModal] = useState<{ data: any; isOldFormat: boolean; versionMismatch: boolean } | null>(null);
@@ -161,6 +185,10 @@ function Settings() {
     input.onchange = async (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
+      if (file.size > MAX_BACKUP_BYTES) {
+        toast.error('Backup file is too large');
+        return;
+      }
       try {
         const text = await file.text();
         const parsed = JSON.parse(text);
@@ -181,14 +209,30 @@ function Settings() {
           isOldFormat = !!(parsed.progress || parsed.settings);
         }
 
-        const hasKnownKeys = STORAGE_KEYS.some((key) => key in storeData);
-        if (!isOldFormat && !hasKnownKeys) {
-          toast.error('Invalid backup file format');
-          return;
+        if (isOldFormat) {
+          const legacy = validateLegacyBackup(storeData);
+          if (!legacy.ok) {
+            toast.error(legacy.reason);
+            return;
+          }
+          pendingImportData.current = {
+            storeData: legacy.sanitized,
+            isOldFormat: true,
+            versionMismatch,
+          };
+        } else {
+          const validated = validateBackupStoreData(storeData);
+          if (!validated.ok) {
+            toast.error(validated.reason);
+            return;
+          }
+          pendingImportData.current = {
+            storeData: validated.sanitized,
+            isOldFormat: false,
+            versionMismatch,
+          };
         }
 
-        // Store parsed data and show confirmation modal
-        pendingImportData.current = { storeData, isOldFormat, versionMismatch };
         setImportModal({ data: parsed, isOldFormat, versionMismatch });
       } catch {
         toast.error('Failed to import data');
@@ -201,14 +245,25 @@ function Settings() {
     if (!pendingImportData.current) return;
     const { storeData, isOldFormat } = pendingImportData.current;
 
-    if (STORAGE_KEYS.some((key) => key in storeData)) {
+    if (isOldFormat) {
+      if (storeData.progress) {
+        localStorage.setItem('ls-progress-storage', JSON.stringify(storeData.progress));
+      }
+      if (storeData.settings) {
+        localStorage.setItem(
+          'ls-progress-settings',
+          JSON.stringify(redactSettingsSecrets(storeData.settings))
+        );
+      }
+    } else {
       STORAGE_KEYS.forEach((key) => {
-        if (storeData[key]) localStorage.setItem(key, JSON.stringify(storeData[key]));
+        if (!storeData[key]) return;
+        const payload =
+          key === 'ls-progress-settings'
+            ? redactSettingsSecrets(storeData[key])
+            : storeData[key];
+        localStorage.setItem(key, JSON.stringify(payload));
       });
-    } else if (isOldFormat) {
-      // Legacy format support
-      if (storeData.progress) localStorage.setItem('ls-progress-storage', JSON.stringify(storeData.progress));
-      if (storeData.settings) localStorage.setItem('ls-progress-settings', JSON.stringify(storeData.settings));
     }
 
     setImportModal(null);
@@ -305,9 +360,15 @@ function Settings() {
                       className="input input-bordered input-sm w-full"
                       value={ai.ollamaBaseUrl}
                       onChange={(e) => setAiSettings({ ollamaBaseUrl: e.target.value })}
+                      onBlur={() => {
+                        const check = validateOllamaBaseUrl(ai.ollamaBaseUrl);
+                        if (ai.ollamaBaseUrl && !check.ok) {
+                          toast.error(check.reason);
+                        }
+                      }}
                       placeholder="https://ollama.com or http://localhost:11434"
                     />
-                    <p className="text-xs text-base-content/50">Cloud: ollama.com | Local: localhost:11434</p>
+                    <p className="text-xs text-base-content/50">Allowed: ollama.com (HTTPS) or localhost / 127.0.0.1</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-base-content/70">API Key</label>
@@ -318,6 +379,7 @@ function Settings() {
                         value={ai.ollamaApiKey}
                         onChange={(e) => setAiSettings({ ollamaApiKey: e.target.value })}
                         placeholder="Ollama Cloud API key (not needed for local)"
+                        autoComplete="off"
                       />
                       <button
                         onClick={() => setShowApiKey(!showApiKey)}
@@ -326,7 +388,9 @@ function Settings() {
                         {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    <p className="text-xs text-base-content/50">Get key at ollama.com (account settings)</p>
+                    <p className="text-xs text-base-content/50">
+                      Stored for this session only — never written to backups or localStorage.
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-base-content/70">Model</label>

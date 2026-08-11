@@ -1,19 +1,19 @@
-# App Store Listing Content - JW News
+# App Store Listing Content - LifeStreak
 
 ## App Name
-JW News
+LifeStreak
 
 ## Subtitle (30 chars max)
-Daily spiritual news & habits
+Personal habits, reading & goals
 
 ## iOS Keywords (100 chars max, comma-separated)
-jw,jehovah,witness,news,bible,daily,text,reading,spiritual,habits,progress,tracker
+habits,goals,reading,service,progress,tracker,streaks,offline,private
 
 ## Promotional Text (170 chars max)
-Stay updated with the latest JW.org news and build consistent spiritual habits. Track your daily Bible reading and spiritual routine in one beautiful app.
+Build consistent routines and see your progress grow. Track habits, reading, service, goals, and daily tasks in one private app.
 
 ## Description (4000 chars max)
-JW News helps Jehovah's Witnesses stay connected with the latest news from JW.org while building consistent spiritual habits.
+LifeStreak helps you build consistent routines while keeping your personal data on your device.
 
 **Features:**
 
@@ -48,7 +48,7 @@ JW News helps Jehovah's Witnesses stay connected with the latest news from JW.or
 - Custom reminder schedules
 
 **Privacy:**
-JW News respects your privacy. All data is stored locally on your device. No account required. No data shared with third parties.
+LifeStreak respects your privacy. Personal tracking data is stored locally on your device. No account is required.
 
 **Note:**
 This is an unofficial app created by a fellow Witness. It is not affiliated with or endorsed by JW.org or the Watch Tower Bible and Tract Society.
@@ -59,7 +59,7 @@ For questions or feedback, contact: support@ashbi.ca
 ---
 
 ## Android Short Description (80 chars max)
-JW.org news and spiritual habit tracker for Jehovah's Witnesses.
+Private habit, reading, service and goal tracker.
 
 ## Android Full Description (4000 chars max)
 [Same as iOS description above]

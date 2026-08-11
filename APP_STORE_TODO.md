@@ -1,9 +1,9 @@
-# JW News - App Store Submission TODO
+# LifeStreak - App Store Submission TODO
 
 ## 🔴 Critical Blockers (Must Fix)
 
 ### iOS App Store
-- [ ] Fix app name mismatch (Info.plist shows "JW Habits", should be "JW News")
+- [x] Normalize app name and bundle identifiers to LifeStreak
 - [ ] Update required device capability from `armv7` to `arm64`
 - [ ] Set proper version numbers in Xcode project (currently using variables)
 - [ ] Add NSCalendarsUsageDescription permission string (if using calendar features)
@@ -100,7 +100,7 @@
 
 ## Notes
 
-- Bundle ID: `com.ashbi.jwnews`
+- Bundle ID: `com.ashbi.lifestreak`
 - Current iOS version in build.gradle: 3.0.0 (versionCode 300)
 - App uses Capacitor for native bridge
 - Has push notification setup (Firebase)

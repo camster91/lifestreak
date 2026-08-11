@@ -8,8 +8,8 @@ if (keystorePropertiesFile.exists()) {
 
 def releaseStorePassword = System.getenv('KEYSTORE_PASSWORD') ?: keystoreProperties['storePassword']
 def releaseKeyPassword = System.getenv('KEY_PASSWORD') ?: keystoreProperties['keyPassword']
-def releaseKeyAlias = keystoreProperties['keyAlias'] ?: 'jw-habits'
-def releaseStoreFilePath = keystoreProperties['storeFile'] ?: 'app/jw-habits-release.keystore'
+def releaseKeyAlias = keystoreProperties['keyAlias'] ?: 'lifestreak'
+def releaseStoreFilePath = keystoreProperties['storeFile'] ?: 'app/lifestreak-release.keystore'
 def hasReleaseSigning = releaseStorePassword && releaseKeyPassword
 
 android {

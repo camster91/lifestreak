@@ -1,10 +1,10 @@
-# CLAUDE.md — JW Habits
+# CLAUDE.md — LifeStreak
 
 ## What This Is
 
-A Capacitor (React + Vite) mobile/PWA app for Jehovah's Witnesses to track daily spiritual habits. Published as **JW Habits** on Android/iOS.
+A Capacitor (React + Vite) mobile/PWA app for tracking personal habits, service, reading, and goals. Published as **LifeStreak** on Android/iOS.
 
-- **App ID:** `com.ashbi.jwnews`
+- **App ID:** `com.ashbi.lifestreak`
 - **Version:** 4.1.0
 - **Node requirement:** >= 18.0.0
 
@@ -176,8 +176,8 @@ npm run test:coverage    # Vitest with v8 coverage
 - Do not remove the `READING_PACE_OPTIONS` export from `settingsStore.ts`
 - Do not change the import path of `useDrawer` back to `SideDrawer`
 - Do not commit keystore passwords or `android/keystore.properties` — use env vars `KEYSTORE_PASSWORD` / `KEY_PASSWORD`
-- Do not delete `android/app/jw-habits-release.keystore`
-- Do not change the app ID from `com.ashbi.jwnews` without updating both `capacitor.config.json` and Android build files
+- Do not delete or commit the local release keystore referenced by `android/keystore.properties`
+- Keep the app ID consistent as `com.ashbi.lifestreak` across Capacitor, Android, and iOS
 
 ## Testing
 
@@ -221,6 +221,6 @@ Config: `vitest.config.js` with jsdom environment, globals enabled, v8 coverage.
 
 - Get screenshots for Google Play listing
 - Register Google Play Developer account ($25)
-- Write/host privacy policy at ashbi.ca/privacy/jw-habits
+- Write/host privacy policy at ashbi.ca/privacy/lifestreak
 - Generate signed Android bundle via Android Studio
 - Submit to Google Play Store

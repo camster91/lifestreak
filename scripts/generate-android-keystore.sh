@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-KEYSTORE_FILE="${KEYSTORE_FILE:-jw-habits-release.keystore}"
-KEY_ALIAS="${KEY_ALIAS:-jw-habits}"
+KEYSTORE_FILE="${KEYSTORE_FILE:-lifestreak-release.keystore}"
+KEY_ALIAS="${KEY_ALIAS:-lifestreak}"
 VALIDITY_DAYS="${VALIDITY_DAYS:-10000}"
 
 echo "=================================="

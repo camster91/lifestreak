@@ -1,9 +1,9 @@
 #!/bin/bash
-# App Store Screenshots Script for JW News
+# App Store Screenshots Script for LifeStreak
 # This script helps capture screenshots for App Store submission
 
 echo "=================================="
-echo "JW News - App Store Screenshots"
+echo "LifeStreak - App Store Screenshots"
 echo "=================================="
 echo ""
 echo "iOS Screenshot Requirements:"

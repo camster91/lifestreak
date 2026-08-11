@@ -1,8 +1,8 @@
-# JW Habits — App Store Submission Guide
+# LifeStreak — App Store Submission Guide
 
 ## App Details
-- **Name:** JW Habits
-- **Bundle ID:** com.jwprogress.app
+- **Name:** LifeStreak
+- **Bundle ID:** com.ashbi.lifestreak
 - **Version:** 3.0.0 (versionCode 4)
 - **Category:** Lifestyle / Reference
 - **Rating:** 4+ (no objectionable content)
@@ -11,7 +11,7 @@
 Daily spiritual habits: Bible reading, meeting prep & progress tracking
 
 ## Full Description
-JW Habits helps Jehovah's Witnesses build and maintain daily spiritual routines with beautiful, easy-to-use tracking tools.
+LifeStreak helps people build consistent personal routines with private, easy-to-use tracking tools.
 
 **Features:**
 - 📖 Daily Bible reading schedule with progress tracking
@@ -49,8 +49,8 @@ npx cap open android
 # 4. In Android Studio:
 #    Build > Generate Signed Bundle/APK
 #    Select: Android App Bundle
-#    Keystore: android/app/jw-habits-release.keystore
-#    Key alias: jw-habits
+#    Keystore: android/app/lifestreak-release.keystore
+#    Key alias: lifestreak
 #    Passwords: Set via KEYSTORE_PASSWORD and KEY_PASSWORD env vars
 ```
 
@@ -60,9 +60,9 @@ npx cap open android
 - Icon: 512x512 PNG (hi-res)
 
 ### Keystore Info (KEEP SAFE)
-- File: `android/app/jw-habits-release.keystore`
+- File: `android/app/lifestreak-release.keystore`
 - Store password: Set via KEYSTORE_PASSWORD env var
-- Key alias: jw-habits
+- Key alias: lifestreak
 - Key password: Set via KEY_PASSWORD env var
 
 ---
@@ -86,7 +86,7 @@ npx cap open ios
 
 ### App Store Connect Setup
 1. Create app at https://appstoreconnect.apple.com
-2. Bundle ID: com.jwprogress.app
+2. Bundle ID: com.ashbi.lifestreak
 3. Upload build via Xcode or Transporter
 4. Fill in metadata (use description above)
 5. Submit for review
@@ -100,7 +100,7 @@ Required for both stores. Minimum content:
 - No account required
 - No analytics or tracking
 
-Host at: https://ashbi.ca/privacy/jw-habits (or similar)
+Host at: https://ashbi.ca/privacy/lifestreak (or similar)
 
 ---
 

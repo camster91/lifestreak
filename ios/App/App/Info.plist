@@ -33,7 +33,7 @@
 		<string>arm64</string>
 	</array>
 	<key>NSCalendarsUsageDescription</key>
-	<string>JW News uses your calendar to set reminders for meetings and study schedules.</string>
+	<string>LifeStreak uses your calendar to help schedule personal reminders.</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>This app does not track you.</string>
 	<key>UISupportedInterfaceOrientations</key>

@@ -95,5 +95,5 @@ Mild References: Infrequent/Mild Religious Themes
 
 ## Contact Information
 Support Email: support@ashbi.ca
-Marketing URL: https://ashbi.ca/jw-news
-Privacy Policy: https://ashbi.ca/jw-news/privacy
+Marketing URL: https://ashbi.ca/lifestreak
+Privacy Policy: https://ashbi.ca/lifestreak/privacy

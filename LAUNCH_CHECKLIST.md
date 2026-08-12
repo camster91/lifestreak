@@ -4,7 +4,7 @@
 
 | File | Change |
 |------|--------|
-| `android/app/lifestreak-release.keystore` | Release signing keystore path; verify locally and keep outside Git |
+| `android/app/build.gradle` | Release signing requires externally supplied keystore credentials; no keystore is committed |
 | `android/app/build.gradle` | Updated release signingConfig to require env vars `KEYSTORE_PASSWORD` and `KEY_PASSWORD` |
 | `ios/App/App/Info.plist` | Fixed `UIRequiredDeviceCapabilities` from `armv64` to `arm64` |
 | `ios/App/App/Info.plist` | Added `NSCalendarsUsageDescription` for calendar reminders |
@@ -18,7 +18,7 @@
 
 ## Privacy Policy
 
-- **Live URL:** https://ashbi.ca/privacy/lifestreak.html
+- **Live URL:** Not verified. Host `PRIVACY_POLICY.md` at an approved HTTPS URL before store submission.
 - **Source:** `PRIVACY_POLICY.md` in repo root
 - Host the contents of `PRIVACY_POLICY.md` at the URL above before submitting to either store
 
@@ -52,6 +52,6 @@ The signed AAB will be at: `android/app/build/outputs/bundle/release/app-release
   - Android: minimum 2 phone screenshots (1080x1920 or 1080x2340)
   - iOS: iPhone 6.7" (1290x2796), 6.5" (1242x2688), 5.5" (1242x2208)
 - [ ] **Physical Device Testing** - Test the release build on real Android and iOS devices before submitting
-- [ ] **Host Privacy Policy** - Upload `PRIVACY_POLICY.md` content to the approved LifeStreak privacy URL
+- [ ] **Host Privacy Policy** - Upload `PRIVACY_POLICY.md` content to an approved HTTPS URL and verify it publicly
 - [ ] **Store Listings** - Write short description (80 chars), full description (4000 chars), and select category
 - [ ] **Content Rating** - Complete the content rating questionnaire on both stores

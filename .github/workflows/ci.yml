@@ -53,6 +53,12 @@ jobs:
             echo "No lint script found, skipping."
           fi
 
+      - name: Test
+        run: npm test
+
+      - name: Format check
+        run: npm run format:check
+
       - name: Build
         run: npm run build
         env:

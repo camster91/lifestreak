@@ -1,6 +1,6 @@
 name: Format
 
-# Format-check workflow. Verifies `npm run format` produces no changes.
+# Format-check workflow. Verifies the repository already matches Prettier.
 # Fails the build if any file would be reformatted.
 
 on:
@@ -39,6 +39,6 @@ jobs:
 
       - name: Run format check
 
-        run: npm run format
+        run: npm run format:check
         env:
           CI: true

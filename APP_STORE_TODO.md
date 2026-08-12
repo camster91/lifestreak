@@ -4,16 +4,16 @@
 
 ### iOS App Store
 - [x] Normalize app name and bundle identifiers to LifeStreak
-- [ ] Update required device capability from `armv7` to `arm64`
-- [ ] Set proper version numbers in Xcode project (currently using variables)
-- [ ] Add NSCalendarsUsageDescription permission string (if using calendar features)
-- [ ] Add NSUserTrackingUsageDescription if using analytics
+- [x] Update required device capability from `armv7` to `arm64`
+- [x] Set iOS marketing/build versions to 3.0.0/300 in the project
+- [x] Add NSCalendarsUsageDescription permission string
+- [x] Add NSUserTrackingUsageDescription permission string
 
 ### Android Google Play
-- [ ] Create release keystore for signing
-- [ ] Update `build.gradle` with proper release signing config
-- [ ] Remove debug signing from release builds
-- [ ] Update versionCode and versionName for release
+- [ ] Create and securely back up a release keystore outside Git
+- [x] Configure `build.gradle` to require release signing credentials
+- [x] Release builds do not fall back to debug signing
+- [x] Set versionCode 400 and versionName 4.0.0
 
 ## 🟡 App Store Assets Needed
 
@@ -44,7 +44,7 @@
 ## 🟢 Pre-Submission Checks
 
 ### Both Platforms
-- [ ] Test on physical devices (not just simulators)
+- [ ] Test on physical devices (not just simulators) - see `docs/mobile-qa.md`; hardware is not available in this workspace
 - [ ] Verify app works offline
 - [ ] Check dark mode support
 - [ ] Test push notifications
@@ -61,7 +61,8 @@
 - [ ] Check for deprecated API usage
 
 ### Android Specific
-- [ ] Build signed release APK/AAB
+- [x] Build debug APK for integration validation
+- [ ] Build signed release APK/AAB after the external keystore is supplied
 - [ ] Test on multiple Android versions
 - [ ] Check for permission requests
 - [ ] Verify ProGuard/R8 minification works
@@ -96,7 +97,7 @@
 | Platform | Status | Blockers |
 |----------|--------|----------|
 | iOS | 🟡 In Progress | App name fix, screenshots, device testing |
-| Android | 🟡 In Progress | Release keystore, screenshots |
+| Android | 🟡 In Progress | Release keystore, physical-device QA, screenshots |
 
 ## Notes
 

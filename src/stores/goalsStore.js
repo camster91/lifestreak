@@ -28,9 +28,7 @@ const useGoalsStore = create(
 
       updateGoal: (id, updates) =>
         set((state) => ({
-          goals: state.goals.map((goal) =>
-            goal.id === id ? { ...goal, ...updates } : goal
-          ),
+          goals: state.goals.map((goal) => (goal.id === id ? { ...goal, ...updates } : goal)),
         })),
 
       deleteGoal: (id) =>
@@ -46,7 +44,9 @@ const useGoalsStore = create(
                   ...goal,
                   completed: !goal.completed,
                   progress: !goal.completed ? 100 : (goal.previousProgress ?? 0),
-                  previousProgress: goal.completed ? goal.progress : (goal.previousProgress ?? goal.progress),
+                  previousProgress: goal.completed
+                    ? goal.progress
+                    : (goal.previousProgress ?? goal.progress),
                 }
               : goal
           ),

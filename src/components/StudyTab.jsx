@@ -6,10 +6,7 @@ import DeeperStudySection from './DeeperStudySection';
 function StudyTab() {
   const calendarDayOfYear = getDayOfYear(new Date());
 
-  const {
-    bibleReadingSchedule,
-    getEffectiveScheduleDay,
-  } = useSettingsStore();
+  const { bibleReadingSchedule, getEffectiveScheduleDay } = useSettingsStore();
 
   // Get effective schedule day (custom or default)
   const effectiveScheduleDay = getEffectiveScheduleDay(calendarDayOfYear);

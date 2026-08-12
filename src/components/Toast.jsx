@@ -93,11 +93,7 @@ function Toast({ message, type, onClose }) {
     >
       {icons[type]}
       <span>{message}</span>
-      <button
-        onClick={onClose}
-        className="btn btn-ghost btn-xs"
-        aria-label="Dismiss notification"
-      >
+      <button onClick={onClose} className="btn btn-ghost btn-xs" aria-label="Dismiss notification">
         <X className="w-4 h-4" aria-hidden="true" />
       </button>
     </div>

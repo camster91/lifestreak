@@ -80,19 +80,21 @@ export async function scheduleDailyNotification(time, title, body, id) {
   if (isCapacitor) {
     try {
       await LocalNotifications.schedule({
-        notifications: [{
-          id: notifId,
-          title,
-          body,
-          schedule: {
-            at: parseTimeToday(time),
-            repeats: true,
+        notifications: [
+          {
+            id: notifId,
+            title,
+            body,
+            schedule: {
+              at: parseTimeToday(time),
+              repeats: true,
+            },
+            sound: null,
+            attachments: null,
+            actionTypeId: '',
+            extra: null,
           },
-          sound: null,
-          attachments: null,
-          actionTypeId: '',
-          extra: null,
-        }],
+        ],
       });
       return { cancel: () => cancelNotification(notifId) };
     } catch (e) {
@@ -102,8 +104,15 @@ export async function scheduleDailyNotification(time, title, body, id) {
   }
 
   // Web fallback: setTimeout (only works while tab open)
-  const timeoutId = scheduleNotificationForTodayWeb(time, title, { body, tag: `reminder-${notifId}` });
-  return { cancel: () => { if (timeoutId) clearTimeout(timeoutId); } };
+  const timeoutId = scheduleNotificationForTodayWeb(time, title, {
+    body,
+    tag: `reminder-${notifId}`,
+  });
+  return {
+    cancel: () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    },
+  };
 }
 
 // ── Schedule a weekly notification ─────────────────────────────────
@@ -122,19 +131,21 @@ export async function scheduleWeeklyNotification(dayOfWeek, time, title, body, i
   if (isCapacitor) {
     try {
       await LocalNotifications.schedule({
-        notifications: [{
-          id: notifId,
-          title,
-          body,
-          schedule: {
-            on: { weekday: dayOfWeek + 1 }, // Capacitor uses 1=Sun..7=Sat
-            at: parseTimeOnly(time),
+        notifications: [
+          {
+            id: notifId,
+            title,
+            body,
+            schedule: {
+              on: { weekday: dayOfWeek + 1 }, // Capacitor uses 1=Sun..7=Sat
+              at: parseTimeOnly(time),
+            },
+            sound: null,
+            attachments: null,
+            actionTypeId: '',
+            extra: null,
           },
-          sound: null,
-          attachments: null,
-          actionTypeId: '',
-          extra: null,
-        }],
+        ],
       });
       return { cancel: () => cancelNotification(notifId) };
     } catch (e) {
@@ -145,7 +156,11 @@ export async function scheduleWeeklyNotification(dayOfWeek, time, title, body, i
 
   // Web fallback: setTimeout for next occurrence this week
   const timeoutId = scheduleWebWeekly(dayOfWeek, time, title, { body, tag: `reminder-${notifId}` });
-  return { cancel: () => { if (timeoutId) clearTimeout(timeoutId); } };
+  return {
+    cancel: () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    },
+  };
 }
 
 // ── Cancel ────────────────────────────────────────────────────────
@@ -191,23 +206,38 @@ export async function initializeReminders(settings) {
 
   // Daily notifications (repeating every day)
   const dailyItems = [
-    { key: 'dailyText', id: 1, title: 'Daily Text Reminder', body: "Don't forget to read today's daily text!" },
+    {
+      key: 'dailyText',
+      id: 1,
+      title: 'Daily Text Reminder',
+      body: "Don't forget to read today's daily text!",
+    },
     { key: 'morningPrayer', id: 2, title: 'Morning Prayer', body: 'Time for your morning prayer.' },
-    { key: 'afternoonPrayer', id: 3, title: 'Afternoon Prayer', body: 'Time for your afternoon prayer.' },
+    {
+      key: 'afternoonPrayer',
+      id: 3,
+      title: 'Afternoon Prayer',
+      body: 'Time for your afternoon prayer.',
+    },
     { key: 'eveningPrayer', id: 4, title: 'Evening Prayer', body: 'Time for your evening prayer.' },
-    { key: 'bibleReading', id: 5, title: 'Bible Reading Reminder', body: 'Time for your daily Bible reading!' },
-    { key: 'streakMotivation', id: 6, title: 'Keep Your Streak', body: 'Stay consistent with your spiritual habits!' },
+    {
+      key: 'bibleReading',
+      id: 5,
+      title: 'Bible Reading Reminder',
+      body: 'Time for your daily Bible reading!',
+    },
+    {
+      key: 'streakMotivation',
+      id: 6,
+      title: 'Keep Your Streak',
+      body: 'Stay consistent with your spiritual habits!',
+    },
   ];
 
   for (const item of dailyItems) {
     const setting = notifs[item.key];
     if (setting && setting.enabled) {
-      const handle = await scheduleDailyNotification(
-        setting.time,
-        item.title,
-        item.body,
-        item.id
-      );
+      const handle = await scheduleDailyNotification(setting.time, item.title, item.body, item.id);
       cancelHandles.push(handle);
     }
   }
@@ -234,7 +264,7 @@ export async function initializeReminders(settings) {
         dayBefore,
         notifs.meetingPrep.time,
         'Meeting Tomorrow',
-        'Remember to prepare for tomorrow\'s meeting!',
+        "Remember to prepare for tomorrow's meeting!",
         8 + i
       );
       cancelHandles.push(handle);
@@ -250,17 +280,21 @@ export function showNotification(title, options = {}) {
   if (isCapacitor) {
     // On native, use LocalNotifications for immediate display
     return LocalNotifications.schedule({
-      notifications: [{
-        id: getNextId(),
-        title,
-        body: options.body || '',
-        schedule: { at: new Date(Date.now() + 100) },
-        sound: null,
-        attachments: null,
-        actionTypeId: '',
-        extra: null,
-      }],
-    }).then(() => true).catch(() => false);
+      notifications: [
+        {
+          id: getNextId(),
+          title,
+          body: options.body || '',
+          schedule: { at: new Date(Date.now() + 100) },
+          sound: null,
+          attachments: null,
+          actionTypeId: '',
+          extra: null,
+        },
+      ],
+    })
+      .then(() => true)
+      .catch(() => false);
   }
 
   if (!isNotificationSupported()) return Promise.resolve(false);
@@ -314,7 +348,7 @@ export function scheduleMeetingReminder(meetingDate) {
       reminderDate.getDay(),
       '18:00',
       'Meeting Tomorrow',
-      'Remember to prepare for tomorrow\'s meeting!',
+      "Remember to prepare for tomorrow's meeting!",
       getNextId()
     );
     return -1;
@@ -323,7 +357,7 @@ export function scheduleMeetingReminder(meetingDate) {
   const delay = reminderDate - now;
   return setTimeout(() => {
     showNotification('Meeting Tomorrow', {
-      body: 'Remember to prepare for tomorrow\'s meeting!',
+      body: "Remember to prepare for tomorrow's meeting!",
       tag: 'meeting-reminder',
     });
   }, delay);

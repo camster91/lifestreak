@@ -206,7 +206,8 @@ describe('progressStore', () => {
 
 describe('pruneRecordBySortedKeys / pruneProgressMaps', () => {
   it('keeps only the newest N keys', async () => {
-    const { pruneRecordBySortedKeys, MAX_DAILY_PROGRESS_ENTRIES } = await import('./progressStore.ts');
+    const { pruneRecordBySortedKeys, MAX_DAILY_PROGRESS_ENTRIES } =
+      await import('./progressStore.ts');
     const iso = {};
     for (let i = 0; i < MAX_DAILY_PROGRESS_ENTRIES + 10; i++) {
       const d = new Date(Date.UTC(2020, 0, 1 + i));

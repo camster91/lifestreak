@@ -15,7 +15,11 @@ function Home() {
   const { openDrawer } = useDrawer();
   const navigate = useNavigate();
   const GreetingIcon = greeting.icon;
-  const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const formattedDate = today.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
 
   const { getWeeklyTotal, weeklyGoal } = useServiceStore();
   const { getInProgress } = useReadingStore();
@@ -59,8 +63,9 @@ function Home() {
             </h2>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div
-              className="card bg-base-100 shadow-md cursor-pointer"
+            <button
+              type="button"
+              className="card bg-base-100 shadow-md cursor-pointer text-left w-full"
               onClick={() => navigate('/service')}
             >
               <div className="card-body p-3">
@@ -77,9 +82,10 @@ function Home() {
                   />
                 </div>
               </div>
-            </div>
-            <div
-              className="card bg-base-100 shadow-md cursor-pointer"
+            </button>
+            <button
+              type="button"
+              className="card bg-base-100 shadow-md cursor-pointer text-left w-full"
               onClick={() => navigate('/reading')}
             >
               <div className="card-body p-3">
@@ -98,7 +104,7 @@ function Home() {
                   />
                 </div>
               </div>
-            </div>
+            </button>
           </div>
         </section>
 
@@ -138,7 +144,6 @@ function Home() {
           </div>
           <FamilyWorshipCard />
         </section>
-
       </main>
     </div>
   );

@@ -177,7 +177,10 @@ function Service() {
               <h3 className="font-semibold text-lg mb-3">Recent Entries</h3>
               <div className="space-y-2">
                 {entries.slice(0, 20).map((entry) => (
-                  <div key={entry.id} className="p-3 bg-base-200 rounded-lg flex items-center justify-between">
+                  <div
+                    key={entry.id}
+                    className="p-3 bg-base-200 rounded-lg flex items-center justify-between"
+                  >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{entry.hours}h</span>

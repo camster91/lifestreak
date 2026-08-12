@@ -21,7 +21,7 @@
   - [x] Running lint on PR
   - [x] Running tests on PR
   - [x] Building production bundle
-  - [ ] Deploying to hosting (Hostinger)
+  - [x] Deploy to Ashbi VPS (`https://lifestreak.ashbi.ca`); retain the prior container/image for rollback
 
 ## Medium Priority
 
@@ -86,8 +86,8 @@
 - [ ] Document component API with JSDoc
 
 ### Security
-- [ ] Add Content Security Policy headers
-- [x] Audit dependencies for vulnerabilities (`npm audit`)
+- [x] Add Content Security Policy headers (Nginx/Vercel configuration and live HTTPS verification)
+- [x] Audit dependencies for vulnerabilities (`npm audit`); production dependency tree is clean
 - [ ] Add Subresource Integrity for CDN resources
 - [ ] Review and minimize localStorage usage
 

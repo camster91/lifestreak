@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const allow =
     isOriginAllowed(requestOrigin, {
       allowMissingOrigin: true,
-      includeLocalDev: process.env.NODE_ENV !== 'production',
+    includeLocalDev: globalThis.process?.env?.NODE_ENV !== 'production',
     }) || !requestOrigin;
 
   const reflectOrigin = allow && requestOrigin

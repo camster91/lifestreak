@@ -24,9 +24,7 @@ export function usePWA() {
   const [isAppInstalled, setIsAppInstalled] = useState(isInstalled());
   const [isOnline, setIsOnline] = useState(checkOnline());
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState(
-    getNotificationPermission()
-  );
+  const [notificationPermission, setNotificationPermission] = useState(getNotificationPermission());
 
   // Handle beforeinstallprompt event
   useEffect(() => {
@@ -73,10 +71,7 @@ export function usePWA() {
     };
 
     const handleStateChange = () => {
-      if (
-        installingWorker?.state === 'installed' &&
-        navigator.serviceWorker.controller
-      ) {
+      if (installingWorker?.state === 'installed' && navigator.serviceWorker.controller) {
         setUpdateAvailable(true);
       }
     };

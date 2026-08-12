@@ -74,6 +74,7 @@ interface GamificationState {
   goalsCompleted: number;
   projectsCompleted: number;
   meetingsPrepared: number;
+  newsRead: number;
   prayersCompleted: number;
   recentAchievements: Achievement[];
   unlockedAchievements: UserAchievement[];
@@ -96,6 +97,7 @@ interface GamificationStats {
   goalsCompleted: number;
   projectsCompleted: number;
   meetingsPrepared: number;
+  newsRead: number;
   achievementsUnlocked: number;
   totalAchievements: number;
 }
@@ -141,6 +143,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
       goalsCompleted: 0,
       projectsCompleted: 0,
       meetingsPrepared: 0,
+      newsRead: 0,
       prayersCompleted: 0,
       recentAchievements: [],
       unlockedAchievements: [],
@@ -215,6 +218,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
           goal: 'goalsCompleted',
           project: 'projectsCompleted',
           meeting: 'meetingsPrepared',
+          news: 'newsRead',
         };
         const key = categoryMap[category];
         if (key) {
@@ -245,6 +249,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
           goalsCompleted: state.goalsCompleted,
           projectsCompleted: state.projectsCompleted,
           meetingsPrepared: state.meetingsPrepared,
+          newsRead: state.newsRead,
           achievementsUnlocked: state.unlockedAchievements.length,
           totalAchievements: ACHIEVEMENTS.length,
         };
@@ -410,6 +415,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
         goalsCompleted: state.goalsCompleted,
         projectsCompleted: state.projectsCompleted,
         meetingsPrepared: state.meetingsPrepared,
+        newsRead: state.newsRead,
         prayersCompleted: state.prayersCompleted,
         unlockedAchievements: state.unlockedAchievements,
       }),

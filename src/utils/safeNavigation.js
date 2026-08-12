@@ -98,9 +98,7 @@ export function validateExternalUrl(url) {
     return { ok: false, reason: 'Remote URLs must use HTTPS' };
   }
 
-  const allowed = ALLOWED_EXTERNAL_HOST_SUFFIXES.some((suffix) =>
-    hostMatchesSuffix(host, suffix)
-  );
+  const allowed = ALLOWED_EXTERNAL_HOST_SUFFIXES.some((suffix) => hostMatchesSuffix(host, suffix));
   if (!allowed && !isLocal) {
     return { ok: false, reason: 'Host is not in the allowed list' };
   }

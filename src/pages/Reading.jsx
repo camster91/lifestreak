@@ -1,4 +1,13 @@
-import { BookOpen, Plus, Trash2, CheckCircle2, Library, Headphones, Monitor, FileText } from 'lucide-react';
+import {
+  BookOpen,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  Library,
+  Headphones,
+  Monitor,
+  FileText,
+} from 'lucide-react';
 import { useState } from 'react';
 import useReadingStore from '../stores/readingStore.js';
 import PageHeader from '../components/PageHeader';
@@ -108,7 +117,9 @@ function Reading() {
         {inProgress.length > 0 && (
           <div className="card bg-base-100 shadow-md">
             <div className="card-body p-4">
-              <h3 className="font-semibold text-lg mb-3">Currently Reading ({inProgress.length})</h3>
+              <h3 className="font-semibold text-lg mb-3">
+                Currently Reading ({inProgress.length})
+              </h3>
               <div className="space-y-3">
                 {inProgress.map((item) => {
                   const Icon = TYPE_ICONS[item.type];
@@ -147,7 +158,8 @@ function Reading() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-base-content/60">
-                          {TYPE_LABELS[item.type]} · {item.completedUnits}/{item.totalUnits} {unitLabel}
+                          {TYPE_LABELS[item.type]} · {item.completedUnits}/{item.totalUnits}{' '}
+                          {unitLabel}
                         </span>
                       </div>
                       <div className="w-full bg-base-300 rounded-full h-2 mt-2">
@@ -174,7 +186,10 @@ function Reading() {
                 {completed.map((item) => {
                   const Icon = TYPE_ICONS[item.type];
                   return (
-                    <div key={item.id} className="p-3 bg-base-200 rounded-lg flex items-center justify-between">
+                    <div
+                      key={item.id}
+                      className="p-3 bg-base-200 rounded-lg flex items-center justify-between"
+                    >
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4 text-success" />
                         <span className="font-medium">{item.title}</span>

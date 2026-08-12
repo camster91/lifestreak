@@ -156,17 +156,33 @@ export const OLLAMA_CLOUD_MODELS = {
   'llama3.2': { name: 'Llama 3.2', size: '3B', description: 'Fast general-purpose model' },
   'llama3.3': { name: 'Llama 3.3', size: '70B', description: 'Powerful general-purpose model' },
   'llama4-scout': { name: 'Llama 4 Scout', size: '17B/16E', description: 'Multimodal reasoning' },
-  'llama4-maverick': { name: 'Llama 4 Maverick', size: '17B/128E', description: 'Advanced reasoning' },
-  'mistral-small3.1': { name: 'Mistral Small 3.1', size: '24B', description: 'Efficient and capable' },
-  'qwen3': { name: 'Qwen 3', size: '8B', description: 'Multilingual reasoning' },
-  'gemma3': { name: 'Gemma 3', size: '4B-27B', description: 'Google lightweight model' },
+  'llama4-maverick': {
+    name: 'Llama 4 Maverick',
+    size: '17B/128E',
+    description: 'Advanced reasoning',
+  },
+  'mistral-small3.1': {
+    name: 'Mistral Small 3.1',
+    size: '24B',
+    description: 'Efficient and capable',
+  },
+  qwen3: { name: 'Qwen 3', size: '8B', description: 'Multilingual reasoning' },
+  gemma3: { name: 'Gemma 3', size: '4B-27B', description: 'Google lightweight model' },
   'deepseek-r1': { name: 'DeepSeek R1', size: '8B-671B', description: 'Reasoning specialist' },
-  'phi4': { name: 'Phi-4', size: '14B', description: 'Microsoft small but mighty' },
-  'codellama': { name: 'Code Llama', size: '7B-34B', description: 'Code generation model' },
+  phi4: { name: 'Phi-4', size: '14B', description: 'Microsoft small but mighty' },
+  codellama: { name: 'Code Llama', size: '7B-34B', description: 'Code generation model' },
   // Cloud-only models (-cloud suffix)
   'gpt-oss:120b-cloud': { name: 'GPT-OSS 120B', size: '120B', description: 'Cloud-only flagship' },
-  'qwen3-coder:480b-cloud': { name: 'Qwen3 Coder', size: '480B', description: 'Cloud-only code model' },
-  'deepseek-v3.1:671b-cloud': { name: 'DeepSeek V3.1', size: '671B', description: 'Cloud-only large model' },
+  'qwen3-coder:480b-cloud': {
+    name: 'Qwen3 Coder',
+    size: '480B',
+    description: 'Cloud-only code model',
+  },
+  'deepseek-v3.1:671b-cloud': {
+    name: 'DeepSeek V3.1',
+    size: '671B',
+    description: 'Cloud-only large model',
+  },
 };
 
 export default chatWithOllama;

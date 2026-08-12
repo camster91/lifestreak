@@ -35,20 +35,15 @@ function logGlobalError(type, message, source, error) {
 }
 
 // Global error handler for uncaught exceptions
-window.onerror = function(message, source, lineno, colno, error) {
+window.onerror = function (message, source, lineno, colno, error) {
   logGlobalError('uncaught_exception', message, `${source}:${lineno}:${colno}`, error);
   return false; // Let the error propagate
 };
 
 // Global handler for unhandled promise rejections
-window.onunhandledrejection = function(event) {
+window.onunhandledrejection = function (event) {
   const error = event.reason;
-  logGlobalError(
-    'unhandled_rejection',
-    error?.message || String(error),
-    'Promise',
-    error
-  );
+  logGlobalError('unhandled_rejection', error?.message || String(error), 'Promise', error);
 };
 
 // Initialize native mobile features
@@ -96,8 +91,11 @@ if ('serviceWorker' in navigator) {
   // Handle notification clicks — focus app window (same-origin paths only)
   navigator.serviceWorker.addEventListener('message', (event) => {
     // Only accept messages from our own service worker controller
-    if (event.source && navigator.serviceWorker.controller
-        && event.source !== navigator.serviceWorker.controller) {
+    if (
+      event.source &&
+      navigator.serviceWorker.controller &&
+      event.source !== navigator.serviceWorker.controller
+    ) {
       return;
     }
     if (event.data?.type === 'NOTIFICATION_CLICK') {
@@ -110,7 +108,9 @@ if ('serviceWorker' in navigator) {
 
 // Listen for notification clicks directly (for when SW isn't controlling)
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.ready.then(() => {
-    // No-op: registration ready for notification scheduling
-  }).catch(() => {});
+  navigator.serviceWorker.ready
+    .then(() => {
+      // No-op: registration ready for notification scheduling
+    })
+    .catch(() => {});
 }

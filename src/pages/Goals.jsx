@@ -22,7 +22,10 @@ function Goals() {
         {/* Tab Switcher */}
         <div className="flex gap-2 mb-4">
           <button
-            onClick={() => { haptics.light(); setActiveTab('goals'); }}
+            onClick={() => {
+              haptics.light();
+              setActiveTab('goals');
+            }}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-sm transition-all active:scale-95 ${
               activeTab === 'goals'
                 ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25'
@@ -33,7 +36,10 @@ function Goals() {
             Goals
           </button>
           <button
-            onClick={() => { haptics.light(); setActiveTab('projects'); }}
+            onClick={() => {
+              haptics.light();
+              setActiveTab('projects');
+            }}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-sm transition-all active:scale-95 ${
               activeTab === 'projects'
                 ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25'

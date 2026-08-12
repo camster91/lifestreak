@@ -20,7 +20,12 @@ describe('settingsStore', () => {
       store.setNotificationTime('dailyText', '07:00');
       store.setNotificationTime('bibleReading', '20:00');
       store.updateNotification('meetingPrep', { enabled: true });
-      store.setBibleReadingSchedule({ startingScheduleDay: 1, readingPace: 1, customStartDate: null, useCustomSchedule: false });
+      store.setBibleReadingSchedule({
+        startingScheduleDay: 1,
+        readingPace: 1,
+        customStartDate: null,
+        useCustomSchedule: false,
+      });
     });
   });
 
@@ -101,7 +106,9 @@ describe('settingsStore', () => {
 
     it('should update notification with partial updates', () => {
       act(() => {
-        useSettingsStore.getState().updateNotification('meetingPrep', { enabled: false, time: '18:00' });
+        useSettingsStore
+          .getState()
+          .updateNotification('meetingPrep', { enabled: false, time: '18:00' });
       });
 
       const notification = useSettingsStore.getState().notifications.meetingPrep;
@@ -131,7 +138,9 @@ describe('settingsStore', () => {
   describe('Bible reading schedule', () => {
     it('should update bible reading schedule', () => {
       act(() => {
-        useSettingsStore.getState().setBibleReadingSchedule({ startingScheduleDay: 50, readingPace: 2 });
+        useSettingsStore
+          .getState()
+          .setBibleReadingSchedule({ startingScheduleDay: 50, readingPace: 2 });
       });
 
       const schedule = useSettingsStore.getState().bibleReadingSchedule;
@@ -157,7 +166,9 @@ describe('settingsStore', () => {
 
     it('should reset bible reading schedule', () => {
       act(() => {
-        useSettingsStore.getState().setBibleReadingSchedule({ startingScheduleDay: 100, readingPace: 3 });
+        useSettingsStore
+          .getState()
+          .setBibleReadingSchedule({ startingScheduleDay: 100, readingPace: 3 });
         useSettingsStore.getState().resetBibleReadingSchedule();
       });
 

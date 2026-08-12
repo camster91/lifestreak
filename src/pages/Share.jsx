@@ -106,7 +106,8 @@ function SharePage() {
                 )}
                 {url && !canOpenUrl && (
                   <p className="text-sm text-warning pt-2">
-                    This link host is blocked for safety. Only JW.org and ashbi.ca links can be opened.
+                    This link host is blocked for safety. Only JW.org and ashbi.ca links can be
+                    opened.
                   </p>
                 )}
               </div>

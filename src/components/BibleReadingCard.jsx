@@ -7,10 +7,7 @@ import useGamificationStore from '../stores/gamificationStore';
 function BibleReadingCard() {
   const [notes, setNotes] = useState('');
 
-  const {
-    getBibleReadingProgress,
-    updateBibleReadingProgress,
-  } = useProgressStore();
+  const { getBibleReadingProgress, updateBibleReadingProgress } = useProgressStore();
 
   const { recordBibleReading } = useGamificationStore();
 
@@ -41,16 +38,20 @@ function BibleReadingCard() {
     <article className="card bg-base-100 shadow-sm rounded-2xl overflow-hidden">
       <div className="p-4">
         <div className="flex items-center gap-3">
-          <div className={`p-3 rounded-2xl ${currentCount > 0 ? 'bg-success/10' : 'bg-secondary/10'}`}>
+          <div
+            className={`p-3 rounded-2xl ${currentCount > 0 ? 'bg-success/10' : 'bg-secondary/10'}`}
+          >
             <Book className={`w-6 h-6 ${currentCount > 0 ? 'text-success' : 'text-secondary'}`} />
           </div>
           <div className="flex-1">
             <h3 className="font-bold">Bible Reading</h3>
-            <p className="text-sm text-base-content/50">{currentCount > 0 ? `${currentCount} chapter${currentCount === 1 ? '' : 's'} today` : 'Log your reading'}</p>
+            <p className="text-sm text-base-content/50">
+              {currentCount > 0
+                ? `${currentCount} chapter${currentCount === 1 ? '' : 's'} today`
+                : 'Log your reading'}
+            </p>
           </div>
-          {currentCount > 0 && (
-            <CheckCircle2 className="w-6 h-6 text-success" />
-          )}
+          {currentCount > 0 && <CheckCircle2 className="w-6 h-6 text-success" />}
         </div>
 
         <div className="mt-4 flex items-center justify-center gap-4">
@@ -62,10 +63,7 @@ function BibleReadingCard() {
             <Minus className="w-4 h-4" />
           </button>
           <span className="text-3xl font-bold w-12 text-center">{currentCount}</span>
-          <button
-            onClick={handleAddChapter}
-            className="btn btn-primary btn-sm btn-square"
-          >
+          <button onClick={handleAddChapter} className="btn btn-primary btn-sm btn-square">
             <Plus className="w-4 h-4" />
           </button>
         </div>

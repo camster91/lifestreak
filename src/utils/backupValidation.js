@@ -70,7 +70,11 @@ function validateMemoriesState(state) {
 function validateGamificationState(state) {
   if (!isPlainObject(state)) return false;
   if (state.points !== undefined && typeof state.points !== 'number') return false;
-  if (state.achievements !== undefined && !isPlainObject(state.achievements) && !Array.isArray(state.achievements)) {
+  if (
+    state.achievements !== undefined &&
+    !isPlainObject(state.achievements) &&
+    !Array.isArray(state.achievements)
+  ) {
     return false;
   }
   return true;

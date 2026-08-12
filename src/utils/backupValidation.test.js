@@ -45,7 +45,7 @@ describe('validateBackupStoreData', () => {
   it('drops unrecognized keys but keeps valid ones', () => {
     const result = validateBackupStoreData({
       'ls-progress-storage': { state: { dailyTexts: {} } },
-      '__proto__': { admin: true },
+      __proto__: { admin: true },
       polluted: { x: 1 },
     });
     expect(result.ok).toBe(true);

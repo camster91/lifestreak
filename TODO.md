@@ -44,7 +44,7 @@
 - [ ] Add background sync for offline actions
 - [ ] Implement periodic background sync for data updates
 - [x] Add app shortcuts for quick actions
-- [ ] Improve offline fallback page
+- [x] Improve offline fallback page and verify uncached offline navigation in Chrome
 - [ ] Add badge API for unread notifications
 
 ### Error Handling

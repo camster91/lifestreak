@@ -259,18 +259,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
         with:
-          java-version: '17'
-          distribution: 'adopt'
-      - uses: actions/setup-node@v3
+          java-version: '21'
+          distribution: 'zulu'
+      - uses: actions/setup-node@v7
         with:
-          node-version: '18'
+          node-version: '22'
       - run: npm ci
       - run: npm run build
       - run: npx cap sync android
-      - run: cd android && ./gradlew assembleRelease
+      # Release tasks fail closed until the external production keystore and
+      # signing credentials are supplied; use assembleDebug for QA meanwhile.
+      - run: cd android && ./gradlew assembleDebug
 ```
 
 ## Version Management

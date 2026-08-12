@@ -4,7 +4,7 @@
 
 | File | Change |
 |------|--------|
-| `android/app/build.gradle` | Release signing requires externally supplied keystore credentials; no keystore is committed |
+| `android/app/build.gradle` | Release signing requires externally supplied keystore credentials and fails closed when they are absent; no keystore is committed |
 | `android/app/build.gradle` | Updated release signingConfig to require env vars `KEYSTORE_PASSWORD` and `KEY_PASSWORD` |
 | `ios/App/App/Info.plist` | Fixed `UIRequiredDeviceCapabilities` from `armv64` to `arm64` |
 | `ios/App/App/Info.plist` | Added `NSCalendarsUsageDescription` for calendar reminders |
@@ -33,16 +33,15 @@ cd android && ./gradlew bundleRelease
 
 The signed AAB will be at: `android/app/build/outputs/bundle/release/app-release.aab`
 
-### Keystore Info
+### Keystore Status
 
-| Property | Value |
-|----------|-------|
-| Location | `android/app/lifestreak-release.keystore` |
-| Password | Set via `KEYSTORE_PASSWORD` env var |
-| Key alias | `lifestreak` |
-| Key password | Set via `KEY_PASSWORD` env var |
+The production release keystore is not present in this repository or current
+Windows workspace. It must be supplied through the authorized release process.
+Keep the keystore outside Git and provide its passwords through a secure secret
+manager or CI secret store.
 
-**Back up this keystore file.** If lost, you cannot update the app on Google Play.
+Do not generate a replacement casually: losing the production keystore can
+prevent future Google Play updates.
 
 ## Remaining Manual Steps
 

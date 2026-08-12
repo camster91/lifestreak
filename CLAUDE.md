@@ -221,6 +221,6 @@ Config: `vitest.config.js` with jsdom environment, globals enabled, v8 coverage.
 
 - Get screenshots for Google Play listing
 - Register Google Play Developer account ($25)
-- Write/host privacy policy at ashbi.ca/privacy/lifestreak
+- Verify the hosted privacy policy at https://lifestreak.ashbi.ca/privacy.html
 - Generate signed Android bundle via Android Studio
 - Submit to Google Play Store

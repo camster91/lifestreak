@@ -12,7 +12,7 @@
 ### Android Google Play
 - [ ] Create and securely back up a release keystore outside Git
 - [x] Configure `build.gradle` to require release signing credentials
-- [x] Release builds do not fall back to debug signing
+- [x] Release builds fail closed when production signing credentials are absent; they do not fall back to debug signing
 - [x] Set versionCode 400 and versionName 4.0.0
 
 ## 🟡 App Store Assets Needed
@@ -102,6 +102,6 @@
 ## Notes
 
 - Bundle ID: `com.ashbi.lifestreak`
-- Current iOS version in build.gradle: 3.0.0 (versionCode 300)
+- Current iOS version in `ios/App/App.xcodeproj/project.pbxproj`: 3.0.0 (build 300)
 - App uses Capacitor for native bridge
 - Has push notification setup (Firebase)

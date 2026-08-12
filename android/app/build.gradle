@@ -56,6 +56,16 @@ android {
     }
 }
 
+// Never allow a release artifact to be mistaken for a publishable signed build.
+// Debug builds remain available without production signing credentials.
+tasks.configureEach { task ->
+    if ((task.name == 'assembleRelease' || task.name == 'bundleRelease') && !hasReleaseSigning) {
+        task.doFirst {
+            throw new GradleException('Release signing is unavailable. Supply KEYSTORE_PASSWORD, KEY_PASSWORD, and the external release keystore before building a release artifact.')
+        }
+    }
+}
+
 repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'

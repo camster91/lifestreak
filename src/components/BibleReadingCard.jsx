@@ -58,7 +58,7 @@ function BibleReadingCard() {
           <button
             type="button"
             onClick={handleRemoveChapter}
-            className="btn btn-ghost btn-md btn-square"
+            className="btn btn-ghost btn-md btn-square min-w-11 min-h-11"
             disabled={currentCount <= 0}
             aria-label="Decrease chapters read"
           >
@@ -68,7 +68,7 @@ function BibleReadingCard() {
           <button
             type="button"
             onClick={handleAddChapter}
-            className="btn btn-primary btn-md btn-square"
+            className="btn btn-primary btn-md btn-square min-w-11 min-h-11"
             aria-label="Increase chapters read"
           >
             <Plus className="w-4 h-4" />

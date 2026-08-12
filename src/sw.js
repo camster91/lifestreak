@@ -1,4 +1,4 @@
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
+import { precacheAndRoute, cleanupOutdatedCaches, matchPrecache } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
@@ -54,7 +54,7 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       {
-        handlerDidError: async () => caches.match('/offline.html'),
+        handlerDidError: async () => matchPrecache('/offline.html'),
       },
     ],
   })

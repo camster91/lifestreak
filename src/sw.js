@@ -11,9 +11,14 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Clean old caches on activation
 cleanupOutdatedCaches();
 
-// Skip waiting and claim clients immediately
-self.skipWaiting();
-self.clients.claim();
+// Activate upgrades immediately and take control on the next navigation.
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
 // ── Notification click handler ────────────────────────────────────
 self.addEventListener('notificationclick', (event) => {

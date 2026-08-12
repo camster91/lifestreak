@@ -70,7 +70,7 @@
 ## 🔵 Store Listing Content
 
 ### Required for Both
-- [ ] Privacy policy URL (✓ EXISTS - PRIVACY_POLICY.md, needs hosting)
+- [x] Privacy policy URL (`https://lifestreak.ashbi.ca/privacy.html`)
 - [ ] Contact email
 - [ ] App category (Lifestyle / Religion)
 - [ ] Content rating questionnaire

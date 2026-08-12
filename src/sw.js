@@ -1,6 +1,6 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { sanitizeSameOriginPath } from './utils/safeNavigation.js';
@@ -42,7 +42,21 @@ self.addEventListener('notificationclick', (event) => {
 
 // App assets — StaleWhileRevalidate
 registerRoute(
-  ({ url }) => self.location.origin === url.origin,
+  ({ request }) => request.mode === 'navigate',
+  new NetworkFirst({
+    cacheName: 'ls-pages-cache',
+    networkTimeoutSeconds: 3,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [200] }),
+      {
+        handlerDidError: async () => caches.match('/offline.html'),
+      },
+    ],
+  })
+);
+
+registerRoute(
+  ({ request, url }) => self.location.origin === url.origin && request.mode !== 'navigate',
   new StaleWhileRevalidate({
     cacheName: 'ls-assets-cache',
     plugins: [

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4a6fa4" />
+    <title>LifeStreak — Offline</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { display: grid; min-height: 100vh; place-items: center; margin: 0; background: #f3f4f6; color: #1f2937; }
+      main { max-width: 28rem; padding: 2rem; text-align: center; }
+      h1 { color: #4a6fa4; }
+      button { border: 0; border-radius: .5rem; background: #4a6fa4; color: white; cursor: pointer; padding: .75rem 1rem; font: inherit; }
+      button:focus-visible { outline: 3px solid #f59e0b; outline-offset: 3px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>LifeStreak</h1>
+      <p>You’re offline. Your saved progress is still on this device. Reconnect and try again to open the latest page.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

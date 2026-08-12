@@ -36,3 +36,16 @@ The check validates HTTPS status, the LifeStreak document title, the PWA manifes
 ## Monitoring
 
 The repository now includes a scheduled GitHub Actions smoke check (`.github/workflows/production-smoke.yml`) that runs hourly and can also be dispatched manually. An independent Uptime Kuma monitor is not configured for this hostname yet. The minimum monitor should check HTTPS 200, the LifeStreak title, the manifest JSON name, and response headers; alert on two consecutive failures. Container logs and `docker inspect` provide local health evidence but are not an independent monitor.
+
+The Ashbi VPS currently has Uptime Kuma installed at loopback port `3052`, but
+its UI is still on the first-run `/setup` screen. Completing independent
+alerting requires an authorized operator to create the Uptime Kuma admin
+account, add `https://lifestreak.ashbi.ca/` as an HTTP monitor, and choose an
+alert notification channel. Do not create credentials in deployment scripts.
+
+Each new LifeStreak image now also exposes a Docker health check that fetches
+the local document and requires the `LifeStreak` title. Verify it with:
+
+```bash
+docker inspect --format '{{json .State.Health}}' lifestreak-<commit>
+```

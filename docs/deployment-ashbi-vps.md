@@ -35,4 +35,4 @@ The check validates HTTPS status, the LifeStreak document title, the PWA manifes
 
 ## Monitoring
 
-The VPS currently has no external uptime monitor configured for this hostname. Until one is added, run the smoke check after every release and from a scheduled external runner. The minimum monitor should check HTTPS 200, the LifeStreak title, the manifest JSON name, and response headers; alert on two consecutive failures. Container logs and `docker inspect` provide local health evidence but are not an independent monitor.
+The repository now includes a scheduled GitHub Actions smoke check (`.github/workflows/production-smoke.yml`) that runs hourly and can also be dispatched manually. An independent Uptime Kuma monitor is not configured for this hostname yet. The minimum monitor should check HTTPS 200, the LifeStreak title, the manifest JSON name, and response headers; alert on two consecutive failures. Container logs and `docker inspect` provide local health evidence but are not an independent monitor.

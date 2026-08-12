@@ -77,11 +77,11 @@ function Reading() {
               placeholder="Title"
               className="input input-bordered w-full"
             />
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <select
                 value={itemType}
                 onChange={(e) => setItemType(e.target.value)}
-                className="select select-bordered flex-1"
+                className="select select-bordered w-full sm:flex-1"
               >
                 <option value="book">Book</option>
                 <option value="audio">Audio</option>
@@ -93,13 +93,13 @@ function Reading() {
                 value={totalUnits}
                 onChange={(e) => setTotalUnits(e.target.value)}
                 placeholder="Total"
-                className="input input-bordered w-28"
+                className="input input-bordered w-full sm:w-28"
                 min="1"
               />
               <select
                 value={unitLabel}
                 onChange={(e) => setUnitLabel(e.target.value)}
-                className="select select-bordered w-32"
+                className="select select-bordered w-full sm:w-32"
               >
                 <option value="chapters">Chapters</option>
                 <option value="pages">Pages</option>

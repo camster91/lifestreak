@@ -3,7 +3,8 @@
 ## App Details
 - **Name:** LifeStreak
 - **Bundle ID:** com.ashbi.lifestreak
-- **Version:** 3.0.0 (versionCode 4)
+- **Android version:** 4.0.0 (versionCode 400)
+- **iOS version:** 3.0.0 (build 300; requires macOS/Xcode validation)
 - **Category:** Lifestyle / Reference
 - **Rating:** 4+ (no objectionable content)
 
@@ -14,14 +15,14 @@ Daily spiritual habits: Bible reading, meeting prep & progress tracking
 LifeStreak helps people build consistent personal routines with private, easy-to-use tracking tools.
 
 **Features:**
-- 📖 Daily Bible reading schedule with progress tracking
-- 📅 Meeting preparation tracker (Midweek & Weekend)
-- 🙏 Prayer & family worship tracking
-- ✅ Daily spiritual goals and habits
-- 📊 Weekly and monthly progress statistics
-- 🔔 Local notifications & reminders
-- 📱 Works offline — no account required
-- 🌙 Dark mode support
+- Daily Bible reading schedule with progress tracking
+- Meeting preparation tracker (Midweek & Weekend)
+- Prayer & family worship tracking
+- Daily spiritual goals and habits
+- Weekly and monthly progress statistics
+- Local notifications & reminders
+- Works offline — no account required
+- Dark mode support
 
 Build consistent spiritual habits and see your progress grow over time.
 
@@ -31,39 +32,29 @@ Build consistent spiritual habits and see your progress grow over time.
 
 ### Prerequisites
 1. Google Play Developer account ($25 one-time fee) — https://play.google.com/console
-2. App signing keystore (already generated — see below)
+2. A release signing keystore supplied and stored outside the repository.
 
 ### Building the Release AAB
 ```bash
-cd C:\Users\camst\JW-News
-
-# 1. Build web
+cd C:\path\to\lifestreak
+npm ci
 npm run build
-
-# 2. Sync to Android
 npx cap sync android
-
-# 3. Open Android Studio
 npx cap open android
-
-# 4. In Android Studio:
-#    Build > Generate Signed Bundle/APK
-#    Select: Android App Bundle
-#    Keystore: android/app/lifestreak-release.keystore
-#    Key alias: lifestreak
-#    Passwords: Set via KEYSTORE_PASSWORD and KEY_PASSWORD env vars
 ```
+
+In Android Studio, generate a signed Android App Bundle with the separately
+managed release keystore. Keep `KEYSTORE_PASSWORD` and `KEY_PASSWORD` in a
+secure secret manager; never commit them or the keystore.
 
 ### Play Store Listing
 - Screenshots: At least 2 phone screenshots (1080x1920 or 1080x2400)
 - Feature graphic: 1024x500 PNG
 - Icon: 512x512 PNG (hi-res)
 
-### Keystore Info (KEEP SAFE)
-- File: `android/app/lifestreak-release.keystore`
-- Store password: Set via KEYSTORE_PASSWORD env var
-- Key alias: lifestreak
-- Key password: Set via KEY_PASSWORD env var
+### Keystore Status
+The production release keystore is not present in this repository or current
+Windows workspace. It must be supplied through the authorized release process.
 
 ---
 
@@ -77,30 +68,29 @@ npx cap open android
 ### Building
 ```bash
 # On Mac:
-cd /path/to/JW-News
+cd /path/to/lifestreak
+npm ci
 npm run build
 npx cap sync ios
 npx cap open ios
-# Then in Xcode: Product > Archive > Distribute App
 ```
 
+Then in Xcode: Product > Archive > Distribute App.
+
 ### App Store Connect Setup
-1. Create app at https://appstoreconnect.apple.com
-2. Bundle ID: com.ashbi.lifestreak
-3. Upload build via Xcode or Transporter
-4. Fill in metadata (use description above)
+1. Create the app at https://appstoreconnect.apple.com
+2. Use bundle ID `com.ashbi.lifestreak`
+3. Upload a build via Xcode or Transporter
+4. Fill in the metadata above
 5. Submit for review
 
 ---
 
 ## Privacy Policy
-Required for both stores. Minimum content:
-- App collects no personal data
-- All data stored locally on device
-- No account required
-- No analytics or tracking
+Required for both stores. The app collects no personal data, stores data
+locally on the device, requires no account, and has no analytics or tracking.
 
-Host at: https://ashbi.ca/privacy/lifestreak (or similar)
+Hosted and browser-verified at: https://lifestreak.ashbi.ca/privacy.html
 
 ---
 
@@ -111,4 +101,6 @@ Host at: https://ashbi.ca/privacy/lifestreak (or similar)
 - Meeting prep screen
 - Settings/dark mode
 
-Use an iPhone 6.5" simulator or Android emulator for captures.
+Draft browser captures are stored under `app-store-assets/screenshots/`; they
+are not a substitute for physical-device or simulator evidence. Final store
+assets still require review on the target device class.

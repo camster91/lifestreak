@@ -45,14 +45,14 @@
 
 ### Both Platforms
 - [ ] Test on physical devices (not just simulators) - see `docs/mobile-qa.md`; hardware is not available in this workspace
-- [ ] Verify app works offline
-- [ ] Check dark mode support
+- [x] Verify web app works offline (browser-verified; native device still pending)
+- [x] Check dark mode support (browser-verified; native device still pending)
 - [ ] Test push notifications
 - [ ] Verify deep links work
-- [ ] Test on different screen sizes
-- [ ] Run accessibility audit
+- [x] Test web app on different mobile screen sizes (browser-verified; native device still pending)
+- [x] Run browser accessibility audit (native screen-reader audit still pending)
 - [ ] Check for memory leaks
-- [ ] Verify app doesn't crash on launch
+- [x] Verify web app launch and route navigation (browser-verified; native launch still pending)
 
 ### iOS Specific
 - [ ] Archive build succeeds in Xcode
@@ -96,8 +96,8 @@
 
 | Platform | Status | Blockers |
 |----------|--------|----------|
-| iOS | 🟡 In Progress | App name fix, screenshots, device testing |
-| Android | 🟡 In Progress | Release keystore, physical-device QA, screenshots |
+| iOS | 🟡 In Progress | macOS/Xcode build, final store assets, device testing |
+| Android | 🟡 In Progress | Release keystore, physical-device QA, final store submission |
 
 ## Notes
 

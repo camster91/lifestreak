@@ -31,7 +31,8 @@ npx cap sync android
 cd android && ./gradlew bundleRelease
 ```
 
-The signed AAB will be at: `android/app/build/outputs/bundle/release/app-release.aab`
+After the external release keystore and credentials are supplied, the signed
+AAB will be at: `android/app/build/outputs/bundle/release/app-release.aab`.
 
 ### Keystore Status
 

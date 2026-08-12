@@ -56,14 +56,21 @@ function BibleReadingCard() {
 
         <div className="mt-4 flex items-center justify-center gap-4">
           <button
+            type="button"
             onClick={handleRemoveChapter}
-            className="btn btn-ghost btn-sm btn-square"
+            className="btn btn-ghost btn-md btn-square"
             disabled={currentCount <= 0}
+            aria-label="Decrease chapters read"
           >
             <Minus className="w-4 h-4" />
           </button>
           <span className="text-3xl font-bold w-12 text-center">{currentCount}</span>
-          <button onClick={handleAddChapter} className="btn btn-primary btn-sm btn-square">
+          <button
+            type="button"
+            onClick={handleAddChapter}
+            className="btn btn-primary btn-md btn-square"
+            aria-label="Increase chapters read"
+          >
             <Plus className="w-4 h-4" />
           </button>
         </div>
@@ -77,6 +84,7 @@ function BibleReadingCard() {
               updateBibleReadingProgress?.(today, currentCount, e.target.value);
             }}
             placeholder="What did you read? (optional)"
+            aria-label="Reading notes (optional)"
             className="input input-bordered input-sm w-full"
           />
         </div>

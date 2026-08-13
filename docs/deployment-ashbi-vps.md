@@ -13,6 +13,11 @@ LifeStreak deployment; redirecting or decommissioning that hostname is
 intentionally a separate production decision because it would change access to
 existing local-only LifeStreak data.
 
+At the time of this audit, `jw.cstack67.win` returned Cloudflare 530 / error
+1033. The local JW Companion scheduled tasks were present but not running, and
+port 8001 had no listener. Do not redirect the legacy hostname until the
+successor is externally reachable and its own release verification passes.
+
 ## Release procedure
 
 1. Confirm the working tree is clean, the target commit is pushed, and the local gates pass:

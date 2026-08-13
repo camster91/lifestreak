@@ -1,5 +1,7 @@
 # LifeStreak - Improvement Roadmap
 
+> **Archived:** LifeStreak was consolidated into [JW Companion](https://github.com/camster91/jw-companion) on 2026-08-13. The roadmap is retained as historical context; new product work belongs in the canonical repository.
+
 ## High Priority
 
 ### Testing Infrastructure

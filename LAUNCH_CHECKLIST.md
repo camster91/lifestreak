@@ -1,5 +1,7 @@
 # LifeStreak - Launch Checklist
 
+> **Archived:** LifeStreak was consolidated into [JW Companion](https://github.com/camster91/jw-companion) on 2026-08-13. This checklist documents historical release work and is not an active store-launch plan.
+
 ## What Was Fixed
 
 | File | Change |

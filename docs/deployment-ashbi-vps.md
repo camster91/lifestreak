@@ -2,6 +2,15 @@
 
 This is the runbook for the manually managed static deployment at `https://lifestreak.ashbi.ca`.
 
+## Archive status
+
+The source repository was archived and consolidated into
+[`camster91/jw-companion`](https://github.com/camster91/jw-companion) on
+2026-08-13. The legacy hostname still serves the last verified LifeStreak
+deployment; redirecting or decommissioning that hostname is intentionally a
+separate production decision because the canonical public destination must be
+confirmed before changing user-facing routing.
+
 ## Release procedure
 
 1. Confirm the working tree is clean, the target commit is pushed, and the local gates pass:

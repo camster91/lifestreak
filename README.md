@@ -1,46 +1,18 @@
-# LifeStreak
+# Archived — LifeStreak
 
-A personal habit, service, reading, and goal tracker built with React + Capacitor. Track your daily routines, log service hours, manage reading progress, and build streaks — all in one place.
+LifeStreak has been consolidated into
+[JW Companion](https://github.com/camster91/jw-companion), the canonical
+personal spiritual-routine companion.
 
-## Features
+JW Companion covers personal routines, study items, field-service records,
+Bible reading, notes, questions, follow-up actions, and a focused Today view.
+It intentionally does not retain streaks, XP, badges, or achievement mechanics.
 
-- **Home Dashboard** — weekly service + reading snapshots, daily tasks, prayer tracking, Bible reading log, family worship
-- **Study** — log study sessions with topic, duration, and notes
-- **Service** — log hours by type (field, RV, study, talk, other), weekly/monthly goals with progress bars
-- **Reading** — track books, audio, video, articles with progress bars and completion dates
-- **Goals** — set and track personal goals with gamification
-- **Stats** — streaks, achievements, XP levels
-- **Settings** — notifications, theme, data export/backup
+See the [feature map and privacy-safe migration guidance](https://github.com/camster91/jw-companion/blob/main/docs/lifestreak-consolidation.md).
 
-## Stack
+## Your data
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19 + Vite 7 |
-| Routing | React Router DOM 7 |
-| State | Zustand 5 (persisted to localStorage) |
-| Styling | Tailwind CSS 3 + DaisyUI 4 |
-| Icons | lucide-react |
-| Dates | date-fns |
-| Mobile | Capacitor 8 (iOS + Android) |
-| PWA | vite-plugin-pwa + Workbox |
-
-## Development
-
-```bash
-npm install
-npm run dev           # Vite dev server
-npm run build         # Production build
-npm run mobile:build  # Build + cap sync
-npm run mobile:android  # Build + sync + open Android Studio
-```
-
-## App Store
-
-- App ID: `com.ashbi.lifestreak`
-- All data is user-entered. No scraped content, no external branding, no copyrighted material.
-- Privacy Policy in `PRIVACY_POLICY.md`
-
-## License
-
-MIT
+LifeStreak data remains on the device where the app was used. This archive
+does not upload, access, or transfer private spiritual records. Export or note
+anything you want to retain before removing a local LifeStreak installation,
+then recreate only the useful items in JW Companion.

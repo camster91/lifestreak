@@ -1,6 +1,6 @@
 # LifeStreak - App Store Submission TODO
 
-> **Archived:** LifeStreak was consolidated into [JW Companion](https://github.com/camster91/jw-companion) on 2026-08-13. New store submission, signing, device-QA, and native-release work is no longer planned for this repository. The historical checklist below is retained for audit context only.
+> **Archived:** LifeStreak was consolidated into [JW Companion](https://github.com/camster91/jw-companion) on 2026-08-13. Its documented public deployment is [jw.cstack67.win](https://jw.cstack67.win/). New store submission, signing, device-QA, and native-release work is no longer planned for this repository. The historical checklist below is retained for audit context only.
 
 ## 🔴 Critical Blockers (Must Fix)
 

@@ -6,10 +6,12 @@ This is the runbook for the manually managed static deployment at `https://lifes
 
 The source repository was archived and consolidated into
 [`camster91/jw-companion`](https://github.com/camster91/jw-companion) on
-2026-08-13. The legacy hostname still serves the last verified LifeStreak
-deployment; redirecting or decommissioning that hostname is intentionally a
-separate production decision because the canonical public destination must be
-confirmed before changing user-facing routing.
+2026-08-13. The canonical JW Companion repository documents its public
+deployment at `https://jw.cstack67.win/` on a separate Windows/Cloudflare
+Tunnel environment. The legacy hostname still serves the last verified
+LifeStreak deployment; redirecting or decommissioning that hostname is
+intentionally a separate production decision because it would change access to
+existing local-only LifeStreak data.
 
 ## Release procedure
 

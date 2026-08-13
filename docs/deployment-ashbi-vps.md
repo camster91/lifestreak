@@ -18,6 +18,17 @@ At the time of this audit, `jw.cstack67.win` returned Cloudflare 530 / error
 port 8001 had no listener. Do not redirect the legacy hostname until the
 successor is externally reachable and its own release verification passes.
 
+Before any redirect, run the repository guard from PowerShell:
+
+```powershell
+./scripts/check-successor.ps1
+```
+
+Only after that check passes should an operator create a timestamped backup of
+`/opt/traefik/dynamic/lifestreak.yml`, change the route to the approved
+successor, verify the public URL, and retain the prior route for rollback. If
+the check fails, leave the LifeStreak route unchanged.
+
 ## Release procedure
 
 1. Confirm the working tree is clean, the target commit is pushed, and the local gates pass:

@@ -29,6 +29,20 @@ Only after that check passes should an operator create a timestamped backup of
 successor, verify the public URL, and retain the prior route for rollback. If
 the check fails, leave the LifeStreak route unchanged.
 
+### 2026-08-14 cutover attempt
+
+The JW Companion origin was started and verified locally on port 8001. The
+Cloudflare tunnel briefly obtained a connector and the successor guard passed,
+but the public tunnel then became unstable and returned intermittent 502/530
+responses. A temporary Traefik redirect was tested, failed end-to-end against
+that unstable successor, and was immediately rolled back. LifeStreak is
+currently still serving HTTP 200 from `lifestreak-9232208`; the rollback route
+backup is `/opt/traefik/dynamic/lifestreak.yml.20260814-154609-pre-redirect`.
+
+Do not retry the redirect until the tunnel remains connected and
+`./scripts/check-successor.ps1` passes repeatedly, followed by a successful
+redirect-following smoke check.
+
 ## Release procedure
 
 1. Confirm the working tree is clean, the target commit is pushed, and the local gates pass:

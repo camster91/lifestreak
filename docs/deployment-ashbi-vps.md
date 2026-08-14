@@ -84,6 +84,14 @@ alerting requires an authorized operator to create the Uptime Kuma admin
 account, add `https://lifestreak.ashbi.ca/` as an HTTP monitor, and choose an
 alert notification channel. Do not create credentials in deployment scripts.
 
+As a credential-free interim layer, the VPS now runs
+`/usr/local/bin/lifestreak-monitor.sh` from `/etc/cron.d/lifestreak-monitor`
+every five minutes. It checks the public HTTPS status, LifeStreak title, PWA
+manifest identity, and required security headers; failures are written to
+`/var/log/lifestreak-monitor.log` and syslog. `flock` prevents overlapping
+checks. This watchdog records failures but does not replace Uptime Kuma’s
+notification channel.
+
 Each new LifeStreak image now also exposes a Docker health check that fetches
 the local document and requires the `LifeStreak` title. Verify it with:
 

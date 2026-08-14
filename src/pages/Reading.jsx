@@ -75,12 +75,14 @@ function Reading() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Title"
+              aria-label="Reading title"
               className="input input-bordered w-full"
             />
             <div className="flex flex-col gap-2 sm:flex-row">
               <select
                 value={itemType}
                 onChange={(e) => setItemType(e.target.value)}
+                aria-label="Reading item type"
                 className="select select-bordered w-full sm:flex-1"
               >
                 <option value="book">Book</option>
@@ -93,12 +95,14 @@ function Reading() {
                 value={totalUnits}
                 onChange={(e) => setTotalUnits(e.target.value)}
                 placeholder="Total"
+                aria-label="Total reading units"
                 className="input input-bordered w-full sm:w-28"
                 min="1"
               />
               <select
                 value={unitLabel}
                 onChange={(e) => setUnitLabel(e.target.value)}
+                aria-label="Reading unit"
                 className="select select-bordered w-full sm:w-32"
               >
                 <option value="chapters">Chapters</option>
@@ -142,6 +146,7 @@ function Reading() {
                               }
                             }}
                             className="btn btn-ghost btn-xs btn-square"
+                            aria-label={`Increase progress for ${item.title}`}
                           >
                             <Plus className="w-3 h-3" />
                           </button>
@@ -151,6 +156,7 @@ function Reading() {
                               deleteItem(item.id);
                             }}
                             className="btn btn-ghost btn-xs btn-square text-error"
+                            aria-label={`Delete ${item.title}`}
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -206,6 +212,7 @@ function Reading() {
                             deleteItem(item.id);
                           }}
                           className="btn btn-ghost btn-xs btn-square text-error"
+                          aria-label={`Delete completed item ${item.title}`}
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>

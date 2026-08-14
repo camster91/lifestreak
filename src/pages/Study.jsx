@@ -54,6 +54,7 @@ function Study() {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="What are you studying?"
+              aria-label="Study topic"
               className="input input-bordered w-full"
             />
             <div className="flex gap-2">
@@ -62,6 +63,7 @@ function Study() {
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
                 placeholder="Minutes"
+                aria-label="Study duration in minutes"
                 className="input input-bordered w-32"
                 min="1"
               />
@@ -73,6 +75,7 @@ function Study() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Notes (optional)"
+              aria-label="Study notes (optional)"
               className="textarea textarea-bordered w-full"
               rows={2}
             />

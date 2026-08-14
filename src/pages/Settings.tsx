@@ -343,6 +343,8 @@ function Settings() {
               <div className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
                 <div><p className="font-medium">AI Provider</p></div>
                 <select
+                  id="ai-provider"
+                  aria-label="AI provider"
                   className="select select-sm select-bordered"
                   value={ai.provider}
                   onChange={(e) => setAiSettings({ provider: e.target.value as 'ollama' | 'none' })}
@@ -354,8 +356,9 @@ function Settings() {
               {ai.provider === 'ollama' && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-base-content/70">Base URL</label>
+                    <label htmlFor="ollama-base-url" className="text-sm font-medium text-base-content/70">Base URL</label>
                     <input
+                      id="ollama-base-url"
                       type="text"
                       className="input input-bordered input-sm w-full"
                       value={ai.ollamaBaseUrl}
@@ -371,9 +374,10 @@ function Settings() {
                     <p className="text-xs text-base-content/50">Allowed: ollama.com (HTTPS) or localhost / 127.0.0.1</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-base-content/70">API Key</label>
+                    <label htmlFor="ollama-api-key" className="text-sm font-medium text-base-content/70">API Key</label>
                     <div className="flex gap-2">
                       <input
+                        id="ollama-api-key"
                         type={showApiKey ? 'text' : 'password'}
                         className="input input-bordered input-sm flex-1"
                         value={ai.ollamaApiKey}
@@ -384,6 +388,7 @@ function Settings() {
                       <button
                         onClick={() => setShowApiKey(!showApiKey)}
                         className="btn btn-sm btn-ghost"
+                        aria-label={showApiKey ? 'Hide Ollama API key' : 'Show Ollama API key'}
                       >
                         {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -393,8 +398,9 @@ function Settings() {
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-base-content/70">Model</label>
+                    <label htmlFor="ollama-model" className="text-sm font-medium text-base-content/70">Model</label>
                     <input
+                      id="ollama-model"
                       type="text"
                       className="input input-bordered input-sm w-full"
                       value={ai.ollamaModel}

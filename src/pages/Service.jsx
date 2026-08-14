@@ -110,6 +110,7 @@ function Service() {
                 value={hours}
                 onChange={(e) => setHours(e.target.value)}
                 placeholder="Hours"
+                aria-label="Service hours"
                 className="input input-bordered w-28"
                 step="0.25"
                 min="0.25"
@@ -117,6 +118,7 @@ function Service() {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
+                aria-label="Service type"
                 className="select select-bordered flex-1"
               >
                 {SERVICE_TYPES.map((t) => (
@@ -131,6 +133,7 @@ function Service() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Notes (optional)"
+              aria-label="Service notes (optional)"
               className="input input-bordered w-full"
             />
             <button onClick={handleAdd} className="btn btn-primary w-full">
@@ -149,6 +152,7 @@ function Service() {
                 type="number"
                 value={weeklyGoal}
                 onChange={(e) => setWeeklyGoal(parseFloat(e.target.value) || 0)}
+                aria-label="Weekly service goal in hours"
                 className="input input-bordered w-24"
                 step="1"
                 min="1"
@@ -161,6 +165,7 @@ function Service() {
                 type="number"
                 value={monthlyGoal}
                 onChange={(e) => setMonthlyGoal(parseFloat(e.target.value) || 0)}
+                aria-label="Monthly service goal in hours"
                 className="input input-bordered w-24"
                 step="1"
                 min="1"
@@ -199,6 +204,7 @@ function Service() {
                         deleteEntry(entry.id);
                       }}
                       className="btn btn-ghost btn-sm btn-square text-error"
+                      aria-label={`Delete service entry from ${entry.date}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

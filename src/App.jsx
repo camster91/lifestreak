@@ -1,4 +1,6 @@
 import './habitTracker/hardening';
+import './habitTracker/operationGuard';
+import './habitTracker/operationGuard.css';
 import HabitTrackerApp from './habitTracker/HabitTrackerApp';
 import LegacyApp from './LegacyApp';
 

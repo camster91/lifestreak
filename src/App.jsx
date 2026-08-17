@@ -1,3 +1,4 @@
+import './habitTracker/hardening';
 import HabitTrackerApp from './habitTracker/HabitTrackerApp';
 import LegacyApp from './LegacyApp';
 

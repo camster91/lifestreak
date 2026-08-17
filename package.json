@@ -3,7 +3,13 @@
   "private": true,
   "version": "4.0.0",
   "type": "module",
-  "description": "Track habits, service, reading, and goals — all in one place",
+  "description": "A private, local-first habit and routine tracker with optional specialist collections.",
+  "keywords": [
+    "habits",
+    "routines",
+    "streaks",
+    "local-first"
+  ],
   "scripts": {
     "dev": "vite",
     "start": "npm run dev:full",

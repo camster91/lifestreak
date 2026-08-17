@@ -93,6 +93,11 @@ habitStore.dismissOnboarding = (...args) => {
 const originalScanLegacyData = habitStore.scanLegacyData.bind(habitStore);
 habitStore.scanLegacyData = (...args) => {
   const result = originalScanLegacyData(...args);
+  if (originalGetSnapshot().operation?.type === 'error') {
+    clearInformationalNotice();
+    return result;
+  }
+
   const count = Array.isArray(result) ? result.length : 0;
   showInformationalNotice(
     count

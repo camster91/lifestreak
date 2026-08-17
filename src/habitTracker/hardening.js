@@ -63,6 +63,7 @@ function sanitizeSchedule(value, startDate, label) {
   if (!SCHEDULE_TYPES.includes(source.type)) {
     throw new Error(`${label} has an unsupported schedule type.`);
   }
+
   const normalized = normalizeSchedule(source, startDate);
   if (normalized.type === 'weekdays' && !normalized.weekdays.length) {
     throw new Error(`${label} must include at least one weekday.`);
@@ -81,6 +82,7 @@ function sanitizeTracking(value, label) {
   if (!TRACKING_TYPES.includes(source.type)) {
     throw new Error(`${label} has an unsupported tracking type.`);
   }
+
   const normalized = normalizeTracking(source);
   if (normalized.type !== 'binary') {
     const target = Number(source.target);
@@ -92,14 +94,20 @@ function sanitizeTracking(value, label) {
     }
     if (source.stretchTarget != null && source.stretchTarget !== '') {
       const stretchTarget = Number(source.stretchTarget);
-      if (!Number.isFinite(stretchTarget) || stretchTarget < target || stretchTarget > MAX_NUMBER) {
+      if (
+        !Number.isFinite(stretchTarget) ||
+        stretchTarget < target ||
+        stretchTarget > MAX_NUMBER
+      ) {
         throw new Error(`${label} has an invalid stretch target.`);
       }
     }
   }
+
   return {
     ...normalized,
-    unit: normalized.type === 'binary' ? 'completion' : safeText(source.unit, 20, normalized.unit),
+    unit:
+      normalized.type === 'binary' ? 'completion' : safeText(source.unit, 20, normalized.unit),
   };
 }
 
@@ -117,68 +125,95 @@ function sanitizeHabit(sourceValue, index, seenHabitIds) {
 
   const schedule = sanitizeSchedule(source.schedule, source.startDate, `Habit “${name}”`);
   const tracking = sanitizeTracking(source.tracking, `Habit “${name}”`);
+  const initialTimeOfDay = safeTimeOfDay(source.timeOfDay);
 
   const revisionIds = new Set();
-  const revisions = Array.isArray(source.revisions)
-    ? source.revisions.slice(-MAX_HISTORY_ITEMS).map((revisionValue, revisionIndex) => {
-        const revision = requireObject(
-          revisionValue,
-          `Revision ${revisionIndex + 1} for habit “${name}”`,
-        );
-        const revisionId = requireId(
-          revision.id,
-          `Revision ${revisionIndex + 1} for habit “${name}”`,
-        );
-        if (revisionIds.has(revisionId)) {
-          throw new Error(`Habit “${name}” contains duplicate revision IDs.`);
-        }
-        revisionIds.add(revisionId);
-        if (!isValidLocalDate(revision.effectiveDate)) {
-          throw new Error(`Habit “${name}” contains an invalid revision date.`);
-        }
-        return {
-          id: revisionId,
-          effectiveDate: revision.effectiveDate,
-          schedule: sanitizeSchedule(
-            revision.schedule || schedule,
-            source.startDate,
-            `Revision for habit “${name}”`,
+  const revisions = [];
+  let revisionConfig = {
+    schedule,
+    tracking,
+    timeOfDay: initialTimeOfDay,
+  };
+
+  const sourceRevisions = Array.isArray(source.revisions)
+    ? source.revisions
+        .slice(-MAX_HISTORY_ITEMS)
+        .map((revisionValue, revisionIndex) => ({ revisionValue, revisionIndex }))
+        .sort((a, b) =>
+          String(a.revisionValue?.effectiveDate || '').localeCompare(
+            String(b.revisionValue?.effectiveDate || ''),
           ),
-          tracking: sanitizeTracking(
-            revision.tracking || tracking,
-            `Revision for habit “${name}”`,
-          ),
-          timeOfDay: safeTimeOfDay(revision.timeOfDay || source.timeOfDay),
-          createdAt: safeTimestamp(revision.createdAt),
-        };
-      })
+        )
     : [];
+
+  sourceRevisions.forEach(({ revisionValue, revisionIndex }) => {
+    const revision = requireObject(
+      revisionValue,
+      `Revision ${revisionIndex + 1} for habit “${name}”`,
+    );
+    const revisionId = requireId(
+      revision.id,
+      `Revision ${revisionIndex + 1} for habit “${name}”`,
+    );
+    if (revisionIds.has(revisionId)) {
+      throw new Error(`Habit “${name}” contains duplicate revision IDs.`);
+    }
+    revisionIds.add(revisionId);
+    if (!isValidLocalDate(revision.effectiveDate)) {
+      throw new Error(`Habit “${name}” contains an invalid revision date.`);
+    }
+
+    revisionConfig = {
+      schedule: revision.schedule
+        ? sanitizeSchedule(revision.schedule, source.startDate, `Revision for habit “${name}”`)
+        : revisionConfig.schedule,
+      tracking: revision.tracking
+        ? sanitizeTracking(revision.tracking, `Revision for habit “${name}”`)
+        : revisionConfig.tracking,
+      timeOfDay: revision.timeOfDay
+        ? safeTimeOfDay(revision.timeOfDay)
+        : revisionConfig.timeOfDay,
+    };
+
+    revisions.push({
+      id: revisionId,
+      effectiveDate: revision.effectiveDate,
+      ...revisionConfig,
+      createdAt: safeTimestamp(revision.createdAt),
+    });
+  });
 
   const lifecycleIds = new Set();
   const lifecycleHistory = Array.isArray(source.lifecycleHistory)
-    ? source.lifecycleHistory.slice(-MAX_HISTORY_ITEMS).map((eventValue, eventIndex) => {
-        const event = requireObject(
-          eventValue,
-          `Lifecycle event ${eventIndex + 1} for habit “${name}”`,
-        );
-        const eventId = requireId(
-          event.id,
-          `Lifecycle event ${eventIndex + 1} for habit “${name}”`,
-        );
-        if (lifecycleIds.has(eventId)) {
-          throw new Error(`Habit “${name}” contains duplicate lifecycle event IDs.`);
-        }
-        lifecycleIds.add(eventId);
-        if (!isValidLocalDate(event.effectiveDate) || !LIFECYCLE_STATES.includes(event.state)) {
-          throw new Error(`Habit “${name}” contains an invalid lifecycle event.`);
-        }
-        return {
-          id: eventId,
-          state: event.state,
-          effectiveDate: event.effectiveDate,
-          createdAt: safeTimestamp(event.createdAt),
-        };
-      })
+    ? source.lifecycleHistory
+        .slice(-MAX_HISTORY_ITEMS)
+        .map((eventValue, eventIndex) => {
+          const event = requireObject(
+            eventValue,
+            `Lifecycle event ${eventIndex + 1} for habit “${name}”`,
+          );
+          const eventId = requireId(
+            event.id,
+            `Lifecycle event ${eventIndex + 1} for habit “${name}”`,
+          );
+          if (lifecycleIds.has(eventId)) {
+            throw new Error(`Habit “${name}” contains duplicate lifecycle event IDs.`);
+          }
+          lifecycleIds.add(eventId);
+          if (
+            !isValidLocalDate(event.effectiveDate) ||
+            !LIFECYCLE_STATES.includes(event.state)
+          ) {
+            throw new Error(`Habit “${name}” contains an invalid lifecycle event.`);
+          }
+          return {
+            id: eventId,
+            state: event.state,
+            effectiveDate: event.effectiveDate,
+            createdAt: safeTimestamp(event.createdAt),
+          };
+        })
+        .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate))
     : [];
 
   return {
@@ -187,7 +222,7 @@ function sanitizeHabit(sourceValue, index, seenHabitIds) {
     description: safeText(source.description, 500),
     category: safeText(source.category, 50, 'Personal'),
     colour: safeColour(source.colour),
-    timeOfDay: safeTimeOfDay(source.timeOfDay),
+    timeOfDay: initialTimeOfDay,
     startDate: source.startDate,
     schedule,
     tracking,
@@ -227,10 +262,15 @@ function sanitizeLog(sourceValue, index, habitIds, seenLogIds, seenHabitDates, e
         if (entryCounter.count > MAX_IMPORTED_ENTRIES) {
           throw new Error('The selected file contains too many quantitative entries.');
         }
-        const entry = requireObject(entryValue, `Entry ${entryIndex + 1} in log ${index + 1}`);
+
+        const entry = requireObject(
+          entryValue,
+          `Entry ${entryIndex + 1} in log ${index + 1}`,
+        );
         const entryId = requireId(entry.id, `Entry ${entryIndex + 1} in log ${index + 1}`);
         if (entryIds.has(entryId)) throw new Error('The backup contains duplicate entry IDs.');
         entryIds.add(entryId);
+
         const value = Number(entry.value);
         if (!Number.isFinite(value) || value <= 0 || value > MAX_NUMBER) {
           throw new Error('The backup contains an invalid quantitative value.');
@@ -324,9 +364,9 @@ export function sanitizeImportedState(payload) {
   };
 }
 
-function sanitizeHabitInput(input, { partial = false } = {}) {
+function sanitizeHabitInput(input, { partial = false, fallbackStartDate = toLocalDate() } = {}) {
   const source = requireObject(input || {}, 'Habit input');
-  const result = { ...source };
+  const result = {};
 
   if (!partial || Object.prototype.hasOwnProperty.call(source, 'name')) {
     result.name = safeText(source.name, 100);
@@ -353,7 +393,7 @@ function sanitizeHabitInput(input, { partial = false } = {}) {
   if (Object.prototype.hasOwnProperty.call(source, 'schedule')) {
     result.schedule = sanitizeSchedule(
       source.schedule,
-      source.startDate || toLocalDate(),
+      source.startDate || fallbackStartDate,
       'Habit',
     );
   }
@@ -380,8 +420,17 @@ habitStore.createRecoveryBackup = (...args) => {
 };
 
 habitStore.createHabit = (input) => originalCreateHabit(sanitizeHabitInput(input));
-habitStore.updateHabit = (habitId, changes, effectiveDate) =>
-  originalUpdateHabit(habitId, sanitizeHabitInput(changes, { partial: true }), effectiveDate);
+habitStore.updateHabit = (habitId, changes, effectiveDate) => {
+  const habit = habitStore.getSnapshot().habits.find((item) => item.id === habitId);
+  return originalUpdateHabit(
+    habitId,
+    sanitizeHabitInput(changes, {
+      partial: true,
+      fallbackStartDate: habit?.startDate || toLocalDate(),
+    }),
+    effectiveDate,
+  );
+};
 
 habitStore.addValue = (habitId, dateKey, value, unit) => {
   const numericValue = Number(value);
@@ -396,7 +445,7 @@ habitStore.importData = (payload, mode = 'replace') => {
   const candidate = sanitizeImportedState(payload);
   if (safeMode === 'replace' && Date.now() - lastSuccessfulBackupAt > 10_000) {
     const backupKey = habitStore.createRecoveryBackup('before-validated-import');
-    if (!backupKey && typeof window !== 'undefined' && window.localStorage) {
+    if (!backupKey) {
       throw new Error('A recovery copy could not be created, so the import was cancelled.');
     }
   }

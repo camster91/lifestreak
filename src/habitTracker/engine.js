@@ -212,18 +212,30 @@ export function isScheduledOnDate(habit, dateKey, logs = [], weekStartsOn = 1) {
     case 'weekdays':
       return schedule.weekdays.includes(date.getDay());
     case 'interval':
-      return daysBetween(schedule.anchorDate, dateKey) >= 0 &&
-        daysBetween(schedule.anchorDate, dateKey) % schedule.intervalDays === 0;
+      return (
+        daysBetween(schedule.anchorDate, dateKey) >= 0 &&
+        daysBetween(schedule.anchorDate, dateKey) % schedule.intervalDays === 0
+      );
     case 'monthly':
       return schedule.monthlyDays.includes(date.getDate());
     case 'timesPerWeek': {
       const weekStart = startOfWeek(dateKey, weekStartsOn);
       const weekEnd = endOfWeek(dateKey, weekStartsOn);
-      const completions = (logs || []).filter((log) => {
-        if (log.habitId !== habit.id || log.date < weekStart || log.date > weekEnd) return false;
-        return dailyResult(habit, log, log.date).status === 'completed';
-      }).length;
-      return completions < schedule.timesPerWeek;
+      const completionDates = Array.from(
+        new Set(
+          (logs || [])
+            .filter((log) => {
+              if (log.habitId !== habit.id || log.date < weekStart || log.date > weekEnd) {
+                return false;
+              }
+              return dailyResult(habit, log, log.date).status === 'completed';
+            })
+            .map((log) => log.date),
+        ),
+      ).sort();
+      const completionIndex = completionDates.indexOf(dateKey);
+      if (completionIndex >= 0) return completionIndex < schedule.timesPerWeek;
+      return completionDates.filter((completedDate) => completedDate < dateKey).length < schedule.timesPerWeek;
     }
     default:
       return false;
@@ -242,9 +254,25 @@ export function getDayState(
   const scheduled = isScheduledOnDate(habit, dateKey, logs, weekStartsOn);
 
   if (dateKey > today) return { ...result, status: 'future', scheduled, lifecycle };
-  if (lifecycle === 'paused') return { ...result, status: result.status === 'unlogged' ? 'paused' : result.status, scheduled: false, lifecycle };
-  if (lifecycle === 'archived') return { ...result, status: result.status === 'unlogged' ? 'archived' : result.status, scheduled: false, lifecycle };
-  if (lifecycle === 'not-started') return { ...result, status: 'not-started', scheduled: false, lifecycle };
+  if (lifecycle === 'paused') {
+    return {
+      ...result,
+      status: result.status === 'unlogged' ? 'paused' : result.status,
+      scheduled: false,
+      lifecycle,
+    };
+  }
+  if (lifecycle === 'archived') {
+    return {
+      ...result,
+      status: result.status === 'unlogged' ? 'archived' : result.status,
+      scheduled: false,
+      lifecycle,
+    };
+  }
+  if (lifecycle === 'not-started') {
+    return { ...result, status: 'not-started', scheduled: false, lifecycle };
+  }
   if (!scheduled) {
     return {
       ...result,
@@ -388,13 +416,20 @@ export function calculateHabitStats(
 }
 
 export function buildWeeklyReview(habits, logs, options = {}) {
-  const active = (habits || []).filter((habit) => lifecycleAt(habit, options.endDate || toLocalDate()) === 'active');
+  const active = (habits || []).filter(
+    (habit) => lifecycleAt(habit, options.endDate || toLocalDate()) === 'active',
+  );
   const rows = active.map((habit) => ({
     habit,
     stats: calculateHabitStats(habit, logs, { ...options, days: 28 }),
   }));
-  const strong = rows.filter(({ stats }) => stats.completionRate != null && stats.completionRate >= 80);
-  const adjust = rows.filter(({ stats }) => stats.expected >= 3 && stats.completionRate != null && stats.completionRate < 60);
+  const strong = rows.filter(
+    ({ stats }) => stats.completionRate != null && stats.completionRate >= 80,
+  );
+  const adjust = rows.filter(
+    ({ stats }) =>
+      stats.expected >= 3 && stats.completionRate != null && stats.completionRate < 60,
+  );
   const insufficient = rows.filter(({ stats }) => stats.expected < 3);
   return { strong, adjust, insufficient };
 }
@@ -461,9 +496,13 @@ export function starterTemplates(today = toLocalDate()) {
 export function describeSchedule(schedule) {
   const normalized = normalizeSchedule(schedule);
   if (normalized.type === 'daily') return 'Every day';
-  if (normalized.type === 'timesPerWeek') return `${normalized.timesPerWeek} times per week`;
+  if (normalized.type === 'timesPerWeek') {
+    return `${normalized.timesPerWeek} times per week`;
+  }
   if (normalized.type === 'interval') return `Every ${normalized.intervalDays} days`;
-  if (normalized.type === 'monthly') return `Monthly on ${normalized.monthlyDays.join(', ') || 'selected days'}`;
+  if (normalized.type === 'monthly') {
+    return `Monthly on ${normalized.monthlyDays.join(', ') || 'selected days'}`;
+  }
   const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   return normalized.weekdays.map((day) => names[day]).join(', ') || 'Selected weekdays';
 }

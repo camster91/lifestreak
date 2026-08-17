@@ -1,72 +1,54 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import BottomNav from './components/BottomNav';
-import ErrorBoundary from './components/ErrorBoundary';
-import { ToastProvider } from './components/Toast';
-import InstallPrompt from './components/InstallPrompt';
-import UpdatePrompt from './components/UpdatePrompt';
-import OfflineIndicator from './components/OfflineIndicator';
-import AchievementPopup from './components/AchievementPopup';
-import SideDrawer from './components/SideDrawer';
-import useNotificationReminders from './hooks/useNotificationReminders';
+import HabitTrackerApp from './habitTracker/HabitTrackerApp';
+import LegacyApp from './LegacyApp';
 
-// Lazy load non-critical pages for better initial load performance
-const Study = lazy(() => import('./pages/Study'));
-const Service = lazy(() => import('./pages/Service'));
-const Reading = lazy(() => import('./pages/Reading'));
-const Goals = lazy(() => import('./pages/Goals'));
-const Stats = lazy(() => import('./pages/Stats'));
-const Settings = lazy(() => import('./pages/Settings'));
-const SharePage = lazy(() => import('./pages/Share'));
-
-// Loading fallback component
-function PageLoader() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <span className="loading loading-spinner loading-lg text-primary"></span>
-    </div>
-  );
+function isLegacyMode() {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('legacy') === '1';
 }
 
-function App() {
-  useNotificationReminders();
-
-  return (
-    <ErrorBoundary>
-      <ToastProvider>
-        <Router>
-          <SideDrawer>
-            <div className="app">
-              {/* PWA Components */}
-              <OfflineIndicator />
-              <UpdatePrompt />
-
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/study" element={<Study />} />
-                  <Route path="/service" element={<Service />} />
-                  <Route path="/reading" element={<Reading />} />
-                  <Route path="/goals" element={<Goals />} />
-                  <Route path="/stats" element={<Stats />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/share" element={<SharePage />} />
-                </Routes>
-              </Suspense>
-              <BottomNav />
-
-              {/* Install Prompt (shown at bottom) */}
-              <InstallPrompt />
-
-              {/* Achievement Popup */}
-              <AchievementPopup />
-            </div>
-          </SideDrawer>
-        </Router>
-      </ToastProvider>
-    </ErrorBoundary>
-  );
+function openLegacyCollections() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('legacy', '1');
+  window.location.assign(url.toString());
 }
 
-export default App;
+function returnToHabits() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('legacy');
+  url.pathname = '/';
+  url.hash = '';
+  window.location.assign(url.toString());
+}
+
+export default function App() {
+  if (isLegacyMode()) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={returnToHabits}
+          style={{
+            position: 'fixed',
+            zIndex: 10000,
+            top: 'max(12px, env(safe-area-inset-top))',
+            right: '12px',
+            minHeight: '44px',
+            padding: '10px 14px',
+            border: '2px solid currentColor',
+            borderRadius: '12px',
+            color: '#172033',
+            background: '#ffffff',
+            fontWeight: 800,
+            boxShadow: '0 10px 30px rgba(0,0,0,.2)',
+            cursor: 'pointer',
+          }}
+        >
+          Back to habits
+        </button>
+        <LegacyApp />
+      </>
+    );
+  }
+
+  return <HabitTrackerApp onOpenCollections={openLegacyCollections} />;
+}

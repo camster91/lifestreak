@@ -38,8 +38,7 @@ function SideDrawer({ children }: SideDrawerProps) {
   const handleNavClick = (path: string) => {
     haptics.light();
     setIsOpen(false);
-    
-    setTimeout(() => navigate(path), 150);
+    navigate(path);
   };
 
   return (
@@ -92,6 +91,7 @@ function SideDrawer({ children }: SideDrawerProps) {
                 return (
                   <button
                     key={item.path}
+                    type="button"
                     onClick={() => handleNavClick(item.path)}
                     className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all active:scale-[0.98] ${
                       isActive

@@ -15,16 +15,16 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.js',
       manifest: {
-        name: 'LifeStreak',
+        name: 'LifeStreak — Habit Tracker',
         short_name: 'LifeStreak',
-        description: 'Track habits, service, reading, and goals — all in one place',
+        description: 'A private, local-first habit and routine tracker.',
         theme_color: '#4A6FA4',
         background_color: '#ffffff',
         display: 'standalone',
-        orientation: 'portrait-primary',
+        orientation: 'any',
         scope: '/',
         start_url: '/',
-        categories: ['lifestyle', 'education', 'productivity'],
+        categories: ['lifestyle', 'health', 'productivity'],
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -46,44 +46,23 @@ export default defineConfig({
         ],
         shortcuts: [
           {
-            name: 'Daily Text',
-            short_name: 'Daily Text',
-            description: 'Read today\'s text',
-            url: '/?focus=dailytext',
+            name: 'Today',
+            short_name: 'Today',
+            description: 'Open today\'s habits',
+            url: '/',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           },
           {
-            name: 'Study',
-            short_name: 'Study',
-            description: 'Log study sessions',
-            url: '/study',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'Service',
-            short_name: 'Service',
-            description: 'Log service hours',
-            url: '/service',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'Reading',
-            short_name: 'Reading',
-            description: 'Track reading progress',
-            url: '/reading',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'Settings',
-            short_name: 'Settings',
-            description: 'Configure app settings',
-            url: '/settings',
+            name: 'Collections',
+            short_name: 'Collections',
+            description: 'Open specialist LifeStreak collections',
+            url: '/?legacy=1',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           }
         ],
-        // Enable share target for receiving shared content
+        // Keep the original specialist share workflow available through Collections.
         share_target: {
-          action: '/share',
+          action: '/share?legacy=1',
           method: 'GET',
           params: {
             title: 'title',
@@ -97,7 +76,7 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'LifeStreak Home Screen'
+            label: 'LifeStreak Today habit view'
           }
         ],
       },

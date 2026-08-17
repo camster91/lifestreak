@@ -90,6 +90,16 @@ habitStore.dismissOnboarding = (...args) => {
   return result;
 };
 
+const originalReopenOnboarding = habitStore.reopenOnboarding?.bind(habitStore);
+if (originalReopenOnboarding) {
+  habitStore.reopenOnboarding = (...args) => {
+    clearInformationalNotice();
+    const result = originalReopenOnboarding(...args);
+    if (result) showInformationalNotice('Starter suggestions are available again.');
+    return result;
+  };
+}
+
 const originalScanLegacyData = habitStore.scanLegacyData.bind(habitStore);
 habitStore.scanLegacyData = (...args) => {
   const result = originalScanLegacyData(...args);

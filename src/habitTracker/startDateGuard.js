@@ -12,6 +12,7 @@ habitStore.updateHabit = (habitId, changes, effectiveDate) => {
     );
   }
 
-  const { startDate: _unchangedStartDate, ...prospectiveChanges } = changes || {};
+  const prospectiveChanges = { ...(changes || {}) };
+  delete prospectiveChanges.startDate;
   return originalUpdateHabit(habitId, prospectiveChanges, effectiveDate);
 };

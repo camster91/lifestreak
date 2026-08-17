@@ -20,7 +20,7 @@ function renderDialog() {
     </div>
   `;
   return {
-    dialog: document.querySelector('.habit-dialog'),
+    form: document.querySelector('.habit-form'),
     input: document.querySelector('input'),
     close: document.querySelector('[aria-label="Close dialog"]'),
     cancel: [...document.querySelectorAll('button')].find(
@@ -61,6 +61,19 @@ describe('habit dialog guards', () => {
     expect(window.confirm).toHaveBeenCalledWith('Discard the unsaved habit changes?');
     expect(event.defaultPrevented).toBe(true);
     expect(clickHandler).not.toHaveBeenCalled();
+  });
+
+  it('keeps the form dirty after a submit event until a successful save closes it', () => {
+    const { form, input, cancel } = renderDialog();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+    cancel.dispatchEvent(event);
+
+    expect(window.confirm).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it('allows a dismiss action after the user confirms', () => {

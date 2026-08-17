@@ -1,9 +1,10 @@
 import './habitTracker/hardening';
 import './habitTracker/startDateGuard';
+import './habitTracker/onboardingGuard';
 import './habitTracker/operationGuard';
 import './habitTracker/dialogGuards';
 import './habitTracker/operationGuard.css';
-import HabitTrackerApp from './habitTracker/HabitTrackerApp';
+import HabitTrackerRoot from './habitTracker/HabitTrackerRoot';
 import LegacyApp from './LegacyApp';
 
 function isLegacyMode() {
@@ -55,5 +56,5 @@ export default function App() {
     );
   }
 
-  return <HabitTrackerApp onOpenCollections={openLegacyCollections} />;
+  return <HabitTrackerRoot onOpenCollections={openLegacyCollections} />;
 }

@@ -3,6 +3,7 @@ import { habitStore } from './store';
 const originalGetSnapshot = habitStore.getSnapshot.bind(habitStore);
 const originalDismissOperation = habitStore.dismissOperation.bind(habitStore);
 let informationalNotice = null;
+let suppressInformationalNotices = 0;
 let cachedBase = null;
 let cachedNotice = null;
 let cachedSnapshot = null;
@@ -15,6 +16,7 @@ function clearInformationalNotice() {
 }
 
 function showInformationalNotice(message) {
+  if (suppressInformationalNotices > 0) return;
   informationalNotice = {
     type: 'info',
     message,
@@ -64,9 +66,13 @@ undoableMethods.forEach((methodName) => {
   if (!original) return;
   habitStore[methodName] = (...args) => {
     clearInformationalNotice();
-    const result = original(...args);
-    clearInformationalNotice();
-    return result;
+    suppressInformationalNotices += 1;
+    try {
+      return original(...args);
+    } finally {
+      suppressInformationalNotices -= 1;
+      clearInformationalNotice();
+    }
   };
 });
 

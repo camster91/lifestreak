@@ -1,0 +1,68 @@
+name: Habit-first bootstrap
+
+on:
+  push:
+    branches:
+      - codex/lifestreak-habit-first
+
+permissions:
+  contents: write
+
+concurrency:
+  group: habit-first-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  integrate-and-verify:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[habit-bootstrap]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: codex/lifestreak-habit-first
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Apply idempotent habit-first integration
+        run: node scripts/apply-habit-first-20260817.mjs
+
+      - name: Commit integrated application
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "Integration already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "feat: implement habit-first LifeStreak [habit-bootstrap]"
+          git push origin HEAD:codex/lifestreak-habit-first
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: |
+          if npm pkg get scripts.lint | grep -vq '^{}$\|^null$'; then
+            npm run lint
+          else
+            echo "No lint script configured."
+          fi
+
+      - name: Test
+        run: |
+          if npm pkg get scripts.test | grep -vq '^{}$\|^null$'; then
+            npm test -- --run
+          else
+            echo "No test script configured."
+          fi
+
+      - name: Build
+        run: npm run build

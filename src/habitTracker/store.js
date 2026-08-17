@@ -54,15 +54,40 @@ function defaultState() {
   };
 }
 
+function localStorageAccess() {
+  if (typeof window === 'undefined') return { storage: null, error: null };
+  try {
+    return { storage: window.localStorage || null, error: null };
+  } catch (error) {
+    return { storage: null, error };
+  }
+}
+
 function storageAvailable() {
-  return typeof window !== 'undefined' && Boolean(window.localStorage);
+  return Boolean(localStorageAccess().storage);
+}
+
+function storageMessage(error) {
+  return error instanceof Error ? error.message : 'Local storage is unavailable.';
 }
 
 function loadState() {
   const fallback = defaultState();
-  if (!storageAvailable()) return fallback;
+  const { storage, error: accessError } = localStorageAccess();
+  if (accessError) {
+    return {
+      ...fallback,
+      operation: {
+        type: 'error',
+        message: `Habit storage is unavailable: ${storageMessage(accessError)}`,
+        at: new Date().toISOString(),
+      },
+    };
+  }
+  if (!storage) return fallback;
+
   try {
-    const raw = window.localStorage.getItem(HABIT_STORAGE_KEY);
+    const raw = storage.getItem(HABIT_STORAGE_KEY);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw);
     if (!parsed || parsed.version !== HABIT_SCHEMA_VERSION) {
@@ -75,22 +100,44 @@ function loadState() {
         },
       };
     }
+
+    const preferences =
+      parsed.preferences && typeof parsed.preferences === 'object' ? parsed.preferences : {};
+    const onboarding =
+      parsed.onboarding && typeof parsed.onboarding === 'object' ? parsed.onboarding : {};
+    const legacy = parsed.legacy && typeof parsed.legacy === 'object' ? parsed.legacy : {};
+
     return {
-      ...fallback,
-      ...parsed,
+      version: HABIT_SCHEMA_VERSION,
       habits: Array.isArray(parsed.habits) ? parsed.habits : [],
       logs: Array.isArray(parsed.logs) ? parsed.logs : [],
-      preferences: { ...fallback.preferences, ...(parsed.preferences || {}) },
-      onboarding: { ...fallback.onboarding, ...(parsed.onboarding || {}) },
-      legacy: { ...fallback.legacy, ...(parsed.legacy || {}) },
+      preferences: {
+        weekStartsOn: [0, 1, 6].includes(Number(preferences.weekStartsOn))
+          ? Number(preferences.weekStartsOn)
+          : fallback.preferences.weekStartsOn,
+        completedPlacement: preferences.completedPlacement === 'keep' ? 'keep' : 'bottom',
+        showHabitNamesInNotifications: Boolean(preferences.showHabitNamesInNotifications),
+      },
+      onboarding: {
+        completed: Boolean(onboarding.completed),
+        dismissedAt: typeof onboarding.dismissedAt === 'string' ? onboarding.dismissedAt : null,
+      },
+      legacy: {
+        detectedKeys: Array.isArray(legacy.detectedKeys)
+          ? legacy.detectedKeys.filter((key) => typeof key === 'string').slice(0, 500)
+          : [],
+        scannedAt: typeof legacy.scannedAt === 'string' ? legacy.scannedAt : null,
+        quarantinedRecords: [],
+      },
       operation: null,
+      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : new Date().toISOString(),
     };
   } catch (error) {
     return {
       ...fallback,
       operation: {
         type: 'error',
-        message: `Habit data could not be read: ${error instanceof Error ? error.message : 'unknown error'}`,
+        message: `Habit data could not be read: ${storageMessage(error)}`,
         at: new Date().toISOString(),
       },
     };
@@ -104,8 +151,9 @@ function serializable(value) {
 }
 
 function persist(nextState) {
-  if (!storageAvailable()) return;
-  window.localStorage.setItem(HABIT_STORAGE_KEY, JSON.stringify(serializable(nextState)));
+  const { storage, error } = localStorageAccess();
+  if (!storage) throw new Error(storageMessage(error));
+  storage.setItem(HABIT_STORAGE_KEY, JSON.stringify(serializable(nextState)));
 }
 
 function emit() {
@@ -140,7 +188,7 @@ function transact(mutator, successMessage, { undoable = true } = {}) {
       ...previous,
       operation: {
         type: 'error',
-        message: `Nothing was saved. ${error instanceof Error ? error.message : 'Unknown storage error.'}`,
+        message: `Nothing was saved. ${storageMessage(error)}`,
         at: new Date().toISOString(),
       },
     };
@@ -277,10 +325,7 @@ export const habitStore = {
       emit();
       return true;
     } catch (error) {
-      setOperation(
-        'error',
-        `Undo failed: ${error instanceof Error ? error.message : 'unknown storage error'}`,
-      );
+      setOperation('error', `Undo failed: ${storageMessage(error)}`);
       return false;
     }
   },
@@ -315,6 +360,7 @@ export const habitStore = {
     if (!['active', 'paused', 'archived'].includes(lifecycleState)) return false;
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
+      habit.lifecycleState = lifecycleState;
       habit.lifecycleHistory = (habit.lifecycleHistory || []).filter(
         (event) => event.effectiveDate !== effectiveDate,
       );
@@ -466,31 +512,45 @@ export const habitStore = {
   },
 
   scanLegacyData() {
-    if (!storageAvailable()) return [];
-    const detectedKeys = [];
-    for (let index = 0; index < window.localStorage.length; index += 1) {
-      const key = window.localStorage.key(index);
-      if (!key || key === HABIT_STORAGE_KEY || key.startsWith(HABIT_BACKUP_PREFIX)) continue;
-      if (/life|streak|progress|service|reading|goal|memory|gamif|prayer|bible/i.test(key)) {
-        detectedKeys.push(key);
-      }
+    const { storage, error } = localStorageAccess();
+    if (!storage) {
+      setOperation('error', `Legacy data could not be scanned: ${storageMessage(error)}`);
+      return [];
     }
-    transact((draft) => {
+
+    const detectedKeys = [];
+    try {
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (!key || key === HABIT_STORAGE_KEY || key.startsWith(HABIT_BACKUP_PREFIX)) continue;
+        if (/life|streak|progress|service|reading|goal|memory|gamif|prayer|bible/i.test(key)) {
+          detectedKeys.push(key);
+        }
+      }
+    } catch (scanError) {
+      setOperation('error', `Legacy data could not be scanned: ${storageMessage(scanError)}`);
+      return [];
+    }
+
+    const saved = transact((draft) => {
       draft.legacy.detectedKeys = detectedKeys.sort();
       draft.legacy.scannedAt = new Date().toISOString();
-    }, detectedKeys.length ? `${detectedKeys.length} legacy data stores were preserved.` : 'No legacy stores were detected.', { undoable: false });
-    return detectedKeys;
+    }, detectedKeys.length
+      ? `${detectedKeys.length} legacy data stores were preserved.`
+      : 'No legacy stores were detected.', { undoable: false });
+    return saved ? detectedKeys : [];
   },
 
   exportLegacyData() {
     const records = {};
-    if (!storageAvailable()) return records;
+    const { storage } = localStorageAccess();
+    if (!storage) return records;
     const keys = state.legacy.detectedKeys || [];
     keys.forEach((key) => {
       try {
-        records[key] = window.localStorage.getItem(key);
+        records[key] = storage.getItem(key);
       } catch (error) {
-        records[key] = { error: error instanceof Error ? error.message : 'Could not read record' };
+        records[key] = { error: storageMessage(error) };
       }
     });
     return {
@@ -536,20 +596,21 @@ export const habitStore = {
   },
 
   createRecoveryBackup(reason = 'manual') {
-    if (!storageAvailable()) return null;
+    const { storage, error: accessError } = localStorageAccess();
+    if (!storage) {
+      setOperation('error', `Recovery copy failed: ${storageMessage(accessError)}`);
+      return null;
+    }
     const key = `${HABIT_BACKUP_PREFIX}${new Date().toISOString().replace(/[:.]/g, '-')}`;
     try {
-      window.localStorage.setItem(
+      storage.setItem(
         key,
         JSON.stringify({ reason, createdAt: new Date().toISOString(), data: serializable(state) }),
       );
       setOperation('success', 'A local recovery copy was created.');
       return key;
     } catch (error) {
-      setOperation(
-        'error',
-        `Recovery copy failed: ${error instanceof Error ? error.message : 'unknown error'}`,
-      );
+      setOperation('error', `Recovery copy failed: ${storageMessage(error)}`);
       return null;
     }
   },
@@ -572,7 +633,7 @@ export const habitStore = {
       emit();
       return true;
     } catch (error) {
-      setOperation('error', 'Reset failed. Existing data was left unchanged.');
+      setOperation('error', `Reset failed. Existing data was left unchanged. ${storageMessage(error)}`);
       return false;
     }
   },

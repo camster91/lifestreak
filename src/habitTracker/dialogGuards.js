@@ -18,11 +18,6 @@ function markDirty(event) {
   if (form) form.dataset.habitDirty = 'true';
 }
 
-function clearDirty(event) {
-  const form = event.target?.closest?.('.habit-form');
-  if (form) form.dataset.habitDirty = 'false';
-}
-
 function hasUnsavedChanges(dialog) {
   return dialog?.querySelector('.habit-form[data-habit-dirty="true"]') != null;
 }
@@ -73,7 +68,6 @@ function trapTab(event, dialog) {
 if (typeof document !== 'undefined') {
   document.addEventListener('input', markDirty, true);
   document.addEventListener('change', markDirty, true);
-  document.addEventListener('submit', clearDirty, true);
 
   document.addEventListener(
     'click',

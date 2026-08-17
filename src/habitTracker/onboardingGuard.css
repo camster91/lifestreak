@@ -1,0 +1,20 @@
+.habit-onboarding-dismissed .habit-starter-panel {
+  display: none;
+}
+
+.habit-dismissed-onboarding {
+  max-width: 760px;
+  margin: 24px auto;
+  padding: clamp(24px, 5vw, 48px);
+  border: 1px solid var(--habit-border);
+  border-radius: 24px;
+  background: var(--habit-surface);
+  box-shadow: var(--habit-shadow-soft);
+  text-align: center;
+}
+
+.habit-dismissed-onboarding p:not(.habit-eyebrow) {
+  max-width: 56ch;
+  margin: 0 auto 20px;
+  color: var(--habit-text-muted);
+}

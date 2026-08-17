@@ -35,13 +35,29 @@ The JW Companion origin was started and verified locally on port 8001. The
 Cloudflare tunnel briefly obtained a connector and the successor guard passed,
 but the public tunnel then became unstable and returned intermittent 502/530
 responses. A temporary Traefik redirect was tested, failed end-to-end against
-that unstable successor, and was immediately rolled back. LifeStreak is
-currently still serving HTTP 200 from `lifestreak-9232208`; the rollback route
-backup is `/opt/traefik/dynamic/lifestreak.yml.20260814-154609-pre-redirect`.
+that unstable successor, and was immediately rolled back. LifeStreak remains
+the active legacy deployment until the successor is externally reachable and
+its own release verification passes.
 
 Do not retry the redirect until the tunnel remains connected and
 `./scripts/check-successor.ps1` passes repeatedly, followed by a successful
 redirect-following smoke check.
+
+### 2026-08-17 LifeStreak release
+
+Commit `4dfc8ae194b7355607ae48d056b01195d73b9213` is deployed and serving
+`https://lifestreak.ashbi.ca`. The active container is
+`lifestreak-4dfc8ae194b7355607ae48d056b01195d73b9213`, using image
+`lifestreak:4dfc8ae194b7355607ae48d056b01195d73b9213` with digest
+`sha256:68a9e01a3bfc927d209dc37f9da30fc82a8491352d3e943f4bf2bcd929116efb`.
+Traefik routes to `127.0.0.1:18095`; the route backup is
+`/opt/traefik/dynamic/lifestreak.yml.20260817-1241-4dfc8ae.bak`.
+
+The candidate reported Docker health `healthy` with restart policy
+`unless-stopped`. Production smoke passed, and delegated live browser QA
+confirmed that Home → More → Settings reaches `/settings` with no console
+errors. The manifest returned HTTP 200 with
+`Content-Type: application/manifest+json`.
 
 ## Release procedure
 

@@ -43,21 +43,22 @@ Do not retry the redirect until the tunnel remains connected and
 `./scripts/check-successor.ps1` passes repeatedly, followed by a successful
 redirect-following smoke check.
 
-### 2026-08-17 LifeStreak release
+### 2026-08-17 LifeStreak releases
 
-Commit `4dfc8ae194b7355607ae48d056b01195d73b9213` is deployed and serving
+Commit `78f38a50cda8df8c60a5c3b59acdd401ce27d172` is deployed and serving
 `https://lifestreak.ashbi.ca`. The active container is
-`lifestreak-4dfc8ae194b7355607ae48d056b01195d73b9213`, using image
-`lifestreak:4dfc8ae194b7355607ae48d056b01195d73b9213` with digest
-`sha256:68a9e01a3bfc927d209dc37f9da30fc82a8491352d3e943f4bf2bcd929116efb`.
-Traefik routes to `127.0.0.1:18095`; the route backup is
-`/opt/traefik/dynamic/lifestreak.yml.20260817-1241-4dfc8ae.bak`.
+`lifestreak-78f38a50cda8df8c60a5c3b59acdd401ce27d172`, using image
+`lifestreak:78f38a50cda8df8c60a5c3b59acdd401ce27d172`.
+Traefik routes to `127.0.0.1:18096`; the route backup is
+`/opt/traefik/dynamic/lifestreak.yml.20260817-1930-78f38a5.bak`.
 
 The candidate reported Docker health `healthy` with restart policy
 `unless-stopped`. Production smoke passed, and delegated live browser QA
 confirmed that Home → More → Settings reaches `/settings` with no console
 errors. The manifest returned HTTP 200 with
 `Content-Type: application/manifest+json`.
+Repository metadata paths `/.git/` and `/.git/config` return HTTP 404 rather
+than the SPA fallback.
 
 ## Release procedure
 

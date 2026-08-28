@@ -13,6 +13,26 @@ import {
 export const HABIT_STORAGE_KEY = 'lifestreak-habit-tracker-v1';
 export const HABIT_BACKUP_PREFIX = 'lifestreak-habit-backup-';
 
+export const HISTORICAL_STORAGE_KEYS = {
+  'jw-progress-storage': 'ls-progress-storage',
+  'jw-progress-settings': 'ls-progress-settings',
+  'jw-gamification-storage': 'ls-gamification-storage',
+  'jw-goals-storage': 'ls-goals-storage',
+  'jw-memories-storage': 'ls-memories-storage',
+};
+
+export const CURRENT_SPECIALIST_STORAGE_KEYS = [
+  'ls-progress-storage',
+  'ls-progress-settings',
+  'ls-gamification-storage',
+  'ls-goals-storage',
+  'ls-memories-storage',
+  'ls-service-storage',
+  'ls-reading-storage',
+];
+
+const AUXILIARY_STORAGE_KEYS = ['ls-error-logs', 'dailyReminderTime', 'installPromptDismissed'];
+
 const listeners = new Set();
 let undoSnapshot = null;
 let state = loadState();
@@ -69,6 +89,84 @@ function storageAvailable() {
 
 function storageMessage(error) {
   return error instanceof Error ? error.message : 'Local storage is unavailable.';
+}
+
+export function classifyLegacyRecord(key, rawValue, availableKeys = []) {
+  const successor = HISTORICAL_STORAGE_KEYS[key] || null;
+  const isSpecialist = CURRENT_SPECIALIST_STORAGE_KEYS.includes(key) || Boolean(successor);
+
+  if (typeof rawValue !== 'string' || !rawValue.length) {
+    return { key, successor, status: 'quarantined', reason: 'The stored value is empty.' };
+  }
+  if (rawValue === '[object Object]') {
+    return {
+      key,
+      successor,
+      status: 'quarantined',
+      reason: 'The value was damaged by an unsafe object-to-string storage write.',
+    };
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(rawValue);
+  } catch {
+    if (key === 'installPromptDismissed' && !Number.isNaN(Date.parse(rawValue))) {
+      return { key, successor, status: 'operational', reason: 'Valid install preference.' };
+    }
+    return { key, successor, status: 'quarantined', reason: 'The value is not valid JSON.' };
+  }
+
+  if (isSpecialist) {
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {
+        key,
+        successor,
+        status: 'quarantined',
+        reason: 'The specialist store is not a JSON object.',
+      };
+    }
+    if (!parsed.state || typeof parsed.state !== 'object' || Array.isArray(parsed.state)) {
+      return {
+        key,
+        successor,
+        status: 'quarantined',
+        reason: 'The Zustand state envelope is missing or malformed.',
+      };
+    }
+    if (successor && availableKeys.includes(successor)) {
+      return {
+        key,
+        successor,
+        status: 'conflict',
+        reason: `Historical and successor stores both exist; neither was changed.`,
+      };
+    }
+    return successor
+      ? {
+          key,
+          successor,
+          status: 'migration-candidate',
+          reason: 'A valid historical store can be offered for non-destructive migration.',
+        }
+      : {
+          key,
+          successor,
+          status: 'preserved',
+          reason: 'A valid specialist Collection store was preserved.',
+        };
+  }
+
+  if (AUXILIARY_STORAGE_KEYS.includes(key)) {
+    return { key, successor, status: 'operational', reason: 'Operational data is not migrated.' };
+  }
+
+  return {
+    key,
+    successor,
+    status: 'quarantined',
+    reason: 'The key resembles LifeStreak data but has no verified schema.',
+  };
 }
 
 function loadState() {
@@ -529,12 +627,24 @@ export const habitStore = {
     }
 
     const detectedKeys = [];
+    const records = [];
     try {
+      const availableKeys = [];
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (key) availableKeys.push(key);
+      }
       for (let index = 0; index < storage.length; index += 1) {
         const key = storage.key(index);
         if (!key || key === HABIT_STORAGE_KEY || key.startsWith(HABIT_BACKUP_PREFIX)) continue;
-        if (/life|streak|progress|service|reading|goal|memory|gamif|prayer|bible/i.test(key)) {
+        if (
+          CURRENT_SPECIALIST_STORAGE_KEYS.includes(key) ||
+          Object.hasOwn(HISTORICAL_STORAGE_KEYS, key) ||
+          AUXILIARY_STORAGE_KEYS.includes(key) ||
+          /life|streak|progress|service|reading|goal|memory|gamif|prayer|bible/i.test(key)
+        ) {
           detectedKeys.push(key);
+          records.push(classifyLegacyRecord(key, storage.getItem(key), availableKeys));
         }
       }
     } catch (scanError) {
@@ -546,13 +656,16 @@ export const habitStore = {
       (draft) => {
         draft.legacy.detectedKeys = detectedKeys.sort();
         draft.legacy.scannedAt = new Date().toISOString();
+        draft.legacy.quarantinedRecords = records
+          .filter(({ status }) => status === 'quarantined' || status === 'conflict')
+          .map(({ key, status, reason, successor }) => ({ key, status, reason, successor }));
       },
       detectedKeys.length
         ? `${detectedKeys.length} legacy data stores were preserved.`
         : 'No legacy stores were detected.',
       { undoable: false }
     );
-    return saved ? detectedKeys : [];
+    return saved ? records.sort((a, b) => a.key.localeCompare(b.key)) : [];
   },
 
   exportLegacyData() {

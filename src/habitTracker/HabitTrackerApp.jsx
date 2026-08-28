@@ -1080,10 +1080,19 @@ function SettingsView({ snapshot }) {
             </button>
           </div>
           {snapshot.legacy.detectedKeys.length > 0 && (
-            <p>
-              {snapshot.legacy.detectedKeys.length} stores detected. Open Collections from the
-              header to use the original specialist interface.
-            </p>
+            <div>
+              <p>
+                {snapshot.legacy.detectedKeys.length} stores detected. Open Collections from the
+                header to use the original specialist interface.
+              </p>
+              {snapshot.legacy.quarantinedRecords.length > 0 && (
+                <div className="habit-form-error" role="status">
+                  {snapshot.legacy.quarantinedRecords.length} stored value
+                  {snapshot.legacy.quarantinedRecords.length === 1 ? '' : 's'} need review and were
+                  not changed. Export preserved stores before attempting migration.
+                </div>
+              )}
+            </div>
           )}
         </section>
 

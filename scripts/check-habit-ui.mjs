@@ -209,6 +209,110 @@ async function main() {
       await context.close();
     }
 
+    const zoomContext = await browser.newContext({
+      viewport: { width: 640, height: 450 },
+      screen: { width: 1280, height: 900 },
+      deviceScaleFactor: 2,
+      forcedColors: 'active',
+      reducedMotion: 'reduce',
+      serviceWorkers: 'block',
+    });
+    await zoomContext.addInitScript(() => {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+        now.getDate()
+      ).padStart(2, '0')}`;
+      const timestamp = now.toISOString();
+      const longName =
+        'A deliberately long translated habit name that must wrap without hiding its actions or status';
+      localStorage.setItem(
+        'lifestreak-habit-tracker-v1',
+        JSON.stringify({
+          version: 1,
+          habits: [
+            {
+              id: 'habit-long-label',
+              name: longName,
+              description:
+                'Long supporting copy verifies that populated cards reflow safely in high contrast and constrained zoom-equivalent layouts.',
+              category: 'Learning and personal development',
+              icon: '✓',
+              colour: '#4f46e5',
+              timeOfDay: 'morning',
+              startDate: today,
+              schedule: { type: 'daily', anchorDate: today },
+              tracking: { type: 'binary', target: 1, unit: 'completion', anyAmountCounts: true },
+              reminderTime: null,
+              lifecycleState: 'active',
+              lifecycleHistory: [],
+              revisions: [],
+              sourceTemplateId: null,
+              order: 0,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+            {
+              id: 'habit-measured-label',
+              name: 'Measured progress with a long custom unit label',
+              description: '',
+              category: 'Health',
+              icon: '↗',
+              colour: '#0f766e',
+              timeOfDay: 'anytime',
+              startDate: today,
+              schedule: { type: 'daily', anchorDate: today },
+              tracking: {
+                type: 'custom',
+                target: 12.5,
+                stretchTarget: 20,
+                unit: 'mindful repetitions',
+                anyAmountCounts: false,
+              },
+              reminderTime: null,
+              lifecycleState: 'active',
+              lifecycleHistory: [],
+              revisions: [],
+              sourceTemplateId: null,
+              order: 1,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+          ],
+          logs: [],
+          preferences: {
+            weekStartsOn: 1,
+            completedPlacement: 'bottom',
+            showHabitNamesInNotifications: false,
+            timeGroupOrder: ['morning', 'afternoon', 'evening', 'anytime'],
+            weeklyReviewDismissals: {},
+          },
+          onboarding: { completed: true, dismissedAt: null },
+          legacy: {
+            detectedKeys: [],
+            scannedAt: null,
+            quarantinedRecords: [],
+            migrationRecords: [],
+          },
+          operation: null,
+          updatedAt: timestamp,
+        })
+      );
+    });
+    const zoomPage = await zoomContext.newPage();
+    await zoomPage.goto(origin, { waitUntil: 'networkidle' });
+    await inspectPage(zoomPage, 'zoom-200-forced-colours', 'populated-today');
+    await zoomPage.getByRole('button', { name: 'More' }).first().click();
+    await inspectPage(zoomPage, 'zoom-200-forced-colours', 'expanded-long-actions');
+    for (const destination of ['Habits', 'Insights', 'Settings']) {
+      await zoomPage.getByRole('button', { name: destination, exact: true }).click();
+      await inspectPage(
+        zoomPage,
+        'zoom-200-forced-colours',
+        `populated-${destination.toLowerCase()}`
+      );
+    }
+    await zoomContext.close();
+
     const privacyContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       serviceWorkers: 'block',
@@ -677,7 +781,9 @@ async function main() {
     assert(afterOffline === beforeOffline, 'Offline restart changed the persisted habit database.');
     await offlineContext.close();
 
-    console.log(`LifeStreak UI contract verified across ${viewports.length} responsive viewports.`);
+    console.log(
+      `LifeStreak UI contract verified across ${viewports.length} responsive viewports plus populated 200%-equivalent forced-colour coverage.`
+    );
   } finally {
     await browser?.close();
     server?.kill('SIGTERM');

@@ -345,6 +345,139 @@ async function main() {
     }
     await zoomContext.close();
 
+    const dailyWorkflowContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    await dailyWorkflowContext.addInitScript(() => {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+        now.getDate()
+      ).padStart(2, '0')}`;
+      const timestamp = now.toISOString();
+      const habit = (id, name, tracking, order) => ({
+        id,
+        name,
+        description: '',
+        category: 'Browser fixtures',
+        icon: '✓',
+        colour: '#4f46e5',
+        timeOfDay: 'anytime',
+        startDate: today,
+        schedule: { type: 'daily', anchorDate: today },
+        tracking,
+        reminderTime: null,
+        lifecycleState: 'active',
+        lifecycleHistory: [],
+        revisions: [],
+        sourceTemplateId: null,
+        order,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+      localStorage.setItem(
+        'lifestreak-habit-tracker-v1',
+        JSON.stringify({
+          version: 1,
+          habits: [
+            habit(
+              'habit-browser-binary',
+              'Binary browser workflow',
+              { type: 'binary', target: 1, unit: 'completion', anyAmountCounts: true },
+              0
+            ),
+            habit(
+              'habit-browser-count',
+              'Quantitative browser workflow',
+              { type: 'count', target: 10, stretchTarget: null, unit: 'reps', anyAmountCounts: false },
+              1
+            ),
+          ],
+          logs: [],
+          preferences: {
+            weekStartsOn: 1,
+            completedPlacement: 'bottom',
+            showHabitNamesInNotifications: false,
+            timeGroupOrder: ['morning', 'afternoon', 'evening', 'anytime'],
+            weeklyReviewDismissals: {},
+          },
+          onboarding: { completed: true, dismissedAt: null },
+          legacy: {
+            detectedKeys: [],
+            scannedAt: null,
+            quarantinedRecords: [],
+            migrationRecords: [],
+          },
+          operation: null,
+          updatedAt: timestamp,
+        })
+      );
+    });
+    const dailyWorkflowPage = await dailyWorkflowContext.newPage();
+    await dailyWorkflowPage.goto(origin, { waitUntil: 'networkidle' });
+    const binaryCard = dailyWorkflowPage
+      .locator('article.habit-today-card')
+      .filter({ hasText: 'Binary browser workflow' });
+    await binaryCard.getByRole('button', { name: 'Complete', exact: true }).click();
+    await binaryCard.getByText('Completed', { exact: true }).waitFor();
+    await dailyWorkflowPage.getByRole('button', { name: 'Undo' }).click();
+    await binaryCard.getByText('Due', { exact: true }).waitFor();
+    await binaryCard.getByRole('button', { name: 'More' }).click();
+    await binaryCard.getByRole('button', { name: 'Skip intentionally' }).click();
+    await binaryCard.getByText('Intentionally skipped', { exact: true }).waitFor();
+
+    const quantitativeCard = dailyWorkflowPage
+      .locator('article.habit-today-card')
+      .filter({ hasText: 'Quantitative browser workflow' });
+    const valueInput = quantitativeCard.getByRole('spinbutton', {
+      name: 'Add reps for Quantitative browser workflow',
+    });
+    await valueInput.fill('4.5');
+    await quantitativeCard.getByRole('button', { name: 'Add', exact: true }).click();
+    await quantitativeCard.getByText('Partially completed', { exact: true }).waitFor();
+    await valueInput.fill('6');
+    await quantitativeCard.getByRole('button', { name: 'Add', exact: true }).click();
+    await quantitativeCard.getByText('Completed', { exact: true }).waitFor();
+    assert(
+      (await quantitativeCard.locator('.habit-value-summary strong').textContent())?.trim() ===
+        '10.5 reps',
+      'Today did not aggregate quantitative source entries deterministically.'
+    );
+    await inspectPage(dailyWorkflowPage, 'phone', 'mixed-daily-results');
+
+    await dailyWorkflowPage.getByRole('button', { name: 'Habits', exact: true }).click();
+    const managedQuantitative = dailyWorkflowPage
+      .locator('article.habit-management-card')
+      .filter({ hasText: 'Quantitative browser workflow' });
+    await managedQuantitative.getByRole('button', { name: 'History' }).click();
+    const historyDialog = dailyWorkflowPage.getByRole('dialog', {
+      name: 'Quantitative browser workflow',
+    });
+    const entries = historyDialog.locator('.habit-entry-list li');
+    await entries.first().getByRole('button', { name: 'Correct' }).click();
+    await entries.first().getByRole('spinbutton', { name: 'Correct value in reps' }).fill('5');
+    await entries.first().getByRole('button', { name: 'Save correction' }).click();
+    dailyWorkflowPage.once('dialog', (browserDialog) => browserDialog.accept());
+    await entries.nth(1).getByRole('button', { name: 'Remove' }).click();
+    await entries.nth(1).waitFor({ state: 'detached' });
+    await historyDialog.getByRole('button', { name: 'Close dialog' }).click();
+
+    await dailyWorkflowPage.getByRole('button', { name: 'Today', exact: true }).click();
+    await quantitativeCard.getByText('Partially completed', { exact: true }).waitFor();
+    assert(
+      (await quantitativeCard.locator('.habit-value-summary strong').textContent())?.trim() ===
+        '5 reps',
+      'Today did not reflect corrected and removed source entries.'
+    );
+    await dailyWorkflowPage.getByRole('button', { name: 'Insights', exact: true }).click();
+    await dailyWorkflowPage.getByRole('combobox', { name: 'Habit' }).selectOption(
+      'habit-browser-count'
+    );
+    const loggedMetric = dailyWorkflowPage.locator('article').filter({ hasText: 'Logged reps' });
+    await loggedMetric.getByText('5', { exact: true }).waitFor();
+    await inspectPage(dailyWorkflowPage, 'phone', 'corrected-quantitative-insights');
+    await dailyWorkflowContext.close();
+
     const privacyContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       serviceWorkers: 'block',

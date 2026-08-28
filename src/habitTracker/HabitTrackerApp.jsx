@@ -1015,6 +1015,7 @@ function InsightsView({ snapshot, onEdit }) {
             <div
               className="habit-calendar"
               role="list"
+              tabIndex="0"
               aria-label={`Recent history for ${selected.name}`}
             >
               {eachDate(addDays(today, -(Math.min(rangeDays, 28) - 1)), today).map((dateKey) => {

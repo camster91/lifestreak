@@ -1,6 +1,7 @@
 import { Component } from 'react';
-import { AlertTriangle, RefreshCw, Home, Trash2 } from 'lucide-react';
+import { AlertTriangle, Download, RefreshCw, Home, Trash2 } from 'lucide-react';
 import { recordDiagnostic } from '../utils/diagnostics';
+import { createPortableBackup } from '../utils/portableBackup';
 
 /**
  * Error Boundary component to catch JavaScript errors in child components.
@@ -13,6 +14,7 @@ class ErrorBoundary extends Component {
       hasError: false,
       error: null,
       errorInfo: null,
+      recoveryMessage: '',
     };
   }
 
@@ -68,6 +70,27 @@ class ErrorBoundary extends Component {
     }
   };
 
+  handleDownloadRecovery = () => {
+    try {
+      const backup = createPortableBackup();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `lifestreak-recovery-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      this.setState({ recoveryMessage: 'Recovery backup downloaded.' });
+    } catch (error) {
+      this.setState({
+        recoveryMessage:
+          error instanceof Error
+            ? `Backup could not be created: ${error.message}`
+            : 'Backup could not be created.',
+      });
+    }
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -111,6 +134,11 @@ class ErrorBoundary extends Component {
                   Reload Page
                 </button>
 
+                <button onClick={this.handleDownloadRecovery} className="btn btn-outline gap-2">
+                  <Download className="w-4 h-4" />
+                  Download recovery backup
+                </button>
+
                 <button onClick={this.handleGoHome} className="btn btn-outline gap-2">
                   <Home className="w-4 h-4" />
                   Go to Home
@@ -132,9 +160,16 @@ class ErrorBoundary extends Component {
                 </button>
               </div>
 
+              {this.state.recoveryMessage && (
+                <p role="status" className="text-sm text-base-content/70 mt-3">
+                  {this.state.recoveryMessage}
+                </p>
+              )}
+
               {/* Support Message */}
               <p className="text-xs text-base-content/50 mt-4">
-                If this problem persists, try clearing your browser cache or reinstalling the app.
+                Download a recovery backup before clearing data. If this persists, try clearing the
+                app cache or reinstalling.
               </p>
             </div>
           </div>

@@ -1,5 +1,10 @@
 import HabitTrackerApp from './HabitTrackerApp';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function HabitTrackerRoot(props) {
-  return <HabitTrackerApp {...props} />;
+  return (
+    <ErrorBoundary>
+      <HabitTrackerApp {...props} />
+    </ErrorBoundary>
+  );
 }

@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
-  attestations: write
 
 jobs:
   signed-release:
@@ -17,12 +15,16 @@ jobs:
     runs-on: macos-15
     environment: production
     timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -39,6 +41,8 @@ jobs:
           npm test -- --run
           npm run identity:check
           npm run permissions:check
+          npm run supply-chain:check
+          npm audit --audit-level=high
           npm run build
           npx cap sync ios
           git diff --exit-code -- ios
@@ -123,12 +127,12 @@ jobs:
             > ios-release-metadata.json
 
       - name: Attest signed IPA provenance
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: LifeStreak.ipa
 
       - name: Upload signed IPA and evidence
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: lifestreak-${{ github.sha }}-signed-ipa
           path: |

@@ -7,13 +7,15 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   smoke:
     name: Smoke lifestreak.ashbi.ca
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Check HTTPS document and security headers
         shell: bash

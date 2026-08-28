@@ -19,6 +19,7 @@
     "identity:check": "node scripts/check-identity.mjs",
     "permissions:check": "node scripts/check-permissions.mjs",
     "signing:check": "node scripts/check-android-signing.mjs",
+    "supply-chain:check": "node scripts/check-supply-chain.mjs",
     "toolchain:check": "node scripts/check-toolchain.mjs",
     "preview": "vite preview",
     "lint": "eslint .",

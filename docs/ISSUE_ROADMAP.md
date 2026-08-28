@@ -32,7 +32,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 5. **#96 — unified versioned habit/log model**
    Audit the recovered implementation against every acceptance criterion, especially atomic persistence, version migrations, corrupted data, and source-record reproducibility.
 6. **#57 and #59 — canonical identity, permissions, and privacy metadata**
-   The repository identity contract is maintained in [product-identity.md](product-identity.md). Package, Capacitor, Android, and iOS source values now align; external store continuity and unused iOS permission declarations remain to verify.
+   Repository contracts are maintained in [product-identity.md](product-identity.md) and [permissions-and-data-flows.md](permissions-and-data-flows.md). Package, Capacitor, Android, and iOS source values now align, and unused Calendar, Tracking, and Push declarations are removed; external store continuity and built-app disclosure evidence remain to verify.
 7. **#58 — fail-closed Android signing**
    Verify missing-secret failure, protected signing, certificate identity, ownership, backup, and recovery.
 8. **#60 — required quality gates and immutable release artifacts**

@@ -40,6 +40,9 @@ jobs:
       - name: Product identity check
         run: npm run identity:check
 
+      - name: Permission and capability check
+        run: npm run permissions:check
+
       - name: Lint
         run: npm run lint
 

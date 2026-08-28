@@ -24,11 +24,9 @@ function renderDialog() {
     input: document.querySelector('input'),
     close: document.querySelector('[aria-label="Close dialog"]'),
     cancel: [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Cancel',
+      (button) => button.textContent === 'Cancel'
     ),
-    save: [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Save',
-    ),
+    save: [...document.querySelectorAll('button')].find((button) => button.textContent === 'Save'),
   };
 }
 

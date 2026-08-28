@@ -14,7 +14,7 @@ describe('starter suggestion onboarding', () => {
     render(<App />);
 
     expect(
-      screen.queryByRole('heading', { name: 'Choose only the habits that fit your life' }),
+      screen.queryByRole('heading', { name: 'Choose only the habits that fit your life' })
     ).not.toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'No habits yet' })).toBeInTheDocument();
 
@@ -22,7 +22,7 @@ describe('starter suggestion onboarding', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: 'Choose only the habits that fit your life' }),
+        screen.getByRole('heading', { name: 'Choose only the habits that fit your life' })
       ).toBeInTheDocument();
     });
     expect(screen.queryByRole('heading', { name: 'No habits yet' })).not.toBeInTheDocument();

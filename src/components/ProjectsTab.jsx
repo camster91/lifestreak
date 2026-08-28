@@ -351,43 +351,49 @@ function ProjectsTab() {
               <div key={project.id} className="card bg-base-100 shadow-sm">
                 <div className="card-body p-3">
                   {/* Project Header */}
-                  <div
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => toggleExpanded(project.id)}
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="w-4 h-4 text-base-content/60" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-base-content/60" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-medium">{project.title}</h4>
-                        {categoryInfo && (
-                          <span className={`badge badge-sm ${categoryInfo.color}`}>
-                            {categoryInfo.label}
-                          </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="flex flex-1 min-w-0 items-center gap-2 text-left cursor-pointer"
+                      onClick={() => toggleExpanded(project.id)}
+                      aria-expanded={isExpanded}
+                      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${project.title}`}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="w-4 h-4 text-base-content/60" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-base-content/60" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-medium">{project.title}</h4>
+                          {categoryInfo && (
+                            <span className={`badge badge-sm ${categoryInfo.color}`}>
+                              {categoryInfo.label}
+                            </span>
+                          )}
+                        </div>
+                        {project.tasks.length > 0 && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 h-1.5 bg-base-300 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${
+                                  progress === 100 ? 'bg-success' : 'bg-secondary'
+                                }`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-base-content/60">
+                              {completedTasks}/{project.tasks.length}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      {project.tasks.length > 0 && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="flex-1 h-1.5 bg-base-300 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all ${
-                                progress === 100 ? 'bg-success' : 'bg-secondary'
-                              }`}
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-base-content/60">
-                            {completedTasks}/{project.tasks.length}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    </button>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      type="button"
+                      aria-label={`Delete ${project.title}`}
+                      onClick={() => {
                         haptics.light();
                         deleteProject(project.id);
                       }}

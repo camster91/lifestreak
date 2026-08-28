@@ -362,7 +362,7 @@ export const habitStore = {
       const habit = assertHabit(draft, habitId);
       habit.lifecycleState = lifecycleState;
       habit.lifecycleHistory = (habit.lifecycleHistory || []).filter(
-        (event) => event.effectiveDate !== effectiveDate,
+        (event) => event.effectiveDate !== effectiveDate
       );
       habit.lifecycleHistory.push({
         id: createId('lifecycle'),
@@ -405,7 +405,10 @@ export const habitStore = {
       const habit = assertHabit(draft, habitId);
       const log = findOrCreateLog(draft, habitId, dateKey);
       log.explicitStatus = explicitStatus;
-      if (explicitStatus === 'completed' && currentConfig(habit, dateKey).tracking.type === 'binary') {
+      if (
+        explicitStatus === 'completed' &&
+        currentConfig(habit, dateKey).tracking.type === 'binary'
+      ) {
         log.entries = [];
       }
       log.updatedAt = new Date().toISOString();
@@ -421,7 +424,8 @@ export const habitStore = {
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
       const tracking = currentConfig(habit, dateKey).tracking;
-      if (tracking.type === 'binary') throw new Error('This habit does not accept a numeric value.');
+      if (tracking.type === 'binary')
+        throw new Error('This habit does not accept a numeric value.');
       const log = findOrCreateLog(draft, habitId, dateKey);
       log.explicitStatus = null;
       log.entries.push({
@@ -449,9 +453,7 @@ export const habitStore = {
   clearDay(habitId, dateKey) {
     return transact((draft) => {
       assertHabit(draft, habitId);
-      draft.logs = draft.logs.filter(
-        (log) => !(log.habitId === habitId && log.date === dateKey),
-      );
+      draft.logs = draft.logs.filter((log) => !(log.habitId === habitId && log.date === dateKey));
     }, 'The day was cleared.');
   },
 
@@ -476,7 +478,7 @@ export const habitStore = {
 
   addAllStarterTemplates() {
     const missing = starterTemplates().filter(
-      (template) => !state.habits.some((habit) => habit.sourceTemplateId === template.templateId),
+      (template) => !state.habits.some((habit) => habit.sourceTemplateId === template.templateId)
     );
     if (!missing.length) {
       setOperation('warning', 'All starter habits are already present.');
@@ -486,7 +488,7 @@ export const habitStore = {
       missing.forEach((template) => {
         const habit = normalizeHabitInput(
           { ...template, sourceTemplateId: template.templateId },
-          createId('habit'),
+          createId('habit')
         );
         habit.order = draft.habits.length;
         draft.habits.push(habit);
@@ -496,19 +498,27 @@ export const habitStore = {
   },
 
   dismissOnboarding() {
-    return transact((draft) => {
-      draft.onboarding.completed = true;
-      draft.onboarding.dismissedAt = new Date().toISOString();
-    }, 'Starter suggestions were dismissed.', { undoable: false });
+    return transact(
+      (draft) => {
+        draft.onboarding.completed = true;
+        draft.onboarding.dismissedAt = new Date().toISOString();
+      },
+      'Starter suggestions were dismissed.',
+      { undoable: false }
+    );
   },
 
   setPreference(key, value) {
-    return transact((draft) => {
-      if (!Object.prototype.hasOwnProperty.call(draft.preferences, key)) {
-        throw new Error('Unknown preference.');
-      }
-      draft.preferences[key] = value;
-    }, 'Preference saved.', { undoable: false });
+    return transact(
+      (draft) => {
+        if (!Object.prototype.hasOwnProperty.call(draft.preferences, key)) {
+          throw new Error('Unknown preference.');
+        }
+        draft.preferences[key] = value;
+      },
+      'Preference saved.',
+      { undoable: false }
+    );
   },
 
   scanLegacyData() {
@@ -532,12 +542,16 @@ export const habitStore = {
       return [];
     }
 
-    const saved = transact((draft) => {
-      draft.legacy.detectedKeys = detectedKeys.sort();
-      draft.legacy.scannedAt = new Date().toISOString();
-    }, detectedKeys.length
-      ? `${detectedKeys.length} legacy data stores were preserved.`
-      : 'No legacy stores were detected.', { undoable: false });
+    const saved = transact(
+      (draft) => {
+        draft.legacy.detectedKeys = detectedKeys.sort();
+        draft.legacy.scannedAt = new Date().toISOString();
+      },
+      detectedKeys.length
+        ? `${detectedKeys.length} legacy data stores were preserved.`
+        : 'No legacy stores were detected.',
+      { undoable: false }
+    );
     return saved ? detectedKeys : [];
   },
 
@@ -579,20 +593,23 @@ export const habitStore = {
       setOperation('error', 'The selected file is incomplete. No data was changed.');
       return false;
     }
-    return transact((draft) => {
-      if (mode === 'merge') {
-        const habits = new Map(draft.habits.map((habit) => [habit.id, habit]));
-        candidate.habits.forEach((habit) => habits.set(habit.id, habit));
-        const logs = new Map(draft.logs.map((log) => [log.id, log]));
-        candidate.logs.forEach((log) => logs.set(log.id, log));
-        draft.habits = [...habits.values()];
-        draft.logs = [...logs.values()];
-      } else {
-        Object.assign(draft, clone(candidate));
-      }
-      draft.version = HABIT_SCHEMA_VERSION;
-      draft.operation = null;
-    }, mode === 'merge' ? 'The backup was merged.' : 'The backup was restored.');
+    return transact(
+      (draft) => {
+        if (mode === 'merge') {
+          const habits = new Map(draft.habits.map((habit) => [habit.id, habit]));
+          candidate.habits.forEach((habit) => habits.set(habit.id, habit));
+          const logs = new Map(draft.logs.map((log) => [log.id, log]));
+          candidate.logs.forEach((log) => logs.set(log.id, log));
+          draft.habits = [...habits.values()];
+          draft.logs = [...logs.values()];
+        } else {
+          Object.assign(draft, clone(candidate));
+        }
+        draft.version = HABIT_SCHEMA_VERSION;
+        draft.operation = null;
+      },
+      mode === 'merge' ? 'The backup was merged.' : 'The backup was restored.'
+    );
   },
 
   createRecoveryBackup(reason = 'manual') {
@@ -605,7 +622,7 @@ export const habitStore = {
     try {
       storage.setItem(
         key,
-        JSON.stringify({ reason, createdAt: new Date().toISOString(), data: serializable(state) }),
+        JSON.stringify({ reason, createdAt: new Date().toISOString(), data: serializable(state) })
       );
       setOperation('success', 'A local recovery copy was created.');
       return key;
@@ -633,7 +650,10 @@ export const habitStore = {
       emit();
       return true;
     } catch (error) {
-      setOperation('error', `Reset failed. Existing data was left unchanged. ${storageMessage(error)}`);
+      setOperation(
+        'error',
+        `Reset failed. Existing data was left unchanged. ${storageMessage(error)}`
+      );
       return false;
     }
   },

@@ -17,6 +17,6 @@ habitStore.reopenOnboarding = () => {
       exportedAt: new Date().toISOString(),
       data: nextData,
     },
-    'replace',
+    'replace'
   );
 };

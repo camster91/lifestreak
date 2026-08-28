@@ -62,15 +62,12 @@ function AchievementPopup() {
   useEffect(() => {
     if (currentAchievement) {
       setParticles(
-        Array.from(
-          { length: 20 },
-          (_, i): Particle => ({
-            id: i,
-            delay: i * 50,
-            color: CONFETTI_COLORS[i % CONFETTI_COLORS.length] ?? '#FFD700',
-            left: Math.random() * 100,
-          })
-        )
+        Array.from({ length: 20 }, (_, i): Particle => ({
+          id: i,
+          delay: i * 50,
+          color: CONFETTI_COLORS[i % CONFETTI_COLORS.length] ?? '#FFD700',
+          left: Math.random() * 100,
+        }))
       );
     }
   }, [currentAchievement]);
@@ -119,7 +116,9 @@ function AchievementPopup() {
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
+      <button
+        type="button"
+        aria-label="Close achievement"
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isExiting ? 'opacity-0' : 'opacity-100'
         }`}

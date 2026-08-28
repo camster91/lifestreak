@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   addDays,
   buildWeeklyReview,
@@ -61,7 +61,7 @@ function useOpenAppNotifications(snapshot) {
       const now = new Date();
       const today = toLocalDate(now);
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(
-        now.getMinutes(),
+        now.getMinutes()
       ).padStart(2, '0')}`;
       snapshot.habits.forEach((habit) => {
         if (!habit.reminderTime || habit.reminderTime !== currentTime) return;
@@ -120,7 +120,11 @@ export default function HabitTrackerApp({ onOpenCollections }) {
           <h1>{view === 'today' ? formatDate(selectedDate) : viewLabel(view)}</h1>
         </div>
         <div className="habit-header-actions">
-          <button className="habit-button habit-button-secondary" type="button" onClick={onOpenCollections}>
+          <button
+            className="habit-button habit-button-secondary"
+            type="button"
+            onClick={onOpenCollections}
+          >
             Collections
           </button>
           <button className="habit-button habit-button-primary" type="button" onClick={openCreate}>
@@ -222,14 +226,7 @@ function OperationBanner({ operation, onDismiss }) {
   );
 }
 
-function TodayView({
-  snapshot,
-  selectedDate,
-  setSelectedDate,
-  onCreate,
-  onEdit,
-  onHistory,
-}) {
+function TodayView({ snapshot, selectedDate, setSelectedDate, onCreate, onEdit, onHistory }) {
   const today = toLocalDate();
   const ordered = [...snapshot.habits].sort((a, b) => a.order - b.order);
   const rows = ordered
@@ -242,7 +239,7 @@ function TodayView({
       }),
     }))
     .filter(({ state }) =>
-      ['due', 'completed', 'partial', 'failed', 'skipped', 'missed'].includes(state.status),
+      ['due', 'completed', 'partial', 'failed', 'skipped', 'missed'].includes(state.status)
     );
 
   const expectedRows = rows.filter(({ state }) => state.scheduled && state.status !== 'skipped');
@@ -262,7 +259,11 @@ function TodayView({
   return (
     <section aria-labelledby="today-heading">
       <div className="habit-date-toolbar">
-        <button type="button" className="habit-icon-button" onClick={() => setSelectedDate(addDays(selectedDate, -1))}>
+        <button
+          type="button"
+          className="habit-icon-button"
+          onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+        >
           <span aria-hidden="true">←</span>
           <span className="habit-visually-hidden">Previous day</span>
         </button>
@@ -280,24 +281,42 @@ function TodayView({
           <span className="habit-visually-hidden">Next day</span>
         </button>
         {selectedDate !== today && (
-          <button type="button" className="habit-button habit-button-quiet" onClick={() => setSelectedDate(today)}>
+          <button
+            type="button"
+            className="habit-button habit-button-quiet"
+            onClick={() => setSelectedDate(today)}
+          >
             Return to today
           </button>
         )}
       </div>
 
       {snapshot.habits.length > 0 && (
-        <div className="habit-progress-card" aria-label={`${completed} of ${expectedRows.length} expected habits completed`}>
+        <div
+          className="habit-progress-card"
+          aria-label={`${completed} of ${expectedRows.length} expected habits completed`}
+        >
           <div>
             <strong>{progress}%</strong>
-            <span>{completed} of {expectedRows.length} completed</span>
+            <span>
+              {completed} of {expectedRows.length} completed
+            </span>
           </div>
-          <progress max="100" value={progress}>{progress}%</progress>
+          <progress max="100" value={progress}>
+            {progress}%
+          </progress>
         </div>
       )}
 
-      {!snapshot.habits.length ? (
+      {!snapshot.habits.length && !snapshot.onboarding?.completed ? (
         <StarterPanel onCreate={onCreate} />
+      ) : !snapshot.habits.length ? (
+        <EmptyState
+          title="No habits yet"
+          description="Starter suggestions are hidden. Add your own routine or show the optional templates again."
+          actionLabel="Show starter suggestions"
+          onAction={() => habitStore.reopenOnboarding()}
+        />
       ) : !rows.length ? (
         <EmptyState
           title="Nothing is due"
@@ -342,16 +361,25 @@ function StarterPanel({ onCreate }) {
         <p className="habit-eyebrow">A small, useful beginning</p>
         <h2 id="starter-heading">Choose only the habits that fit your life</h2>
         <p>
-          Templates are optional and fully editable. Spiritual, health, planning, and learning habits use the same private habit engine.
+          Templates are optional and fully editable. Spiritual, health, planning, and learning
+          habits use the same private habit engine.
         </p>
         <div className="habit-button-row">
-          <button type="button" className="habit-button habit-button-primary" onClick={() => habitStore.addAllStarterTemplates()}>
+          <button
+            type="button"
+            className="habit-button habit-button-primary"
+            onClick={() => habitStore.addAllStarterTemplates()}
+          >
             Add all starter habits
           </button>
           <button type="button" className="habit-button habit-button-secondary" onClick={onCreate}>
             Create my own
           </button>
-          <button type="button" className="habit-button habit-button-quiet" onClick={() => habitStore.dismissOnboarding()}>
+          <button
+            type="button"
+            className="habit-button habit-button-quiet"
+            onClick={() => habitStore.dismissOnboarding()}
+          >
             Dismiss suggestions
           </button>
         </div>
@@ -362,7 +390,11 @@ function StarterPanel({ onCreate }) {
             <span>{template.category}</span>
             <h3>{template.name}</h3>
             <p>{template.description}</p>
-            <button type="button" className="habit-button habit-button-secondary" onClick={() => habitStore.addTemplate(template.templateId)}>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => habitStore.addTemplate(template.templateId)}
+            >
               Add template
             </button>
           </article>
@@ -384,11 +416,17 @@ function TodayHabitCard({ habit, state, config, dateKey, onEdit, onHistory }) {
 
   return (
     <article className={`habit-today-card status-${state.status}`}>
-      <div className="habit-card-colour" style={{ '--habit-colour': habit.colour }} aria-hidden="true" />
+      <div
+        className="habit-card-colour"
+        style={{ '--habit-colour': habit.colour }}
+        aria-hidden="true"
+      />
       <div className="habit-card-content">
         <div className="habit-card-title-row">
           <div>
-            <p className="habit-card-meta">{habit.category} · {describeSchedule(config.schedule)}</p>
+            <p className="habit-card-meta">
+              {habit.category} · {describeSchedule(config.schedule)}
+            </p>
             <h4>{habit.name}</h4>
           </div>
           <span className={`habit-status status-${state.status}`}>{statusLabel(state.status)}</span>
@@ -397,7 +435,9 @@ function TodayHabitCard({ habit, state, config, dateKey, onEdit, onHistory }) {
 
         {config.tracking.type !== 'binary' && (
           <div className="habit-value-summary">
-            <strong>{state.value} {config.tracking.unit}</strong>
+            <strong>
+              {state.value} {config.tracking.unit}
+            </strong>
             <span>
               {config.tracking.anyAmountCounts
                 ? 'Any amount counts'
@@ -434,10 +474,17 @@ function TodayHabitCard({ habit, state, config, dateKey, onEdit, onHistory }) {
                   aria-label={`Add ${config.tracking.unit} for ${habit.name}`}
                 />
               </label>
-              <button type="submit" className="habit-button habit-button-primary">Add</button>
+              <button type="submit" className="habit-button habit-button-primary">
+                Add
+              </button>
             </form>
           )}
-          <button type="button" className="habit-button habit-button-secondary" aria-expanded={showActions} onClick={() => setShowActions(!showActions)}>
+          <button
+            type="button"
+            className="habit-button habit-button-secondary"
+            aria-expanded={showActions}
+            onClick={() => setShowActions(!showActions)}
+          >
             More
           </button>
         </div>
@@ -445,13 +492,34 @@ function TodayHabitCard({ habit, state, config, dateKey, onEdit, onHistory }) {
         {showActions && (
           <div className="habit-more-actions" aria-label={`Actions for ${habit.name}`}>
             {config.tracking.type !== 'binary' && (
-              <button type="button" onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'completed')}>Mark complete</button>
+              <button
+                type="button"
+                onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'completed')}
+              >
+                Mark complete
+              </button>
             )}
-            <button type="button" onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'skipped')}>Skip intentionally</button>
-            <button type="button" onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'failed')}>Mark not completed</button>
-            <button type="button" onClick={() => habitStore.clearDay(habit.id, dateKey)}>Clear day</button>
-            <button type="button" onClick={onHistory}>History and notes</button>
-            <button type="button" onClick={onEdit}>Edit habit</button>
+            <button
+              type="button"
+              onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'skipped')}
+            >
+              Skip intentionally
+            </button>
+            <button
+              type="button"
+              onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'failed')}
+            >
+              Mark not completed
+            </button>
+            <button type="button" onClick={() => habitStore.clearDay(habit.id, dateKey)}>
+              Clear day
+            </button>
+            <button type="button" onClick={onHistory}>
+              History and notes
+            </button>
+            <button type="button" onClick={onEdit}>
+              Edit habit
+            </button>
           </div>
         )}
       </div>
@@ -474,13 +542,24 @@ function HabitsView({ snapshot, onCreate, onEdit, onHistory }) {
       <div className="habit-page-heading">
         <div>
           <h2 id="habits-heading">Manage habits</h2>
-          <p>Schedules and targets change prospectively, so previous records keep their original meaning.</p>
+          <p>
+            Schedules and targets change prospectively, so previous records keep their original
+            meaning.
+          </p>
         </div>
-        <button type="button" className="habit-button habit-button-primary" onClick={onCreate}>Create habit</button>
+        <button type="button" className="habit-button habit-button-primary" onClick={onCreate}>
+          Create habit
+        </button>
       </div>
       <div className="habit-filter-tabs" role="group" aria-label="Filter habits">
         {['active', 'paused', 'archived', 'all'].map((item) => (
-          <button key={item} type="button" className={filter === item ? 'is-active' : ''} aria-pressed={filter === item} onClick={() => setFilter(item)}>
+          <button
+            key={item}
+            type="button"
+            className={filter === item ? 'is-active' : ''}
+            aria-pressed={filter === item}
+            onClick={() => setFilter(item)}
+          >
             {item[0].toUpperCase() + item.slice(1)}
           </button>
         ))}
@@ -502,26 +581,83 @@ function HabitsView({ snapshot, onCreate, onEdit, onHistory }) {
               <article key={habit.id} className="habit-management-card">
                 <div className="habit-card-title-row">
                   <div>
-                    <p className="habit-card-meta">{habit.category} · {GROUP_LABELS[config.timeOfDay]}</p>
+                    <p className="habit-card-meta">
+                      {habit.category} · {GROUP_LABELS[config.timeOfDay]}
+                    </p>
                     <h3>{habit.name}</h3>
                   </div>
-                  <span className={`habit-status status-${lifecycle}`}>{statusLabel(lifecycle)}</span>
+                  <span className={`habit-status status-${lifecycle}`}>
+                    {statusLabel(lifecycle)}
+                  </span>
                 </div>
                 {habit.description && <p>{habit.description}</p>}
                 <dl className="habit-definition-list">
-                  <div><dt>Schedule</dt><dd>{describeSchedule(config.schedule)}</dd></div>
-                  <div><dt>Tracking</dt><dd>{trackingDescription(config.tracking)}</dd></div>
-                  <div><dt>Reminder</dt><dd>{habit.reminderTime || 'None'}</dd></div>
+                  <div>
+                    <dt>Schedule</dt>
+                    <dd>{describeSchedule(config.schedule)}</dd>
+                  </div>
+                  <div>
+                    <dt>Tracking</dt>
+                    <dd>{trackingDescription(config.tracking)}</dd>
+                  </div>
+                  <div>
+                    <dt>Reminder</dt>
+                    <dd>{habit.reminderTime || 'None'}</dd>
+                  </div>
                 </dl>
                 <div className="habit-management-actions">
-                  <button type="button" onClick={() => onEdit(habit.id)}>Edit</button>
-                  <button type="button" onClick={() => onHistory(habit.id)}>History</button>
-                  <button type="button" disabled={index === 0} onClick={() => habitStore.moveHabit(habit.id, 'up')}>Move up</button>
-                  <button type="button" disabled={index === rows.length - 1} onClick={() => habitStore.moveHabit(habit.id, 'down')}>Move down</button>
-                  {lifecycle === 'active' && <button type="button" onClick={() => habitStore.setLifecycle(habit.id, 'paused')}>Pause</button>}
-                  {lifecycle === 'paused' && <button type="button" onClick={() => habitStore.setLifecycle(habit.id, 'active')}>Resume</button>}
-                  {lifecycle !== 'archived' && <button type="button" onClick={() => habitStore.setLifecycle(habit.id, 'archived')}>Archive</button>}
-                  {lifecycle === 'archived' && <button type="button" onClick={() => habitStore.setLifecycle(habit.id, 'active')}>Restore</button>}
+                  <button type="button" onClick={() => onEdit(habit.id)}>
+                    Edit
+                  </button>
+                  <button type="button" onClick={() => onHistory(habit.id)}>
+                    History
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => habitStore.moveHabit(habit.id, 'up')}
+                  >
+                    Move up
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === rows.length - 1}
+                    onClick={() => habitStore.moveHabit(habit.id, 'down')}
+                  >
+                    Move down
+                  </button>
+                  {lifecycle === 'active' && (
+                    <button
+                      type="button"
+                      onClick={() => habitStore.setLifecycle(habit.id, 'paused')}
+                    >
+                      Pause
+                    </button>
+                  )}
+                  {lifecycle === 'paused' && (
+                    <button
+                      type="button"
+                      onClick={() => habitStore.setLifecycle(habit.id, 'active')}
+                    >
+                      Resume
+                    </button>
+                  )}
+                  {lifecycle !== 'archived' && (
+                    <button
+                      type="button"
+                      onClick={() => habitStore.setLifecycle(habit.id, 'archived')}
+                    >
+                      Archive
+                    </button>
+                  )}
+                  {lifecycle === 'archived' && (
+                    <button
+                      type="button"
+                      onClick={() => habitStore.setLifecycle(habit.id, 'active')}
+                    >
+                      Restore
+                    </button>
+                  )}
                   <DeleteHabitButton habit={habit} />
                 </div>
               </article>
@@ -531,16 +667,25 @@ function HabitsView({ snapshot, onCreate, onEdit, onHistory }) {
       )}
 
       <section className="habit-template-library" aria-labelledby="templates-heading">
-        <div className="habit-section-heading"><h3 id="templates-heading">Starter templates</h3></div>
+        <div className="habit-section-heading">
+          <h3 id="templates-heading">Starter templates</h3>
+        </div>
         <div className="habit-template-grid compact">
           {starterTemplates().map((template) => {
-            const added = snapshot.habits.some((habit) => habit.sourceTemplateId === template.templateId);
+            const added = snapshot.habits.some(
+              (habit) => habit.sourceTemplateId === template.templateId
+            );
             return (
               <article key={template.templateId} className="habit-template-card">
                 <span>{template.category}</span>
                 <h4>{template.name}</h4>
                 <p>{template.description}</p>
-                <button type="button" className="habit-button habit-button-secondary" disabled={added} onClick={() => habitStore.addTemplate(template.templateId)}>
+                <button
+                  type="button"
+                  className="habit-button habit-button-secondary"
+                  disabled={added}
+                  onClick={() => habitStore.addTemplate(template.templateId)}
+                >
                   {added ? 'Added' : 'Add template'}
                 </button>
               </article>
@@ -555,13 +700,25 @@ function HabitsView({ snapshot, onCreate, onEdit, onHistory }) {
 function DeleteHabitButton({ habit }) {
   const [confirming, setConfirming] = useState(false);
   if (!confirming) {
-    return <button type="button" className="habit-danger-text" onClick={() => setConfirming(true)}>Delete</button>;
+    return (
+      <button type="button" className="habit-danger-text" onClick={() => setConfirming(true)}>
+        Delete
+      </button>
+    );
   }
   return (
     <span className="habit-inline-confirm">
       Delete permanently?
-      <button type="button" className="habit-danger-text" onClick={() => habitStore.deleteHabit(habit.id)}>Yes, delete</button>
-      <button type="button" onClick={() => setConfirming(false)}>Cancel</button>
+      <button
+        type="button"
+        className="habit-danger-text"
+        onClick={() => habitStore.deleteHabit(habit.id)}
+      >
+        Yes, delete
+      </button>
+      <button type="button" onClick={() => setConfirming(false)}>
+        Cancel
+      </button>
     </span>
   );
 }
@@ -570,13 +727,10 @@ function InsightsView({ snapshot }) {
   const today = toLocalDate();
   const active = snapshot.habits.filter((habit) => lifecycleAt(habit, today) === 'active');
   const [selectedId, setSelectedId] = useState(active[0]?.id || '');
-
-  useEffect(() => {
-    if (selectedId && !snapshot.habits.some((habit) => habit.id === selectedId)) setSelectedId('');
-    if (!selectedId && active[0]) setSelectedId(active[0].id);
-  }, [active, selectedId, snapshot.habits]);
-
-  const selected = snapshot.habits.find((habit) => habit.id === selectedId) || null;
+  const resolvedSelectedId = snapshot.habits.some((habit) => habit.id === selectedId)
+    ? selectedId
+    : active[0]?.id || snapshot.habits[0]?.id || '';
+  const selected = snapshot.habits.find((habit) => habit.id === resolvedSelectedId) || null;
   const stats = selected
     ? calculateHabitStats(selected, snapshot.logs, {
         days: 84,
@@ -592,7 +746,12 @@ function InsightsView({ snapshot }) {
   });
 
   if (!snapshot.habits.length) {
-    return <EmptyState title="No insights yet" description="Create a habit and log a few scheduled days before looking for trends." />;
+    return (
+      <EmptyState
+        title="No insights yet"
+        description="Create a habit and log a few scheduled days before looking for trends."
+      />
+    );
   }
 
   return (
@@ -600,12 +759,22 @@ function InsightsView({ snapshot }) {
       <div className="habit-page-heading">
         <div>
           <h2 id="insights-heading">Schedule-aware insights</h2>
-          <p>Only expected dates count in completion rates. Skipped, paused, future, and unscheduled dates stay neutral.</p>
+          <p>
+            Only expected dates count in completion rates. Skipped, paused, future, and unscheduled
+            dates stay neutral.
+          </p>
         </div>
         <label className="habit-field compact-field">
           <span>Habit</span>
-          <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
-            {snapshot.habits.map((habit) => <option key={habit.id} value={habit.id}>{habit.name}</option>)}
+          <select
+            value={resolvedSelectedId}
+            onChange={(event) => setSelectedId(event.target.value)}
+          >
+            {snapshot.habits.map((habit) => (
+              <option key={habit.id} value={habit.id}>
+                {habit.name}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -613,24 +782,48 @@ function InsightsView({ snapshot }) {
       {selected && stats && (
         <>
           <div className="habit-metric-grid">
-            <Metric label="Completion rate" value={stats.completionRate == null ? 'Not enough data' : `${stats.completionRate}%`} />
-            <Metric label="Current streak" value={`${stats.currentStreak}`} detail="scheduled successes" />
-            <Metric label="Best streak" value={`${stats.bestStreak}`} detail="scheduled successes" />
-            <Metric label="Expected periods" value={`${stats.expected}`} detail={`${stats.completed} completed`} />
+            <Metric
+              label="Completion rate"
+              value={stats.completionRate == null ? 'Not enough data' : `${stats.completionRate}%`}
+            />
+            <Metric
+              label="Current streak"
+              value={`${stats.currentStreak}`}
+              detail="scheduled successes"
+            />
+            <Metric
+              label="Best streak"
+              value={`${stats.bestStreak}`}
+              detail="scheduled successes"
+            />
+            <Metric
+              label="Expected periods"
+              value={`${stats.expected}`}
+              detail={`${stats.completed} completed`}
+            />
           </div>
           <section className="habit-calendar-panel" aria-labelledby="history-calendar-heading">
             <div className="habit-section-heading">
               <h3 id="history-calendar-heading">Recent history</h3>
               <span>{selected.name}</span>
             </div>
-            <div className="habit-calendar" role="list" aria-label={`Recent history for ${selected.name}`}>
+            <div
+              className="habit-calendar"
+              role="list"
+              aria-label={`Recent history for ${selected.name}`}
+            >
               {eachDate(addDays(today, -27), today).map((dateKey) => {
                 const dayState = getDayState(selected, snapshot.logs, dateKey, {
                   today,
                   weekStartsOn: snapshot.preferences.weekStartsOn,
                 });
                 return (
-                  <div key={dateKey} role="listitem" className={`habit-calendar-day status-${dayState.status}`} title={`${formatDate(dateKey, { month: 'short', day: 'numeric' })}: ${statusLabel(dayState.status)}`}>
+                  <div
+                    key={dateKey}
+                    role="listitem"
+                    className={`habit-calendar-day status-${dayState.status}`}
+                    title={`${formatDate(dateKey, { month: 'short', day: 'numeric' })}: ${statusLabel(dayState.status)}`}
+                  >
                     <span>{parseLocalDate(dateKey).getDate()}</span>
                     <small>{statusLabel(dayState.status)}</small>
                   </div>
@@ -642,17 +835,24 @@ function InsightsView({ snapshot }) {
       )}
 
       <section className="habit-review-panel" aria-labelledby="weekly-review-heading">
-        <div className="habit-section-heading"><h3 id="weekly-review-heading">Weekly review</h3></div>
+        <div className="habit-section-heading">
+          <h3 id="weekly-review-heading">Weekly review</h3>
+        </div>
         <div className="habit-review-grid">
           <ReviewColumn
             title="Going well"
             empty="No habit has enough strong evidence yet."
-            rows={review.strong.map(({ habit, stats: rowStats }) => `${habit.name} — ${rowStats.completionRate}%`)}
+            rows={review.strong.map(
+              ({ habit, stats: rowStats }) => `${habit.name} — ${rowStats.completionRate}%`
+            )}
           />
           <ReviewColumn
             title="Consider adjusting"
             empty="No routine currently needs an obvious schedule or target adjustment."
-            rows={review.adjust.map(({ habit, stats: rowStats }) => `${habit.name} — ${rowStats.completionRate}% over expected periods`)}
+            rows={review.adjust.map(
+              ({ habit, stats: rowStats }) =>
+                `${habit.name} — ${rowStats.completionRate}% over expected periods`
+            )}
           />
           <ReviewColumn
             title="Not enough data"
@@ -661,7 +861,8 @@ function InsightsView({ snapshot }) {
           />
         </div>
         <p className="habit-supporting-copy">
-          A lower rate is information, not a judgement. Adjust the minimum, schedule, or lifecycle when a routine no longer fits.
+          A lower rate is information, not a judgement. Adjust the minimum, schedule, or lifecycle
+          when a routine no longer fits.
         </p>
       </section>
     </section>
@@ -669,14 +870,28 @@ function InsightsView({ snapshot }) {
 }
 
 function Metric({ label, value, detail }) {
-  return <article className="habit-metric"><span>{label}</span><strong>{value}</strong>{detail && <small>{detail}</small>}</article>;
+  return (
+    <article className="habit-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {detail && <small>{detail}</small>}
+    </article>
+  );
 }
 
 function ReviewColumn({ title, rows, empty }) {
   return (
     <article>
       <h4>{title}</h4>
-      {rows.length ? <ul>{rows.map((row) => <li key={row}>{row}</li>)}</ul> : <p>{empty}</p>}
+      {rows.length ? (
+        <ul>
+          {rows.map((row) => (
+            <li key={row}>{row}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>{empty}</p>
+      )}
     </article>
   );
 }
@@ -695,7 +910,7 @@ function SettingsView({ snapshot }) {
     setNotificationMessage(
       permission === 'granted'
         ? 'Permission granted. Reminders can appear while LifeStreak is open.'
-        : `Permission is ${permission}. LifeStreak will not ask automatically.`,
+        : `Permission is ${permission}. LifeStreak will not ask automatically.`
     );
   };
 
@@ -708,7 +923,11 @@ function SettingsView({ snapshot }) {
       habitStore.importData(parsed, importMode);
     } catch (error) {
       habitStore.dismissOperation();
-      window.setTimeout(() => window.alert(`Import failed: ${error instanceof Error ? error.message : 'Invalid file'}`), 0);
+      window.setTimeout(
+        () =>
+          window.alert(`Import failed: ${error instanceof Error ? error.message : 'Invalid file'}`),
+        0
+      );
     } finally {
       event.target.value = '';
     }
@@ -717,7 +936,10 @@ function SettingsView({ snapshot }) {
   return (
     <section aria-labelledby="settings-heading">
       <div className="habit-page-heading">
-        <div><h2 id="settings-heading">Settings and recovery</h2><p>Your habit database stays in this browser or installed app unless you export it.</p></div>
+        <div>
+          <h2 id="settings-heading">Settings and recovery</h2>
+          <p>Your habit database stays in this browser or installed app unless you export it.</p>
+        </div>
       </div>
 
       <div className="habit-settings-grid">
@@ -725,59 +947,163 @@ function SettingsView({ snapshot }) {
           <h3 id="display-settings-heading">Routine preferences</h3>
           <label className="habit-field">
             <span>Week starts on</span>
-            <select value={snapshot.preferences.weekStartsOn} onChange={(event) => habitStore.setPreference('weekStartsOn', Number(event.target.value))}>
-              <option value="0">Sunday</option><option value="1">Monday</option><option value="6">Saturday</option>
+            <select
+              value={snapshot.preferences.weekStartsOn}
+              onChange={(event) =>
+                habitStore.setPreference('weekStartsOn', Number(event.target.value))
+              }
+            >
+              <option value="0">Sunday</option>
+              <option value="1">Monday</option>
+              <option value="6">Saturday</option>
             </select>
           </label>
           <label className="habit-field">
             <span>Completed habits</span>
-            <select value={snapshot.preferences.completedPlacement} onChange={(event) => habitStore.setPreference('completedPlacement', event.target.value)}>
-              <option value="bottom">Move below outstanding habits</option><option value="keep">Keep in their original order</option>
+            <select
+              value={snapshot.preferences.completedPlacement}
+              onChange={(event) =>
+                habitStore.setPreference('completedPlacement', event.target.value)
+              }
+            >
+              <option value="bottom">Move below outstanding habits</option>
+              <option value="keep">Keep in their original order</option>
             </select>
           </label>
         </section>
 
         <section className="habit-settings-card" aria-labelledby="notification-settings-heading">
           <h3 id="notification-settings-heading">Reminder privacy</h3>
-          <p>LifeStreak never requests notification permission during startup or background rescheduling.</p>
+          <p>
+            LifeStreak never requests notification permission during startup or background
+            rescheduling.
+          </p>
           <label className="habit-check-row">
-            <input type="checkbox" checked={snapshot.preferences.showHabitNamesInNotifications} onChange={(event) => habitStore.setPreference('showHabitNamesInNotifications', event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={snapshot.preferences.showHabitNamesInNotifications}
+              onChange={(event) =>
+                habitStore.setPreference('showHabitNamesInNotifications', event.target.checked)
+              }
+            />
             <span>Show habit names on notification surfaces</span>
           </label>
-          <button type="button" className="habit-button habit-button-secondary" onClick={requestNotifications}>Request notification permission</button>
+          <button
+            type="button"
+            className="habit-button habit-button-secondary"
+            onClick={requestNotifications}
+          >
+            Request notification permission
+          </button>
           {notificationMessage && <p role="status">{notificationMessage}</p>}
-          <small>Browser reminders operate while LifeStreak is open. Native background scheduling remains controlled by the installed app platform.</small>
+          <small>
+            Browser reminders operate while LifeStreak is open. Native background scheduling remains
+            controlled by the installed app platform.
+          </small>
         </section>
 
         <section className="habit-settings-card" aria-labelledby="backup-settings-heading">
           <h3 id="backup-settings-heading">Backup and portability</h3>
           <div className="habit-button-stack">
-            <button type="button" className="habit-button habit-button-primary" onClick={() => downloadJson(`lifestreak-habits-${toLocalDate()}.json`, habitStore.exportData())}>Export habit backup</button>
-            <button type="button" className="habit-button habit-button-secondary" onClick={() => habitStore.createRecoveryBackup('manual')}>Create local recovery copy</button>
+            <button
+              type="button"
+              className="habit-button habit-button-primary"
+              onClick={() =>
+                downloadJson(`lifestreak-habits-${toLocalDate()}.json`, habitStore.exportData())
+              }
+            >
+              Export habit backup
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => habitStore.createRecoveryBackup('manual')}
+            >
+              Create local recovery copy
+            </button>
           </div>
           <fieldset className="habit-inline-fieldset">
             <legend>Import behaviour</legend>
-            <label><input type="radio" name="import-mode" value="replace" checked={importMode === 'replace'} onChange={(event) => setImportMode(event.target.value)} /> Replace after creating a recovery copy</label>
-            <label><input type="radio" name="import-mode" value="merge" checked={importMode === 'merge'} onChange={(event) => setImportMode(event.target.value)} /> Merge by stable record ID</label>
+            <label>
+              <input
+                type="radio"
+                name="import-mode"
+                value="replace"
+                checked={importMode === 'replace'}
+                onChange={(event) => setImportMode(event.target.value)}
+              />{' '}
+              Replace after creating a recovery copy
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="import-mode"
+                value="merge"
+                checked={importMode === 'merge'}
+                onChange={(event) => setImportMode(event.target.value)}
+              />{' '}
+              Merge by stable record ID
+            </label>
           </fieldset>
-          <label className="habit-file-label">Import LifeStreak JSON<input type="file" accept="application/json,.json" onChange={importFile} /></label>
+          <label className="habit-file-label">
+            Import LifeStreak JSON
+            <input type="file" accept="application/json,.json" onChange={importFile} />
+          </label>
         </section>
 
         <section className="habit-settings-card" aria-labelledby="legacy-settings-heading">
           <h3 id="legacy-settings-heading">Existing LifeStreak records</h3>
-          <p>Specialist stores are preserved without silently converting dates, notes, service entries, or spiritual records into checkmarks.</p>
+          <p>
+            Specialist stores are preserved without silently converting dates, notes, service
+            entries, or spiritual records into checkmarks.
+          </p>
           <div className="habit-button-stack">
-            <button type="button" className="habit-button habit-button-secondary" onClick={() => habitStore.scanLegacyData()}>Scan for preserved stores</button>
-            <button type="button" className="habit-button habit-button-secondary" disabled={!snapshot.legacy.detectedKeys.length} onClick={() => downloadJson(`lifestreak-legacy-${toLocalDate()}.json`, habitStore.exportLegacyData())}>Export preserved stores</button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => habitStore.scanLegacyData()}
+            >
+              Scan for preserved stores
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              disabled={!snapshot.legacy.detectedKeys.length}
+              onClick={() =>
+                downloadJson(
+                  `lifestreak-legacy-${toLocalDate()}.json`,
+                  habitStore.exportLegacyData()
+                )
+              }
+            >
+              Export preserved stores
+            </button>
           </div>
-          {snapshot.legacy.detectedKeys.length > 0 && <p>{snapshot.legacy.detectedKeys.length} stores detected. Open Collections from the header to use the original specialist interface.</p>}
+          {snapshot.legacy.detectedKeys.length > 0 && (
+            <p>
+              {snapshot.legacy.detectedKeys.length} stores detected. Open Collections from the
+              header to use the original specialist interface.
+            </p>
+          )}
         </section>
 
         <section className="habit-settings-card habit-danger-zone" aria-labelledby="danger-heading">
           <h3 id="danger-heading">Reset habit tracker</h3>
           <p>A recovery copy is created first. Existing specialist collections are not removed.</p>
-          <label className="habit-field"><span>Type RESET to confirm</span><input value={resetText} onChange={(event) => setResetText(event.target.value)} /></label>
-          <button type="button" className="habit-button habit-button-danger" disabled={resetText !== 'RESET'} onClick={() => { if (habitStore.resetAllData()) setResetText(''); }}>Create backup and reset habits</button>
+          <label className="habit-field">
+            <span>Type RESET to confirm</span>
+            <input value={resetText} onChange={(event) => setResetText(event.target.value)} />
+          </label>
+          <button
+            type="button"
+            className="habit-button habit-button-danger"
+            disabled={resetText !== 'RESET'}
+            onClick={() => {
+              if (habitStore.resetAllData()) setResetText('');
+            }}
+          >
+            Create backup and reset habits
+          </button>
         </section>
       </div>
     </section>
@@ -809,7 +1135,13 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
   const [error, setError] = useState('');
 
   const set = (key, value) => setForm((currentForm) => ({ ...currentForm, [key]: value }));
-  const toggleWeekday = (day) => set('weekdays', form.weekdays.includes(day) ? form.weekdays.filter((item) => item !== day) : [...form.weekdays, day]);
+  const toggleWeekday = (day) =>
+    set(
+      'weekdays',
+      form.weekdays.includes(day)
+        ? form.weekdays.filter((item) => item !== day)
+        : [...form.weekdays, day]
+    );
 
   const submit = (event) => {
     event.preventDefault();
@@ -827,7 +1159,10 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
         weekdays: form.weekdays,
         timesPerWeek: Number(form.timesPerWeek),
         intervalDays: Number(form.intervalDays),
-        monthlyDays: String(form.monthlyDays).split(',').map((value) => Number(value.trim())).filter(Boolean),
+        monthlyDays: String(form.monthlyDays)
+          .split(',')
+          .map((value) => Number(value.trim()))
+          .filter(Boolean),
         anchorDate: form.startDate,
       },
       tracking: {
@@ -839,49 +1174,243 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
       },
     };
     try {
-      const result = habit ? habitStore.updateHabit(habit.id, input, today) : habitStore.createHabit(input);
+      const result = habit
+        ? habitStore.updateHabit(habit.id, input, today)
+        : habitStore.createHabit(input);
       if (result) onSaved(habit?.id || result);
       else setError('The habit was not saved. Review the message above and try again.');
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'The habit could not be saved.');
+      setError(
+        submitError instanceof Error ? submitError.message : 'The habit could not be saved.'
+      );
     }
   };
 
   return (
     <Dialog title={habit ? `Edit ${habit.name}` : 'Create a habit'} onClose={onClose} wide>
       <form className="habit-form" onSubmit={submit}>
-        {error && <div className="habit-form-error" role="alert">{error}</div>}
+        {error && (
+          <div className="habit-form-error" role="alert">
+            {error}
+          </div>
+        )}
         <div className="habit-form-grid">
-          <label className="habit-field full"><span>Name <strong aria-hidden="true">*</strong></span><input autoFocus required maxLength="100" value={form.name} onChange={(event) => set('name', event.target.value)} /></label>
-          <label className="habit-field full"><span>Description</span><textarea rows="3" maxLength="500" value={form.description} onChange={(event) => set('description', event.target.value)} /></label>
-          <label className="habit-field"><span>Category</span><input maxLength="50" value={form.category} onChange={(event) => set('category', event.target.value)} /></label>
-          <label className="habit-field"><span>Colour</span><input type="color" value={form.colour} onChange={(event) => set('colour', event.target.value)} /></label>
-          <label className="habit-field"><span>Time of day</span><select value={form.timeOfDay} onChange={(event) => set('timeOfDay', event.target.value)}>{TIME_GROUPS.map((group) => <option key={group} value={group}>{GROUP_LABELS[group]}</option>)}</select></label>
-          <label className="habit-field"><span>Start date</span><input type="date" value={form.startDate} onChange={(event) => set('startDate', event.target.value)} /></label>
+          <label className="habit-field full">
+            <span>
+              Name <strong aria-hidden="true">*</strong>
+            </span>
+            <input
+              autoFocus
+              required
+              maxLength="100"
+              value={form.name}
+              onChange={(event) => set('name', event.target.value)}
+            />
+          </label>
+          <label className="habit-field full">
+            <span>Description</span>
+            <textarea
+              rows="3"
+              maxLength="500"
+              value={form.description}
+              onChange={(event) => set('description', event.target.value)}
+            />
+          </label>
+          <label className="habit-field">
+            <span>Category</span>
+            <input
+              maxLength="50"
+              value={form.category}
+              onChange={(event) => set('category', event.target.value)}
+            />
+          </label>
+          <label className="habit-field">
+            <span>Colour</span>
+            <input
+              type="color"
+              value={form.colour}
+              onChange={(event) => set('colour', event.target.value)}
+            />
+          </label>
+          <label className="habit-field">
+            <span>Time of day</span>
+            <select
+              value={form.timeOfDay}
+              onChange={(event) => set('timeOfDay', event.target.value)}
+            >
+              {TIME_GROUPS.map((group) => (
+                <option key={group} value={group}>
+                  {GROUP_LABELS[group]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="habit-field">
+            <span>Start date</span>
+            <input
+              type="date"
+              value={form.startDate}
+              onChange={(event) => set('startDate', event.target.value)}
+            />
+          </label>
         </div>
 
         <fieldset className="habit-form-section">
           <legend>Schedule</legend>
-          <label className="habit-field"><span>Frequency</span><select value={form.scheduleType} onChange={(event) => set('scheduleType', event.target.value)}><option value="daily">Every day</option><option value="weekdays">Selected weekdays</option><option value="timesPerWeek">Times per week</option><option value="interval">Every N days</option><option value="monthly">Selected days of month</option></select></label>
-          {form.scheduleType === 'weekdays' && <div className="habit-weekday-picker" role="group" aria-label="Scheduled weekdays">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((name, day) => <label key={name}><input type="checkbox" checked={form.weekdays.includes(day)} onChange={() => toggleWeekday(day)} /><span>{name}</span></label>)}</div>}
-          {form.scheduleType === 'timesPerWeek' && <label className="habit-field"><span>Times per week</span><input type="number" min="1" max="7" value={form.timesPerWeek} onChange={(event) => set('timesPerWeek', event.target.value)} /></label>}
-          {form.scheduleType === 'interval' && <label className="habit-field"><span>Repeat every</span><span className="habit-input-suffix"><input type="number" min="1" max="365" value={form.intervalDays} onChange={(event) => set('intervalDays', event.target.value)} /><span>days</span></span></label>}
-          {form.scheduleType === 'monthly' && <label className="habit-field"><span>Days of month</span><input value={form.monthlyDays} onChange={(event) => set('monthlyDays', event.target.value)} placeholder="1, 15, 28" /><small>Comma-separated values from 1 to 31.</small></label>}
+          <label className="habit-field">
+            <span>Frequency</span>
+            <select
+              value={form.scheduleType}
+              onChange={(event) => set('scheduleType', event.target.value)}
+            >
+              <option value="daily">Every day</option>
+              <option value="weekdays">Selected weekdays</option>
+              <option value="timesPerWeek">Times per week</option>
+              <option value="interval">Every N days</option>
+              <option value="monthly">Selected days of month</option>
+            </select>
+          </label>
+          {form.scheduleType === 'weekdays' && (
+            <div className="habit-weekday-picker" role="group" aria-label="Scheduled weekdays">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((name, day) => (
+                <label key={name}>
+                  <input
+                    type="checkbox"
+                    checked={form.weekdays.includes(day)}
+                    onChange={() => toggleWeekday(day)}
+                  />
+                  <span>{name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+          {form.scheduleType === 'timesPerWeek' && (
+            <label className="habit-field">
+              <span>Times per week</span>
+              <input
+                type="number"
+                min="1"
+                max="7"
+                value={form.timesPerWeek}
+                onChange={(event) => set('timesPerWeek', event.target.value)}
+              />
+            </label>
+          )}
+          {form.scheduleType === 'interval' && (
+            <label className="habit-field">
+              <span>Repeat every</span>
+              <span className="habit-input-suffix">
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={form.intervalDays}
+                  onChange={(event) => set('intervalDays', event.target.value)}
+                />
+                <span>days</span>
+              </span>
+            </label>
+          )}
+          {form.scheduleType === 'monthly' && (
+            <label className="habit-field">
+              <span>Days of month</span>
+              <input
+                value={form.monthlyDays}
+                onChange={(event) => set('monthlyDays', event.target.value)}
+                placeholder="1, 15, 28"
+              />
+              <small>Comma-separated values from 1 to 31.</small>
+            </label>
+          )}
         </fieldset>
 
         <fieldset className="habit-form-section">
           <legend>Tracking</legend>
-          <label className="habit-field"><span>Tracking type</span><select value={form.trackingType} onChange={(event) => set('trackingType', event.target.value)}>{Object.entries(TRACKING_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-          {form.trackingType !== 'binary' && <div className="habit-form-grid"><label className="habit-field"><span>Minimum target</span><input type="number" min="0" step="any" value={form.target} onChange={(event) => set('target', event.target.value)} /></label><label className="habit-field"><span>Unit</span><input maxLength="20" value={form.unit} onChange={(event) => set('unit', event.target.value)} /></label><label className="habit-field"><span>Optional stretch target</span><input type="number" min="0" step="any" value={form.stretchTarget} onChange={(event) => set('stretchTarget', event.target.value)} /></label><label className="habit-check-row"><input type="checkbox" checked={form.anyAmountCounts} onChange={(event) => set('anyAmountCounts', event.target.checked)} /><span>Any amount counts as complete</span></label></div>}
+          <label className="habit-field">
+            <span>Tracking type</span>
+            <select
+              value={form.trackingType}
+              onChange={(event) => set('trackingType', event.target.value)}
+            >
+              {Object.entries(TRACKING_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {form.trackingType !== 'binary' && (
+            <div className="habit-form-grid">
+              <label className="habit-field">
+                <span>Minimum target</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={form.target}
+                  onChange={(event) => set('target', event.target.value)}
+                />
+              </label>
+              <label className="habit-field">
+                <span>Unit</span>
+                <input
+                  maxLength="20"
+                  value={form.unit}
+                  onChange={(event) => set('unit', event.target.value)}
+                />
+              </label>
+              <label className="habit-field">
+                <span>Optional stretch target</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={form.stretchTarget}
+                  onChange={(event) => set('stretchTarget', event.target.value)}
+                />
+              </label>
+              <label className="habit-check-row">
+                <input
+                  type="checkbox"
+                  checked={form.anyAmountCounts}
+                  onChange={(event) => set('anyAmountCounts', event.target.checked)}
+                />
+                <span>Any amount counts as complete</span>
+              </label>
+            </div>
+          )}
         </fieldset>
 
         <fieldset className="habit-form-section">
           <legend>Reminder</legend>
-          <label className="habit-field"><span>Preferred time</span><input type="time" value={form.reminderTime} onChange={(event) => set('reminderTime', event.target.value)} /><small>Permission is requested only from Settings. Browser reminders run while LifeStreak is open.</small></label>
+          <label className="habit-field">
+            <span>Preferred time</span>
+            <input
+              type="time"
+              value={form.reminderTime}
+              onChange={(event) => set('reminderTime', event.target.value)}
+            />
+            <small>
+              Permission is requested only from Settings. Browser reminders run while LifeStreak is
+              open.
+            </small>
+          </label>
         </fieldset>
 
-        {habit && <p className="habit-supporting-copy">Schedule, target, unit, and time-of-day changes take effect today. Earlier logs continue to use the configuration active on their date.</p>}
-        <div className="habit-dialog-actions"><button type="button" className="habit-button habit-button-secondary" onClick={onClose}>Cancel</button><button type="submit" className="habit-button habit-button-primary">{habit ? 'Save changes' : 'Create habit'}</button></div>
+        {habit && (
+          <p className="habit-supporting-copy">
+            Schedule, target, unit, and time-of-day changes take effect today. Earlier logs continue
+            to use the configuration active on their date.
+          </p>
+        )}
+        <div className="habit-dialog-actions">
+          <button type="button" className="habit-button habit-button-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="habit-button habit-button-primary">
+            {habit ? 'Save changes' : 'Create habit'}
+          </button>
+        </div>
       </form>
     </Dialog>
   );
@@ -893,24 +1422,119 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit }) {
   const [note, setNote] = useState(logForDate(snapshot.logs, habit.id, today)?.note || '');
   const config = configurationForDate(habit, selectedDate);
   const log = logForDate(snapshot.logs, habit.id, selectedDate);
-  const dayState = getDayState(habit, snapshot.logs, selectedDate, { today, weekStartsOn: snapshot.preferences.weekStartsOn });
+  const dayState = getDayState(habit, snapshot.logs, selectedDate, {
+    today,
+    weekStartsOn: snapshot.preferences.weekStartsOn,
+  });
 
-  useEffect(() => setNote(logForDate(snapshot.logs, habit.id, selectedDate)?.note || ''), [habit.id, selectedDate, snapshot.logs]);
+  const selectDate = (dateKey) => {
+    setSelectedDate(dateKey);
+    setNote(logForDate(snapshot.logs, habit.id, dateKey)?.note || '');
+  };
 
   return (
     <Dialog title={habit.name} onClose={onClose} wide>
       <div className="habit-history-header">
-        <div><span className={`habit-status status-${dayState.status}`}>{statusLabel(dayState.status)}</span><p>{describeSchedule(config.schedule)} · {trackingDescription(config.tracking)}</p></div>
-        <button type="button" className="habit-button habit-button-secondary" onClick={onEdit}>Edit habit</button>
+        <div>
+          <span className={`habit-status status-${dayState.status}`}>
+            {statusLabel(dayState.status)}
+          </span>
+          <p>
+            {describeSchedule(config.schedule)} · {trackingDescription(config.tracking)}
+          </p>
+        </div>
+        <button type="button" className="habit-button habit-button-secondary" onClick={onEdit}>
+          Edit habit
+        </button>
       </div>
-      <label className="habit-field"><span>Review date</span><input type="date" max={today} value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label>
+      <label className="habit-field">
+        <span>Review date</span>
+        <input
+          type="date"
+          max={today}
+          value={selectedDate}
+          onChange={(event) => selectDate(event.target.value)}
+        />
+      </label>
       <section className="habit-history-day" aria-labelledby="selected-history-heading">
         <h3 id="selected-history-heading">{formatDate(selectedDate)}</h3>
-        {log?.entries?.length ? <ul className="habit-entry-list">{log.entries.map((entry) => <li key={entry.id}><span>{entry.value} {entry.unit}</span><button type="button" onClick={() => habitStore.removeValue(habit.id, selectedDate, entry.id)}>Remove</button></li>)}</ul> : <p>No individual numeric entries for this date.</p>}
-        <label className="habit-field"><span>Private note</span><textarea rows="4" maxLength="2000" value={note} onChange={(event) => setNote(event.target.value)} /></label>
-        <div className="habit-button-row"><button type="button" className="habit-button habit-button-primary" onClick={() => habitStore.setNote(habit.id, selectedDate, note)}>Save note</button><button type="button" className="habit-button habit-button-secondary" onClick={() => habitStore.clearDay(habit.id, selectedDate)}>Clear this date</button></div>
+        {log?.entries?.length ? (
+          <ul className="habit-entry-list">
+            {log.entries.map((entry) => (
+              <li key={entry.id}>
+                <span>
+                  {entry.value} {entry.unit}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => habitStore.removeValue(habit.id, selectedDate, entry.id)}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No individual numeric entries for this date.</p>
+        )}
+        <label className="habit-field">
+          <span>Private note</span>
+          <textarea
+            rows="4"
+            maxLength="2000"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+          />
+        </label>
+        <div className="habit-button-row">
+          <button
+            type="button"
+            className="habit-button habit-button-primary"
+            onClick={() => habitStore.setNote(habit.id, selectedDate, note)}
+          >
+            Save note
+          </button>
+          <button
+            type="button"
+            className="habit-button habit-button-secondary"
+            onClick={() => {
+              habitStore.clearDay(habit.id, selectedDate);
+              setNote('');
+            }}
+          >
+            Clear this date
+          </button>
+        </div>
       </section>
-      <section aria-labelledby="recent-log-heading"><h3 id="recent-log-heading">Recent records</h3><div className="habit-history-list">{eachDate(addDays(today, -29), today).reverse().map((dateKey) => { const state = getDayState(habit, snapshot.logs, dateKey, { today, weekStartsOn: snapshot.preferences.weekStartsOn }); return <button type="button" key={dateKey} className={selectedDate === dateKey ? 'is-selected' : ''} onClick={() => setSelectedDate(dateKey)}><span>{formatDate(dateKey, { month: 'short', day: 'numeric' })}</span><span>{statusLabel(state.status)}</span>{state.value > 0 && <span>{state.value} {state.tracking.unit}</span>}</button>; })}</div></section>
+      <section aria-labelledby="recent-log-heading">
+        <h3 id="recent-log-heading">Recent records</h3>
+        <div className="habit-history-list">
+          {eachDate(addDays(today, -29), today)
+            .reverse()
+            .map((dateKey) => {
+              const state = getDayState(habit, snapshot.logs, dateKey, {
+                today,
+                weekStartsOn: snapshot.preferences.weekStartsOn,
+              });
+              return (
+                <button
+                  type="button"
+                  key={dateKey}
+                  className={selectedDate === dateKey ? 'is-selected' : ''}
+                  onClick={() => selectDate(dateKey)}
+                >
+                  <span>{formatDate(dateKey, { month: 'short', day: 'numeric' })}</span>
+                  <span>{statusLabel(state.status)}</span>
+                  {state.value > 0 && (
+                    <span>
+                      {state.value} {state.tracking.unit}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+        </div>
+      </section>
     </Dialog>
   );
 }
@@ -922,15 +1546,42 @@ function Dialog({ title, onClose, children, wide = false }) {
     const dialog = dialogRef.current;
     const first = dialog?.querySelector('input, select, textarea, button');
     first?.focus();
-    const onKeyDown = (event) => { if (event.key === 'Escape') onClose(); };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
     document.addEventListener('keydown', onKeyDown);
-    return () => { document.removeEventListener('keydown', onKeyDown); previous?.focus?.(); };
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previous?.focus?.();
+    };
   }, [onClose]);
 
   return (
-    <div className="habit-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section ref={dialogRef} className={`habit-dialog ${wide ? 'habit-dialog-wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="habit-dialog-title">
-        <header><h2 id="habit-dialog-title">{title}</h2><button type="button" className="habit-icon-button" onClick={onClose} aria-label="Close dialog">×</button></header>
+    <div
+      className="habit-dialog-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        ref={dialogRef}
+        className={`habit-dialog ${wide ? 'habit-dialog-wide' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="habit-dialog-title"
+      >
+        <header>
+          <h2 id="habit-dialog-title">{title}</h2>
+          <button
+            type="button"
+            className="habit-icon-button"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </header>
         <div className="habit-dialog-body">{children}</div>
       </section>
     </div>
@@ -938,7 +1589,17 @@ function Dialog({ title, onClose, children, wide = false }) {
 }
 
 function EmptyState({ title, description, actionLabel, onAction }) {
-  return <div className="habit-empty-state"><h2>{title}</h2><p>{description}</p>{actionLabel && onAction && <button type="button" className="habit-button habit-button-primary" onClick={onAction}>{actionLabel}</button>}</div>;
+  return (
+    <div className="habit-empty-state">
+      <h2>{title}</h2>
+      <p>{description}</p>
+      {actionLabel && onAction && (
+        <button type="button" className="habit-button habit-button-primary" onClick={onAction}>
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
 }
 
 function trackingDescription(tracking) {

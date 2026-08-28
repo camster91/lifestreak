@@ -92,7 +92,9 @@ describe('habit import hardening', () => {
   });
 
   it('does not copy prototype-style properties from a parsed backup', () => {
-    const input = JSON.parse(JSON.stringify(validState()).replace(/}$/, ',"__proto__":{"polluted":true}}'));
+    const input = JSON.parse(
+      JSON.stringify(validState()).replace(/}$/, ',"__proto__":{"polluted":true}}')
+    );
     const result = sanitizeImportedState(input);
 
     expect(Object.prototype.polluted).toBeUndefined();

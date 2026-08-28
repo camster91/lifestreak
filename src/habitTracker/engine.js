@@ -97,12 +97,10 @@ export function configurationForDate(habit, dateKey) {
         schedule: revision.schedule
           ? normalizeSchedule(revision.schedule, habit.startDate)
           : current.schedule,
-        tracking: revision.tracking
-          ? normalizeTracking(revision.tracking)
-          : current.tracking,
+        tracking: revision.tracking ? normalizeTracking(revision.tracking) : current.tracking,
         timeOfDay: revision.timeOfDay || current.timeOfDay,
       }),
-      base,
+      base
     );
 }
 
@@ -122,21 +120,19 @@ export function normalizeTracking(tracking = {}) {
 }
 
 export function normalizeSchedule(schedule = {}, fallbackStartDate = toLocalDate()) {
-  const type = ['daily', 'weekdays', 'timesPerWeek', 'interval', 'monthly'].includes(
-    schedule.type,
-  )
+  const type = ['daily', 'weekdays', 'timesPerWeek', 'interval', 'monthly'].includes(schedule.type)
     ? schedule.type
     : 'daily';
 
   return {
     type,
     weekdays: Array.from(
-      new Set((schedule.weekdays || []).map(Number).filter((day) => day >= 0 && day <= 6)),
+      new Set((schedule.weekdays || []).map(Number).filter((day) => day >= 0 && day <= 6))
     ).sort(),
     timesPerWeek: Math.min(7, Math.max(1, Number(schedule.timesPerWeek) || 3)),
     intervalDays: Math.max(1, Number(schedule.intervalDays) || 2),
     monthlyDays: Array.from(
-      new Set((schedule.monthlyDays || []).map(Number).filter((day) => day >= 1 && day <= 31)),
+      new Set((schedule.monthlyDays || []).map(Number).filter((day) => day >= 1 && day <= 31))
     ).sort((a, b) => a - b),
     anchorDate: isValidLocalDate(schedule.anchorDate)
       ? schedule.anchorDate
@@ -167,7 +163,7 @@ export function lifecycleAt(habit, dateKey) {
   if (dateKey < habit.startDate) return 'not-started';
   let state = habit.lifecycleState || 'active';
   const history = [...(habit.lifecycleHistory || [])].sort((a, b) =>
-    a.effectiveDate.localeCompare(b.effectiveDate),
+    a.effectiveDate.localeCompare(b.effectiveDate)
   );
   for (const event of history) {
     if (event.effectiveDate > dateKey) break;
@@ -230,12 +226,15 @@ export function isScheduledOnDate(habit, dateKey, logs = [], weekStartsOn = 1) {
               }
               return dailyResult(habit, log, log.date).status === 'completed';
             })
-            .map((log) => log.date),
-        ),
+            .map((log) => log.date)
+        )
       ).sort();
       const completionIndex = completionDates.indexOf(dateKey);
       if (completionIndex >= 0) return completionIndex < schedule.timesPerWeek;
-      return completionDates.filter((completedDate) => completedDate < dateKey).length < schedule.timesPerWeek;
+      return (
+        completionDates.filter((completedDate) => completedDate < dateKey).length <
+        schedule.timesPerWeek
+      );
     }
     default:
       return false;
@@ -246,7 +245,7 @@ export function getDayState(
   habit,
   logs,
   dateKey,
-  { today = toLocalDate(), weekStartsOn = 1 } = {},
+  { today = toLocalDate(), weekStartsOn = 1 } = {}
 ) {
   const lifecycle = lifecycleAt(habit, dateKey);
   const log = logForDate(logs, habit.id, dateKey);
@@ -339,14 +338,14 @@ function evaluateFlexibleWeeks(habit, logs, fromDate, toDate, weekStartsOn, toda
     const boundedStart = week < fromDate ? fromDate : week;
     const boundedEnd = weekEnd > toDate ? toDate : weekEnd;
     const activeDays = eachDate(boundedStart, boundedEnd).filter(
-      (dateKey) => lifecycleAt(habit, dateKey) === 'active' && dateKey <= today,
+      (dateKey) => lifecycleAt(habit, dateKey) === 'active' && dateKey <= today
     );
     if (!activeDays.length) continue;
 
     const { schedule } = configurationForDate(habit, activeDays[0]);
     const target = schedule.timesPerWeek;
     const results = activeDays.map((dateKey) =>
-      dailyResult(habit, logForDate(logs, habit.id, dateKey), dateKey),
+      dailyResult(habit, logForDate(logs, habit.id, dateKey), dateKey)
     );
     const completions = results.filter((result) => result.status === 'completed').length;
     const allSkipped = results.length > 0 && results.every((result) => result.status === 'skipped');
@@ -376,7 +375,7 @@ function evaluateFlexibleWeeks(habit, logs, fromDate, toDate, weekStartsOn, toda
 export function calculateHabitStats(
   habit,
   logs,
-  { endDate = toLocalDate(), days = 84, weekStartsOn = 1, today = toLocalDate() } = {},
+  { endDate = toLocalDate(), days = 84, weekStartsOn = 1, today = toLocalDate() } = {}
 ) {
   const fromDate = addDays(endDate, -(Math.max(1, days) - 1));
   const schedule = configurationForDate(habit, endDate).schedule;
@@ -417,18 +416,17 @@ export function calculateHabitStats(
 
 export function buildWeeklyReview(habits, logs, options = {}) {
   const active = (habits || []).filter(
-    (habit) => lifecycleAt(habit, options.endDate || toLocalDate()) === 'active',
+    (habit) => lifecycleAt(habit, options.endDate || toLocalDate()) === 'active'
   );
   const rows = active.map((habit) => ({
     habit,
     stats: calculateHabitStats(habit, logs, { ...options, days: 28 }),
   }));
   const strong = rows.filter(
-    ({ stats }) => stats.completionRate != null && stats.completionRate >= 80,
+    ({ stats }) => stats.completionRate != null && stats.completionRate >= 80
   );
   const adjust = rows.filter(
-    ({ stats }) =>
-      stats.expected >= 3 && stats.completionRate != null && stats.completionRate < 60,
+    ({ stats }) => stats.expected >= 3 && stats.completionRate != null && stats.completionRate < 60
   );
   const insufficient = rows.filter(({ stats }) => stats.expected < 3);
   return { strong, adjust, insufficient };

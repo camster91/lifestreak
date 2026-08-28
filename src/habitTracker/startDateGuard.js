@@ -8,7 +8,7 @@ habitStore.updateHabit = (habitId, changes, effectiveDate) => {
 
   if (changes?.startDate && changes.startDate !== habit.startDate) {
     throw new Error(
-      'The start date cannot be changed after a habit has history. Create a new habit or adjust its schedule prospectively.',
+      'The start date cannot be changed after a habit has history. Create a new habit or adjust its schedule prospectively.'
     );
   }
 

@@ -44,7 +44,7 @@ function isDialogDismissAction(event, dialog) {
 
 function trapTab(event, dialog) {
   const focusable = [...dialog.querySelectorAll(FOCUSABLE_SELECTOR)].filter(
-    (element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
+    (element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true'
   );
   if (!focusable.length) {
     event.preventDefault();
@@ -79,7 +79,7 @@ if (typeof document !== 'undefined') {
       event.stopPropagation();
       event.stopImmediatePropagation();
     },
-    true,
+    true
   );
 
   document.addEventListener(
@@ -99,6 +99,6 @@ if (typeof document !== 'undefined') {
         event.stopImmediatePropagation();
       }
     },
-    true,
+    true
   );
 }

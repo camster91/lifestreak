@@ -107,7 +107,7 @@ describe('completion and insight rules', () => {
       measurable,
       [log('2026-08-17', null, [{ id: 'entry-1', value: 12, unit: 'min' }])],
       '2026-08-17',
-      { today: '2026-08-17' },
+      { today: '2026-08-17' }
     );
     expect(partial.status).toBe('partial');
     expect(partial.value).toBe(12);

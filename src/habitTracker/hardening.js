@@ -94,11 +94,7 @@ function sanitizeTracking(value, label) {
     }
     if (source.stretchTarget != null && source.stretchTarget !== '') {
       const stretchTarget = Number(source.stretchTarget);
-      if (
-        !Number.isFinite(stretchTarget) ||
-        stretchTarget < target ||
-        stretchTarget > MAX_NUMBER
-      ) {
+      if (!Number.isFinite(stretchTarget) || stretchTarget < target || stretchTarget > MAX_NUMBER) {
         throw new Error(`${label} has an invalid stretch target.`);
       }
     }
@@ -106,8 +102,7 @@ function sanitizeTracking(value, label) {
 
   return {
     ...normalized,
-    unit:
-      normalized.type === 'binary' ? 'completion' : safeText(source.unit, 20, normalized.unit),
+    unit: normalized.type === 'binary' ? 'completion' : safeText(source.unit, 20, normalized.unit),
   };
 }
 
@@ -141,20 +136,17 @@ function sanitizeHabit(sourceValue, index, seenHabitIds) {
         .map((revisionValue, revisionIndex) => ({ revisionValue, revisionIndex }))
         .sort((a, b) =>
           String(a.revisionValue?.effectiveDate || '').localeCompare(
-            String(b.revisionValue?.effectiveDate || ''),
-          ),
+            String(b.revisionValue?.effectiveDate || '')
+          )
         )
     : [];
 
   sourceRevisions.forEach(({ revisionValue, revisionIndex }) => {
     const revision = requireObject(
       revisionValue,
-      `Revision ${revisionIndex + 1} for habit “${name}”`,
+      `Revision ${revisionIndex + 1} for habit “${name}”`
     );
-    const revisionId = requireId(
-      revision.id,
-      `Revision ${revisionIndex + 1} for habit “${name}”`,
-    );
+    const revisionId = requireId(revision.id, `Revision ${revisionIndex + 1} for habit “${name}”`);
     if (revisionIds.has(revisionId)) {
       throw new Error(`Habit “${name}” contains duplicate revision IDs.`);
     }
@@ -170,9 +162,7 @@ function sanitizeHabit(sourceValue, index, seenHabitIds) {
       tracking: revision.tracking
         ? sanitizeTracking(revision.tracking, `Revision for habit “${name}”`)
         : revisionConfig.tracking,
-      timeOfDay: revision.timeOfDay
-        ? safeTimeOfDay(revision.timeOfDay)
-        : revisionConfig.timeOfDay,
+      timeOfDay: revision.timeOfDay ? safeTimeOfDay(revision.timeOfDay) : revisionConfig.timeOfDay,
     };
 
     revisions.push({
@@ -190,20 +180,17 @@ function sanitizeHabit(sourceValue, index, seenHabitIds) {
         .map((eventValue, eventIndex) => {
           const event = requireObject(
             eventValue,
-            `Lifecycle event ${eventIndex + 1} for habit “${name}”`,
+            `Lifecycle event ${eventIndex + 1} for habit “${name}”`
           );
           const eventId = requireId(
             event.id,
-            `Lifecycle event ${eventIndex + 1} for habit “${name}”`,
+            `Lifecycle event ${eventIndex + 1} for habit “${name}”`
           );
           if (lifecycleIds.has(eventId)) {
             throw new Error(`Habit “${name}” contains duplicate lifecycle event IDs.`);
           }
           lifecycleIds.add(eventId);
-          if (
-            !isValidLocalDate(event.effectiveDate) ||
-            !LIFECYCLE_STATES.includes(event.state)
-          ) {
+          if (!isValidLocalDate(event.effectiveDate) || !LIFECYCLE_STATES.includes(event.state)) {
             throw new Error(`Habit “${name}” contains an invalid lifecycle event.`);
           }
           return {
@@ -263,10 +250,7 @@ function sanitizeLog(sourceValue, index, habitIds, seenLogIds, seenHabitDates, e
           throw new Error('The selected file contains too many quantitative entries.');
         }
 
-        const entry = requireObject(
-          entryValue,
-          `Entry ${entryIndex + 1} in log ${index + 1}`,
-        );
+        const entry = requireObject(entryValue, `Entry ${entryIndex + 1} in log ${index + 1}`);
         const entryId = requireId(entry.id, `Entry ${entryIndex + 1} in log ${index + 1}`);
         if (entryIds.has(entryId)) throw new Error('The backup contains duplicate entry IDs.');
         entryIds.add(entryId);
@@ -327,7 +311,7 @@ export function sanitizeImportedState(payload) {
   const seenHabitDates = new Set();
   const entryCounter = { count: 0 };
   const logs = raw.logs.map((log, index) =>
-    sanitizeLog(log, index, seenHabitIds, seenLogIds, seenHabitDates, entryCounter),
+    sanitizeLog(log, index, seenHabitIds, seenLogIds, seenHabitDates, entryCounter)
   );
 
   return {
@@ -339,15 +323,11 @@ export function sanitizeImportedState(payload) {
         ? Number(raw.preferences.weekStartsOn)
         : 1,
       completedPlacement: raw.preferences?.completedPlacement === 'keep' ? 'keep' : 'bottom',
-      showHabitNamesInNotifications: Boolean(
-        raw.preferences?.showHabitNamesInNotifications,
-      ),
+      showHabitNamesInNotifications: Boolean(raw.preferences?.showHabitNamesInNotifications),
     },
     onboarding: {
       completed: Boolean(raw.onboarding?.completed),
-      dismissedAt: raw.onboarding?.dismissedAt
-        ? safeTimestamp(raw.onboarding.dismissedAt)
-        : null,
+      dismissedAt: raw.onboarding?.dismissedAt ? safeTimestamp(raw.onboarding.dismissedAt) : null,
     },
     legacy: {
       detectedKeys: Array.isArray(raw.legacy?.detectedKeys)
@@ -394,7 +374,7 @@ function sanitizeHabitInput(input, { partial = false, fallbackStartDate = toLoca
     result.schedule = sanitizeSchedule(
       source.schedule,
       source.startDate || fallbackStartDate,
-      'Habit',
+      'Habit'
     );
   }
   if (Object.prototype.hasOwnProperty.call(source, 'tracking')) {
@@ -428,7 +408,7 @@ habitStore.updateHabit = (habitId, changes, effectiveDate) => {
       partial: true,
       fallbackStartDate: habit?.startDate || toLocalDate(),
     }),
-    effectiveDate,
+    effectiveDate
   );
 };
 

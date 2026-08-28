@@ -112,7 +112,7 @@ habitStore.scanLegacyData = (...args) => {
   showInformationalNotice(
     count
       ? `${count} existing LifeStreak data ${count === 1 ? 'store was' : 'stores were'} detected and left unchanged.`
-      : 'No existing LifeStreak specialist stores were detected.',
+      : 'No existing LifeStreak specialist stores were detected.'
   );
   return result;
 };

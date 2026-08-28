@@ -17,6 +17,18 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 - The branch has not passed the full migration, native archive, device, accessibility, privacy, or release evidence required by the issues below.
 - Issues #95-#102 remain open because source on a draft branch is not completion on the default branch and required external/manual evidence is incomplete.
 
+## GitHub triage metadata
+
+The live GitHub issue list mirrors this roadmap with the following repository labels:
+
+- `priority:P0` — independent-product safety, data preservation, identity, permissions, signing, and integration gates that block release.
+- `priority:P1` — core habit workflows, accessibility, reliability, supported tooling, and release readiness.
+- `priority:P2` — post-foundation trust, reminders, design polish, insights, observability, and supply-chain completion.
+- `status:integration-pending` — work exists or is progressing on draft PR #106, but the acceptance criteria are not yet proven on the default branch. This label must be removed when an issue is closed or when its disposition changes.
+- `roadmap:umbrella` — historical aggregate issues #81-#83, retained only until this reconciled roadmap is integrated and linked from them.
+
+Every open actionable issue has exactly one priority label plus its ordinary `bug`, `enhancement`, or `documentation` type. The three umbrella issues intentionally have no priority label. Closed audit issue #40 is marked `duplicate`; closed resolved audit issue #42 remains typed `bug`; open audit issue #41 retains `audit` alongside its current P1 bug disposition. Titles retain their historical prefixes, but labels and this file are authoritative for current sorting.
+
 ## Execution order
 
 ### P0 — establish a safe independent product

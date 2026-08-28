@@ -21,6 +21,15 @@ The canonical runtime and TypeScript contract lives in `src/habitTracker/domain.
 - Lifecycle events are also effective-dated, preserving historical active/paused/archived expectations.
 - At most one log may exist for a habit/date pair. Corrections update that stable log; quantitative additions retain stable entry IDs.
 
+## Schedule and streak language
+
+- Supported schedules are every day, selected weekdays, a target number per week, once per week within selected weekdays, every N days, selected month days, and a target number per month. An optional end date stops new expectations.
+- Flexible weekly/monthly schedules expose the target, completions, remaining target, and remaining available dates from the same pure engine used by Today and stats. Future-dated logs never satisfy the current period.
+- `Current streak` counts consecutive completed scheduled periods ending at the latest decisive result. `Best streak` is the longest such run in the selected history.
+- Intentional skips are neutral: they neither increase nor break a streak and are excluded from the expected denominator. Paused, archived, future, and unscheduled dates are also neutral.
+- A partial, failed, or missed scheduled period breaks the current streak. Insights state the exact date and reason for the latest break.
+- Backdated corrections immediately recompute streaks and completion rates from source logs. Prospective schedule revisions preserve earlier expectations.
+
 ## Persistence and recovery
 
 - Every loaded v1 database passes the runtime domain validator before it becomes app state. Invalid databases remain untouched in local storage and open an error state instead of being partially loaded.

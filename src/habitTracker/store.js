@@ -370,11 +370,14 @@ function validateHabitInput(input) {
     throw new Error('A measurable habit needs a target greater than zero.');
   }
   const schedule = normalizeSchedule(input.schedule, input.startDate);
-  if (schedule.type === 'weekdays' && schedule.weekdays.length === 0) {
+  if (['weekdays', 'weekly'].includes(schedule.type) && schedule.weekdays.length === 0) {
     throw new Error('Choose at least one weekday.');
   }
   if (schedule.type === 'monthly' && schedule.monthlyDays.length === 0) {
     throw new Error('Choose at least one day of the month.');
+  }
+  if (schedule.endDate && isValidLocalDate(input.startDate) && schedule.endDate < input.startDate) {
+    throw new Error('The end date cannot be before the start date.');
   }
 }
 

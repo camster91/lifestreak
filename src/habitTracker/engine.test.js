@@ -3,7 +3,9 @@ import {
   addDays,
   calculateHabitStats,
   configurationForDate,
+  explainStreak,
   getDayState,
+  getSchedulePeriodProgress,
   isScheduledOnDate,
   parseLocalDate,
   startOfWeek,
@@ -79,6 +81,54 @@ describe('schedule evaluation', () => {
     const state = getDayState(habit(), [], '2026-08-18', { today: '2026-08-17' });
     expect(state.status).toBe('future');
   });
+
+  it('does not let future-dated logs satisfy the current weekly target', () => {
+    const flexible = habit({
+      schedule: { type: 'timesPerWeek', timesPerWeek: 1, anchorDate: '2026-01-01' },
+    });
+    const state = getDayState(flexible, [log('2026-08-21')], '2026-08-17', {
+      today: '2026-08-17',
+      weekStartsOn: 1,
+    });
+    expect(state.status).toBe('due');
+  });
+
+  it('supports a once-per-week window on selected weekdays', () => {
+    const weekly = habit({
+      schedule: { type: 'weekly', weekdays: [2, 4], anchorDate: '2026-01-01' },
+    });
+    expect(isScheduledOnDate(weekly, '2026-08-17')).toBe(false);
+    expect(isScheduledOnDate(weekly, '2026-08-18')).toBe(true);
+    expect(isScheduledOnDate(weekly, '2026-08-20')).toBe(true);
+    expect(isScheduledOnDate(weekly, '2026-08-20', [log('2026-08-18')])).toBe(false);
+  });
+
+  it('supports monthly targets and optional end dates', () => {
+    const monthly = habit({
+      schedule: {
+        type: 'monthlyTarget',
+        monthlyTarget: 2,
+        anchorDate: '2026-01-01',
+        endDate: '2026-08-20',
+      },
+    });
+    expect(isScheduledOnDate(monthly, '2026-08-18', [log('2026-08-03')])).toBe(true);
+    expect(isScheduledOnDate(monthly, '2026-08-18', [log('2026-08-03'), log('2026-08-10')])).toBe(
+      false
+    );
+    expect(isScheduledOnDate(monthly, '2026-08-21')).toBe(false);
+  });
+
+  it('explains remaining weekly opportunities from the same schedule engine', () => {
+    const weekly = habit({
+      schedule: { type: 'weekly', weekdays: [2, 4, 6], anchorDate: '2026-01-01' },
+    });
+    const progress = getSchedulePeriodProgress(weekly, [log('2026-08-18')], '2026-08-19', {
+      today: '2026-08-19',
+      weekStartsOn: 1,
+    });
+    expect(progress).toMatchObject({ target: 1, completed: 1, remaining: 0, availableDays: 2 });
+  });
 });
 
 describe('historical configuration', () => {
@@ -130,6 +180,18 @@ describe('completion and insight rules', () => {
     expect(stats.skipped).toBe(1);
     expect(stats.currentStreak).toBe(3);
     expect(stats.completionRate).toBe(100);
+    expect(explainStreak(stats)).toContain('Current streak: 3');
+  });
+
+  it('explains the scheduled date and reason that reset a streak', () => {
+    const stats = calculateHabitStats(habit(), [log('2026-08-15'), log('2026-08-16', 'failed')], {
+      endDate: '2026-08-17',
+      today: '2026-08-17',
+      days: 3,
+    });
+    expect(stats.currentStreak).toBe(0);
+    expect(explainStreak(stats)).toContain('2026-08-16');
+    expect(explainStreak(stats)).toContain('marked not completed');
   });
 
   it('does not count off-schedule activity in the expected denominator', () => {

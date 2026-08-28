@@ -57,6 +57,15 @@ export interface HabitDatabase {
 }
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/;
+const SCHEDULE_TYPES = [
+  'daily',
+  'weekdays',
+  'timesPerWeek',
+  'weekly',
+  'interval',
+  'monthly',
+  'monthlyTarget',
+];
 const objectRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -88,6 +97,8 @@ export function assertValidHabitDatabase(value: unknown): asserts value is Habit
       typeof rawHabit.lifecycleState !== 'string' ||
       !LIFECYCLE_STATES.includes(rawHabit.lifecycleState) ||
       !objectRecord(rawHabit.schedule) ||
+      typeof rawHabit.schedule.type !== 'string' ||
+      !SCHEDULE_TYPES.includes(rawHabit.schedule.type) ||
       !objectRecord(rawHabit.tracking) ||
       typeof rawHabit.tracking.type !== 'string' ||
       !TRACKING_TYPES.includes(rawHabit.tracking.type) ||

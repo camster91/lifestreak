@@ -6,6 +6,7 @@ import {
   configurationForDate,
   describeSchedule,
   eachDate,
+  explainStreak,
   getDayState,
   lifecycleAt,
   logForDate,
@@ -802,6 +803,7 @@ function InsightsView({ snapshot }) {
               detail={`${stats.completed} completed`}
             />
           </div>
+          <p role="status">{explainStreak(stats)}</p>
           <section className="habit-calendar-panel" aria-labelledby="history-calendar-heading">
             <div className="habit-section-heading">
               <h3 id="history-calendar-heading">Recent history</h3>
@@ -823,6 +825,7 @@ function InsightsView({ snapshot }) {
                     role="listitem"
                     className={`habit-calendar-day status-${dayState.status}`}
                     title={`${formatDate(dateKey, { month: 'short', day: 'numeric' })}: ${statusLabel(dayState.status)}`}
+                    aria-label={`${formatDate(dateKey)}: ${statusLabel(dayState.status)} for ${selected.name}`}
                   >
                     <span>{parseLocalDate(dateKey).getDate()}</span>
                     <small>{statusLabel(dayState.status)}</small>
@@ -1148,8 +1151,10 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
     scheduleType: current?.schedule.type || 'daily',
     weekdays: current?.schedule.weekdays || [1, 2, 3, 4, 5],
     timesPerWeek: current?.schedule.timesPerWeek || 3,
+    monthlyTarget: current?.schedule.monthlyTarget || 3,
     intervalDays: current?.schedule.intervalDays || 2,
     monthlyDays: (current?.schedule.monthlyDays || [1]).join(', '),
+    endDate: current?.schedule.endDate || '',
     trackingType: current?.tracking.type || 'binary',
     target: current?.tracking.target || 1,
     stretchTarget: current?.tracking.stretchTarget || '',
@@ -1183,12 +1188,14 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
         type: form.scheduleType,
         weekdays: form.weekdays,
         timesPerWeek: Number(form.timesPerWeek),
+        monthlyTarget: Number(form.monthlyTarget),
         intervalDays: Number(form.intervalDays),
         monthlyDays: String(form.monthlyDays)
           .split(',')
           .map((value) => Number(value.trim()))
           .filter(Boolean),
         anchorDate: form.startDate,
+        endDate: form.endDate || null,
       },
       tracking: {
         type: form.trackingType,
@@ -1291,11 +1298,13 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
               <option value="daily">Every day</option>
               <option value="weekdays">Selected weekdays</option>
               <option value="timesPerWeek">Times per week</option>
+              <option value="weekly">Once per week in a weekday window</option>
               <option value="interval">Every N days</option>
               <option value="monthly">Selected days of month</option>
+              <option value="monthlyTarget">Times per month</option>
             </select>
           </label>
-          {form.scheduleType === 'weekdays' && (
+          {['weekdays', 'weekly'].includes(form.scheduleType) && (
             <div className="habit-weekday-picker" role="group" aria-label="Scheduled weekdays">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((name, day) => (
                 <label key={name}>
@@ -1318,6 +1327,18 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
                 max="7"
                 value={form.timesPerWeek}
                 onChange={(event) => set('timesPerWeek', event.target.value)}
+              />
+            </label>
+          )}
+          {form.scheduleType === 'monthlyTarget' && (
+            <label className="habit-field">
+              <span>Times per month</span>
+              <input
+                type="number"
+                min="1"
+                max="31"
+                value={form.monthlyTarget}
+                onChange={(event) => set('monthlyTarget', event.target.value)}
               />
             </label>
           )}
@@ -1347,6 +1368,32 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
               <small>Comma-separated values from 1 to 31.</small>
             </label>
           )}
+          <label className="habit-field">
+            <span>End date (optional)</span>
+            <input
+              type="date"
+              min={form.startDate}
+              value={form.endDate}
+              onChange={(event) => set('endDate', event.target.value)}
+            />
+          </label>
+          <p role="status">
+            Preview:{' '}
+            {describeSchedule({
+              type: form.scheduleType,
+              weekdays: form.weekdays,
+              timesPerWeek: Number(form.timesPerWeek),
+              monthlyTarget: Number(form.monthlyTarget),
+              intervalDays: Number(form.intervalDays),
+              monthlyDays: String(form.monthlyDays)
+                .split(',')
+                .map((value) => Number(value.trim()))
+                .filter(Boolean),
+              anchorDate: form.startDate,
+              endDate: form.endDate || null,
+            })}
+            {form.endDate ? ` through ${formatDate(form.endDate)}` : ''}
+          </p>
         </fieldset>
 
         <fieldset className="habit-form-section">

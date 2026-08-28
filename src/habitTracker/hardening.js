@@ -20,7 +20,15 @@ const MAX_NUMBER = 1e12;
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const COLOUR_PATTERN = /^#[0-9a-f]{6}$/i;
-const SCHEDULE_TYPES = ['daily', 'weekdays', 'timesPerWeek', 'interval', 'monthly'];
+const SCHEDULE_TYPES = [
+  'daily',
+  'weekdays',
+  'timesPerWeek',
+  'weekly',
+  'interval',
+  'monthly',
+  'monthlyTarget',
+];
 
 function requireObject(value, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -65,7 +73,7 @@ function sanitizeSchedule(value, startDate, label) {
   }
 
   const normalized = normalizeSchedule(source, startDate);
-  if (normalized.type === 'weekdays' && !normalized.weekdays.length) {
+  if (['weekdays', 'weekly'].includes(normalized.type) && !normalized.weekdays.length) {
     throw new Error(`${label} must include at least one weekday.`);
   }
   if (normalized.type === 'monthly' && !normalized.monthlyDays.length) {
@@ -73,6 +81,9 @@ function sanitizeSchedule(value, startDate, label) {
   }
   if (!isValidLocalDate(normalized.anchorDate)) {
     throw new Error(`${label} has an invalid schedule anchor date.`);
+  }
+  if (normalized.endDate && normalized.endDate < startDate) {
+    throw new Error(`${label} has an end date before its start date.`);
   }
   return normalized;
 }

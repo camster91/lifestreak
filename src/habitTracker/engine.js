@@ -120,7 +120,15 @@ export function normalizeTracking(tracking = {}) {
 }
 
 export function normalizeSchedule(schedule = {}, fallbackStartDate = toLocalDate()) {
-  const type = ['daily', 'weekdays', 'timesPerWeek', 'interval', 'monthly'].includes(schedule.type)
+  const type = [
+    'daily',
+    'weekdays',
+    'timesPerWeek',
+    'weekly',
+    'interval',
+    'monthly',
+    'monthlyTarget',
+  ].includes(schedule.type)
     ? schedule.type
     : 'daily';
 
@@ -130,6 +138,7 @@ export function normalizeSchedule(schedule = {}, fallbackStartDate = toLocalDate
       new Set((schedule.weekdays || []).map(Number).filter((day) => day >= 0 && day <= 6))
     ).sort(),
     timesPerWeek: Math.min(7, Math.max(1, Number(schedule.timesPerWeek) || 3)),
+    monthlyTarget: Math.min(31, Math.max(1, Number(schedule.monthlyTarget) || 3)),
     intervalDays: Math.max(1, Number(schedule.intervalDays) || 2),
     monthlyDays: Array.from(
       new Set((schedule.monthlyDays || []).map(Number).filter((day) => day >= 1 && day <= 31))
@@ -137,6 +146,7 @@ export function normalizeSchedule(schedule = {}, fallbackStartDate = toLocalDate
     anchorDate: isValidLocalDate(schedule.anchorDate)
       ? schedule.anchorDate
       : fallbackStartDate || toLocalDate(),
+    endDate: isValidLocalDate(schedule.endDate) ? schedule.endDate : null,
   };
 }
 
@@ -200,6 +210,7 @@ export function dailyResult(habit, log, dateKey) {
 export function isScheduledOnDate(habit, dateKey, logs = [], weekStartsOn = 1) {
   if (lifecycleAt(habit, dateKey) !== 'active') return false;
   const { schedule } = configurationForDate(habit, dateKey);
+  if (schedule.endDate && dateKey > schedule.endDate) return false;
   const date = parseLocalDate(dateKey);
 
   switch (schedule.type) {
@@ -214,14 +225,22 @@ export function isScheduledOnDate(habit, dateKey, logs = [], weekStartsOn = 1) {
       );
     case 'monthly':
       return schedule.monthlyDays.includes(date.getDate());
-    case 'timesPerWeek': {
+    case 'timesPerWeek':
+    case 'weekly': {
       const weekStart = startOfWeek(dateKey, weekStartsOn);
       const weekEnd = endOfWeek(dateKey, weekStartsOn);
+      if (schedule.type === 'weekly' && !schedule.weekdays.includes(date.getDay())) return false;
+      const target = schedule.type === 'weekly' ? 1 : schedule.timesPerWeek;
       const completionDates = Array.from(
         new Set(
           (logs || [])
             .filter((log) => {
-              if (log.habitId !== habit.id || log.date < weekStart || log.date > weekEnd) {
+              if (
+                log.habitId !== habit.id ||
+                log.date < weekStart ||
+                log.date > weekEnd ||
+                log.date > dateKey
+              ) {
                 return false;
               }
               return dailyResult(habit, log, log.date).status === 'completed';
@@ -230,15 +249,85 @@ export function isScheduledOnDate(habit, dateKey, logs = [], weekStartsOn = 1) {
         )
       ).sort();
       const completionIndex = completionDates.indexOf(dateKey);
-      if (completionIndex >= 0) return completionIndex < schedule.timesPerWeek;
+      if (completionIndex >= 0) return completionIndex < target;
+      return completionDates.filter((completedDate) => completedDate < dateKey).length < target;
+    }
+    case 'monthlyTarget': {
+      const month = dateKey.slice(0, 7);
+      const completionDates = Array.from(
+        new Set(
+          (logs || [])
+            .filter(
+              (log) =>
+                log.habitId === habit.id &&
+                log.date.startsWith(month) &&
+                log.date <= dateKey &&
+                dailyResult(habit, log, log.date).status === 'completed'
+            )
+            .map((log) => log.date)
+        )
+      ).sort();
+      const completionIndex = completionDates.indexOf(dateKey);
+      if (completionIndex >= 0) return completionIndex < schedule.monthlyTarget;
       return (
         completionDates.filter((completedDate) => completedDate < dateKey).length <
-        schedule.timesPerWeek
+        schedule.monthlyTarget
       );
     }
     default:
       return false;
   }
+}
+
+export function getSchedulePeriodProgress(
+  habit,
+  logs,
+  dateKey,
+  { today = toLocalDate(), weekStartsOn = 1 } = {}
+) {
+  const { schedule } = configurationForDate(habit, dateKey);
+  const weekly = schedule.type === 'timesPerWeek' || schedule.type === 'weekly';
+  const monthly = schedule.type === 'monthlyTarget';
+  if (!weekly && !monthly) return null;
+
+  const periodStart = weekly ? startOfWeek(dateKey, weekStartsOn) : `${dateKey.slice(0, 7)}-01`;
+  const periodEnd = weekly
+    ? endOfWeek(dateKey, weekStartsOn)
+    : addDays(
+        `${dateKey.slice(0, 7)}-01`,
+        new Date(Number(dateKey.slice(0, 4)), Number(dateKey.slice(5, 7)), 0).getDate() - 1
+      );
+  const target =
+    schedule.type === 'weekly' ? 1 : weekly ? schedule.timesPerWeek : schedule.monthlyTarget;
+  const completedDates = Array.from(
+    new Set(
+      (logs || [])
+        .filter(
+          (log) =>
+            log.habitId === habit.id &&
+            log.date >= periodStart &&
+            log.date <= periodEnd &&
+            log.date <= today &&
+            dailyResult(habit, log, log.date).status === 'completed'
+        )
+        .map((log) => log.date)
+    )
+  );
+  const availableDates = eachDate(dateKey > periodStart ? dateKey : periodStart, periodEnd).filter(
+    (candidate) =>
+      candidate >= dateKey &&
+      lifecycleAt(habit, candidate) === 'active' &&
+      (!schedule.endDate || candidate <= schedule.endDate) &&
+      (schedule.type !== 'weekly' || schedule.weekdays.includes(parseLocalDate(candidate).getDay()))
+  );
+  return {
+    periodStart,
+    periodEnd,
+    target,
+    completed: Math.min(target, completedDates.length),
+    remaining: Math.max(0, target - completedDates.length),
+    availableDays: availableDates.length,
+  };
 }
 
 export function getDayState(
@@ -309,13 +398,13 @@ function evaluateFixedSchedule(habit, logs, fromDate, toDate, weekStartsOn, toda
       streakStates.push({ date: dateKey, status: 'completed' });
     } else if (state.status === 'partial') {
       partial += 1;
-      streakStates.push({ date: dateKey, status: 'broken' });
+      streakStates.push({ date: dateKey, status: 'broken', reason: 'partially completed' });
     } else if (state.status === 'failed') {
       failed += 1;
-      streakStates.push({ date: dateKey, status: 'broken' });
+      streakStates.push({ date: dateKey, status: 'broken', reason: 'marked not completed' });
     } else if (state.status === 'missed') {
       missed += 1;
-      streakStates.push({ date: dateKey, status: 'broken' });
+      streakStates.push({ date: dateKey, status: 'broken', reason: 'missed' });
     }
   }
 
@@ -343,7 +432,7 @@ function evaluateFlexibleWeeks(habit, logs, fromDate, toDate, weekStartsOn, toda
     if (!activeDays.length) continue;
 
     const { schedule } = configurationForDate(habit, activeDays[0]);
-    const target = schedule.timesPerWeek;
+    const target = schedule.type === 'weekly' ? 1 : schedule.timesPerWeek;
     const results = activeDays.map((dateKey) =>
       dailyResult(habit, logForDate(logs, habit.id, dateKey), dateKey)
     );
@@ -365,11 +454,22 @@ function evaluateFlexibleWeeks(habit, logs, fromDate, toDate, weekStartsOn, toda
       partial += 1;
     } else {
       missed += 1;
-      streakStates.push({ date: week, status: 'broken' });
+      streakStates.push({ date: week, status: 'broken', reason: 'weekly target missed' });
     }
   }
 
   return { expected, completed, partial, failed, missed, skipped, streakStates };
+}
+
+export function explainStreak(stats) {
+  const lastDecisive = [...(stats?.streakStates || [])]
+    .reverse()
+    .find((state) => state.status !== 'neutral');
+  if (!lastDecisive) return 'No scheduled result has started this streak yet.';
+  if (lastDecisive.status === 'completed') {
+    return `Current streak: ${stats.currentStreak}. It grows with each completed scheduled period; intentional skips stay neutral.`;
+  }
+  return `Current streak: 0. It was reset on ${lastDecisive.date} because that scheduled period was ${lastDecisive.reason || 'not completed'}.`;
 }
 
 export function calculateHabitStats(
@@ -379,10 +479,9 @@ export function calculateHabitStats(
 ) {
   const fromDate = addDays(endDate, -(Math.max(1, days) - 1));
   const schedule = configurationForDate(habit, endDate).schedule;
-  const metrics =
-    schedule.type === 'timesPerWeek'
-      ? evaluateFlexibleWeeks(habit, logs, fromDate, endDate, weekStartsOn, today)
-      : evaluateFixedSchedule(habit, logs, fromDate, endDate, weekStartsOn, today);
+  const metrics = ['timesPerWeek', 'weekly'].includes(schedule.type)
+    ? evaluateFlexibleWeeks(habit, logs, fromDate, endDate, weekStartsOn, today)
+    : evaluateFixedSchedule(habit, logs, fromDate, endDate, weekStartsOn, today);
 
   let currentStreak = 0;
   let bestStreak = 0;
@@ -497,6 +596,11 @@ export function describeSchedule(schedule) {
   if (normalized.type === 'timesPerWeek') {
     return `${normalized.timesPerWeek} times per week`;
   }
+  if (normalized.type === 'weekly') {
+    const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return `Once per week on ${normalized.weekdays.map((day) => names[day]).join(', ')}`;
+  }
+  if (normalized.type === 'monthlyTarget') return `${normalized.monthlyTarget} times per month`;
   if (normalized.type === 'interval') return `Every ${normalized.intervalDays} days`;
   if (normalized.type === 'monthly') {
     return `Monthly on ${normalized.monthlyDays.join(', ') || 'selected days'}`;

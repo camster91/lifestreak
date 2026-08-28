@@ -17,6 +17,11 @@ import {
   toLocalDate,
 } from './engine';
 import { habitStore, useHabitState } from './store';
+import {
+  createPortableBackup,
+  restorePortableBackup,
+  validatePortableBackup,
+} from '../utils/portableBackup';
 import './styles.css';
 
 const GROUP_LABELS = {
@@ -967,6 +972,8 @@ function ReviewColumn({ title, rows, empty }) {
 function SettingsView({ snapshot }) {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [importMode, setImportMode] = useState('replace');
+  const [pendingPortableImport, setPendingPortableImport] = useState(null);
+  const [backupMessage, setBackupMessage] = useState('');
   const [resetText, setResetText] = useState('');
 
   const requestNotifications = async () => {
@@ -987,6 +994,17 @@ function SettingsView({ snapshot }) {
     if (!file) return;
     try {
       const parsed = JSON.parse(await file.text());
+      if (parsed?.product === 'LifeStreak' && parsed?.formatVersion !== undefined) {
+        const validation = validatePortableBackup(parsed);
+        if (!validation.ok) throw new Error(validation.reason);
+        setPendingPortableImport({
+          payload: parsed,
+          storeCount: Object.keys(validation.sanitized).length,
+          filename: file.name,
+        });
+        setBackupMessage('Portable backup validated. Review and confirm the replacement below.');
+        return;
+      }
       habitStore.createRecoveryBackup('before-import');
       habitStore.importData(parsed, importMode);
     } catch (error) {
@@ -1104,15 +1122,35 @@ function SettingsView({ snapshot }) {
 
         <section className="habit-settings-card" aria-labelledby="backup-settings-heading">
           <h3 id="backup-settings-heading">Backup and portability</h3>
+          <p>
+            Complete backups include habits and every specialist collection. Session-only AI keys
+            and notification schedules managed by the operating system are excluded.
+          </p>
           <div className="habit-button-stack">
             <button
               type="button"
               className="habit-button habit-button-primary"
+              onClick={() => {
+                try {
+                  downloadJson(`lifestreak-backup-${toLocalDate()}.json`, createPortableBackup());
+                  setBackupMessage(
+                    'Complete backup downloaded. Session-only secrets were excluded.'
+                  );
+                } catch (error) {
+                  setBackupMessage(error instanceof Error ? error.message : 'Export failed.');
+                }
+              }}
+            >
+              Export complete LifeStreak backup
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
               onClick={() =>
                 downloadJson(`lifestreak-habits-${toLocalDate()}.json`, habitStore.exportData())
               }
             >
-              Export habit backup
+              Export habits only
             </button>
             <button
               type="button"
@@ -1149,6 +1187,53 @@ function SettingsView({ snapshot }) {
             Import LifeStreak JSON
             <input type="file" accept="application/json,.json" onChange={importFile} />
           </label>
+          {backupMessage && <p role="status">{backupMessage}</p>}
+          {pendingPortableImport && (
+            <div
+              className="habit-import-confirm"
+              role="alert"
+              aria-labelledby="portable-import-heading"
+            >
+              <h4 id="portable-import-heading">Replace with validated complete backup?</h4>
+              <p>
+                {pendingPortableImport.filename} contains {pendingPortableImport.storeCount}{' '}
+                validated store{pendingPortableImport.storeCount === 1 ? '' : 's'}. A verified
+                recovery snapshot is created first, and a failed write rolls every store back.
+              </p>
+              <div className="habit-inline-actions">
+                <button
+                  type="button"
+                  className="habit-button habit-button-primary"
+                  onClick={() => {
+                    try {
+                      restorePortableBackup(pendingPortableImport.payload);
+                      setBackupMessage('Backup restored atomically. Reloading LifeStreak…');
+                      setPendingPortableImport(null);
+                      window.setTimeout(() => window.location.reload(), 400);
+                    } catch (error) {
+                      setBackupMessage(
+                        error instanceof Error
+                          ? error.message
+                          : 'Import failed. No data was changed.'
+                      );
+                    }
+                  }}
+                >
+                  Restore complete backup
+                </button>
+                <button
+                  type="button"
+                  className="habit-button habit-button-secondary"
+                  onClick={() => {
+                    setPendingPortableImport(null);
+                    setBackupMessage('Import cancelled. No data was changed.');
+                  }}
+                >
+                  Cancel import
+                </button>
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="habit-settings-card" aria-labelledby="legacy-settings-heading">
@@ -1214,7 +1299,11 @@ function SettingsView({ snapshot }) {
 
         <section className="habit-settings-card habit-danger-zone" aria-labelledby="danger-heading">
           <h3 id="danger-heading">Reset habit tracker</h3>
-          <p>A recovery copy is created first. Existing specialist collections are not removed.</p>
+          <p>
+            A recovery copy is created first. This removes habits only. Specialist collections,
+            notification schedules, Collections settings, and session-only AI credentials are not
+            changed.
+          </p>
           <label className="habit-field">
             <span>Type RESET to confirm</span>
             <input value={resetText} onChange={(event) => setResetText(event.target.value)} />

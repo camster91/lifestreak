@@ -26,10 +26,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import useProgressStore from '../stores/progressStore.js';
-import useSettingsStore, {
-  redactSettingsSecrets,
-  type Notifications,
-} from '../stores/settingsStore.js';
+import useSettingsStore, { type Notifications } from '../stores/settingsStore.js';
 import { useToast } from '../components/Toast.jsx';
 import { haptics } from '../utils/native.js';
 import PageHeader from '../components/PageHeader.jsx';
@@ -47,11 +44,15 @@ import {
 } from '../components/settings/NotificationItems.js';
 import { validateOllamaBaseUrl } from '../utils/safeNavigation.js';
 import {
-  BACKUP_STORAGE_KEYS,
   MAX_BACKUP_BYTES,
   validateBackupStoreData,
   validateLegacyBackup,
 } from '../utils/backupValidation.js';
+import {
+  createPortableBackup,
+  restorePortableBackup,
+  validatePortableBackup,
+} from '../utils/portableBackup.js';
 
 function Settings() {
   const toast = useToast();
@@ -192,26 +193,9 @@ function Settings() {
     }
   };
 
-  const STORAGE_KEYS = BACKUP_STORAGE_KEYS;
-
   const handleExportData = () => {
     try {
-      const storeData: Record<string, unknown> = {};
-      STORAGE_KEYS.forEach((key) => {
-        const raw = localStorage.getItem(key);
-        if (!raw) return;
-        try {
-          const parsed = JSON.parse(raw);
-          storeData[key] = key === 'ls-progress-settings' ? redactSettingsSecrets(parsed) : parsed;
-        } catch {
-          // Skip corrupt keys rather than failing the whole export
-        }
-      });
-      const exportData = {
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        data: storeData,
-      };
+      const exportData = createPortableBackup();
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -222,14 +206,14 @@ function Settings() {
       toast.success('Data exported (API keys excluded)');
     } catch (error) {
       console.error('Export failed:', error);
-      toast.error('Could not export data');
+      toast.error(error instanceof Error ? error.message : 'Could not export data');
     }
   };
 
   const [importModal, setImportModal] = useState<{
     data: any;
     isOldFormat: boolean;
-    versionMismatch: boolean;
+    storeCount: number;
   } | null>(null);
   const pendingImportData = useRef<any>(null);
 
@@ -248,15 +232,29 @@ function Settings() {
         const text = await file.text();
         const parsed = JSON.parse(text);
 
-        // Detect versioned format (version + data wrapper)
+        if (parsed.product === 'LifeStreak' && parsed.formatVersion !== undefined) {
+          const portable = validatePortableBackup(parsed);
+          if (!portable.ok) {
+            toast.error(portable.reason);
+            return;
+          }
+          pendingImportData.current = parsed;
+          setImportModal({
+            data: parsed,
+            isOldFormat: false,
+            storeCount: Object.keys(portable.sanitized).length,
+          });
+          return;
+        }
+
+        // Support the previous versioned wrapper and legacy progress/settings shape.
         let isOldFormat = false;
-        let versionMismatch = false;
         let storeData = parsed;
 
         if (parsed.version !== undefined && parsed.data !== undefined) {
-          // New versioned format
           if (parsed.version !== 1) {
-            versionMismatch = true;
+            toast.error(`Unsupported older backup wrapper version ${String(parsed.version)}`);
+            return;
           }
           storeData = parsed.data;
         } else {
@@ -270,27 +268,31 @@ function Settings() {
             toast.error(legacy.reason);
             return;
           }
-          pendingImportData.current = {
-            storeData: legacy.sanitized,
-            isOldFormat: true,
-            versionMismatch,
-          };
+          storeData = {};
+          if (legacy.sanitized.progress) {
+            storeData['ls-progress-storage'] = legacy.sanitized.progress;
+          }
+          if (legacy.sanitized.settings) {
+            storeData['ls-progress-settings'] = legacy.sanitized.settings;
+          }
         } else {
           const validated = validateBackupStoreData(storeData);
           if (!validated.ok) {
             toast.error(validated.reason);
             return;
           }
-          pendingImportData.current = {
-            storeData: validated.sanitized,
-            isOldFormat: false,
-            versionMismatch,
-          };
+          storeData = validated.sanitized;
         }
 
-        setImportModal({ data: parsed, isOldFormat, versionMismatch });
-      } catch {
-        toast.error('Failed to import data');
+        pendingImportData.current = {
+          product: 'LifeStreak',
+          formatVersion: 1,
+          exportedAt: parsed.exportedAt,
+          stores: storeData,
+        };
+        setImportModal({ data: parsed, isOldFormat, storeCount: Object.keys(storeData).length });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to import data');
       }
     };
     input.click();
@@ -298,31 +300,15 @@ function Settings() {
 
   const confirmImport = () => {
     if (!pendingImportData.current) return;
-    const { storeData, isOldFormat } = pendingImportData.current;
-
-    if (isOldFormat) {
-      if (storeData.progress) {
-        localStorage.setItem('ls-progress-storage', JSON.stringify(storeData.progress));
-      }
-      if (storeData.settings) {
-        localStorage.setItem(
-          'ls-progress-settings',
-          JSON.stringify(redactSettingsSecrets(storeData.settings))
-        );
-      }
-    } else {
-      STORAGE_KEYS.forEach((key) => {
-        if (!storeData[key]) return;
-        const payload =
-          key === 'ls-progress-settings' ? redactSettingsSecrets(storeData[key]) : storeData[key];
-        localStorage.setItem(key, JSON.stringify(payload));
-      });
+    try {
+      restorePortableBackup(pendingImportData.current);
+      setImportModal(null);
+      pendingImportData.current = null;
+      toast.success('Validated backup restored atomically. Refreshing...');
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Import failed. No data was changed.');
     }
-
-    setImportModal(null);
-    pendingImportData.current = null;
-    toast.success('Data imported successfully! Refreshing...');
-    setTimeout(() => window.location.reload(), 1000);
   };
 
   const cancelImport = () => {
@@ -590,27 +576,31 @@ function Settings() {
       {/* Import Confirmation Modal */}
       {importModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="card bg-base-100 shadow-2xl w-full max-w-md">
+          <div
+            className="card bg-base-100 shadow-2xl w-full max-w-md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="collections-import-heading"
+          >
             <div className="card-body">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-lg flex items-center gap-2">
+                <h3
+                  id="collections-import-heading"
+                  className="font-bold text-lg flex items-center gap-2"
+                >
                   <AlertTriangle className="w-5 h-5 text-warning" />
                   Import Data
                 </h3>
-                <button onClick={cancelImport} className="btn btn-ghost btn-sm btn-circle">
+                <button
+                  type="button"
+                  onClick={cancelImport}
+                  className="btn btn-ghost btn-sm btn-circle"
+                  aria-label="Cancel import"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="divider my-1"></div>
-              {importModal.versionMismatch && (
-                <div className="alert alert-warning mb-3">
-                  <AlertTriangle className="w-5 h-5" />
-                  <span className="text-sm">
-                    This backup was created by a different version of the app. Some data may not
-                    import correctly.
-                  </span>
-                </div>
-              )}
               {importModal.isOldFormat && (
                 <div className="alert alert-info mb-3">
                   <span className="text-sm">
@@ -619,8 +609,9 @@ function Settings() {
                 </div>
               )}
               <p className="text-base-content/70 mb-4">
-                This will <strong>replace all your current data</strong> with the imported backup.
-                This action cannot be undone.
+                {importModal.storeCount} validated LifeStreak store
+                {importModal.storeCount === 1 ? '' : 's'} will be restored. A verified local
+                recovery snapshot is created first; any failed write rolls every store back.
               </p>
               {importModal.data.exportedAt && (
                 <p className="text-xs text-base-content/50 mb-4">

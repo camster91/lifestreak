@@ -255,6 +255,46 @@ async function main() {
     );
     await readingContext.close();
 
+    const backupContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+      acceptDownloads: true,
+    });
+    const backupPage = await backupContext.newPage();
+    await backupPage.goto(origin, { waitUntil: 'networkidle' });
+    await backupPage.getByRole('button', { name: 'Create my own' }).click();
+    await backupPage.getByLabel(/Name/).fill('Portable fixture');
+    await backupPage.getByRole('button', { name: 'Create habit' }).click();
+    await backupPage.getByRole('dialog', { name: 'Portable fixture' }).waitFor();
+    await backupPage.getByRole('button', { name: 'Close dialog' }).click();
+    await backupPage.evaluate(() => {
+      localStorage.setItem(
+        'ls-service-storage',
+        JSON.stringify({ state: { entries: [] }, version: 1 })
+      );
+    });
+    await backupPage.getByRole('button', { name: 'Settings', exact: true }).click();
+    const downloadPromise = backupPage.waitForEvent('download');
+    await backupPage.getByRole('button', { name: 'Export complete LifeStreak backup' }).click();
+    const backupDownload = await downloadPromise;
+    const backupPath = await backupDownload.path();
+    assert(backupPath, 'Portable backup download did not produce a readable file.');
+    await backupPage.evaluate(() => {
+      localStorage.removeItem('lifestreak-habit-tracker-v1');
+      localStorage.removeItem('ls-service-storage');
+    });
+    await backupPage.getByLabel('Import LifeStreak JSON').setInputFiles(backupPath);
+    await backupPage
+      .getByRole('heading', { name: 'Replace with validated complete backup?' })
+      .waitFor();
+    await backupPage.getByRole('button', { name: 'Restore complete backup' }).click();
+    await backupPage.waitForFunction(
+      () =>
+        localStorage.getItem('lifestreak-habit-tracker-v1')?.includes('Portable fixture') &&
+        localStorage.getItem('ls-service-storage') !== null
+    );
+    await backupContext.close();
+
     const offlineContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
     });

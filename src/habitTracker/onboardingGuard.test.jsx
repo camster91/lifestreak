@@ -127,6 +127,21 @@ describe('starter suggestion onboarding', () => {
     });
   });
 
+  it('explains remaining flexible-schedule opportunities on Today', async () => {
+    const today = toLocalDate();
+    habitStore.createHabit({
+      name: 'Three flexible sessions',
+      startDate: today,
+      schedule: { type: 'timesPerWeek', timesPerWeek: 3, anchorDate: today },
+      tracking: { type: 'binary' },
+    });
+    render(<App />);
+
+    expect(
+      await screen.findByText(/0 of 3 this week · 3 remaining across \d+ available days?/i)
+    ).toBeVisible();
+  });
+
   it('collapses completed habits while keeping them available on demand', async () => {
     const today = toLocalDate();
     const habitId = habitStore.createHabit({

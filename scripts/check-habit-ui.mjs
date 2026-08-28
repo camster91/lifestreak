@@ -355,7 +355,7 @@ async function main() {
         now.getDate()
       ).padStart(2, '0')}`;
       const timestamp = now.toISOString();
-      const habit = (id, name, tracking, order) => ({
+      const habit = (id, name, tracking, order, schedule = null) => ({
         id,
         name,
         description: '',
@@ -364,7 +364,7 @@ async function main() {
         colour: '#4f46e5',
         timeOfDay: 'anytime',
         startDate: today,
-        schedule: { type: 'daily', anchorDate: today },
+        schedule: schedule || { type: 'daily', anchorDate: today },
         tracking,
         reminderTime: null,
         lifecycleState: 'active',
@@ -392,6 +392,13 @@ async function main() {
               { type: 'count', target: 10, stretchTarget: null, unit: 'reps', anyAmountCounts: false },
               1
             ),
+            habit(
+              'habit-browser-flexible',
+              'Flexible weekly browser workflow',
+              { type: 'binary', target: 1, unit: 'completion', anyAmountCounts: true },
+              2,
+              { type: 'timesPerWeek', timesPerWeek: 2, anchorDate: today }
+            ),
           ],
           logs: [],
           preferences: {
@@ -415,6 +422,12 @@ async function main() {
     });
     const dailyWorkflowPage = await dailyWorkflowContext.newPage();
     await dailyWorkflowPage.goto(origin, { waitUntil: 'networkidle' });
+    const nextDay = dailyWorkflowPage.getByRole('button', { name: 'Next day' });
+    assert(await nextDay.isDisabled(), 'Today allowed navigation into a future date.');
+    await dailyWorkflowPage.getByRole('button', { name: 'Previous day' }).click();
+    assert(!(await nextDay.isDisabled()), 'A historical date did not allow navigation toward today.');
+    await dailyWorkflowPage.getByRole('button', { name: 'Return to today' }).click();
+    assert(await nextDay.isDisabled(), 'Returning to today did not restore the future safeguard.');
     const binaryCard = dailyWorkflowPage
       .locator('article.habit-today-card')
       .filter({ hasText: 'Binary browser workflow' });
@@ -425,6 +438,13 @@ async function main() {
     await binaryCard.getByRole('button', { name: 'More' }).click();
     await binaryCard.getByRole('button', { name: 'Skip intentionally' }).click();
     await binaryCard.getByText('Intentionally skipped', { exact: true }).waitFor();
+
+    const flexibleCard = dailyWorkflowPage
+      .locator('article.habit-today-card')
+      .filter({ hasText: 'Flexible weekly browser workflow' });
+    await flexibleCard.getByText(/0 of 2 this week · 2 remaining across \d+ available days?/).waitFor();
+    await flexibleCard.getByRole('button', { name: 'Complete', exact: true }).click();
+    await flexibleCard.getByText(/1 of 2 this week · 1 remaining across \d+ available days?/).waitFor();
 
     const quantitativeCard = dailyWorkflowPage
       .locator('article.habit-today-card')

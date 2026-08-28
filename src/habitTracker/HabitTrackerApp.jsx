@@ -9,6 +9,7 @@ import {
   eachDate,
   explainStreak,
   getDayState,
+  getSchedulePeriodProgress,
   lifecycleAt,
   logForDate,
   parseLocalDate,
@@ -279,14 +280,21 @@ function TodayView({
   const [showCollapsedCompleted, setShowCollapsedCompleted] = useState(false);
   const ordered = [...snapshot.habits].sort((a, b) => a.order - b.order);
   const rows = ordered
-    .map((habit) => ({
-      habit,
-      config: configurationForDate(habit, selectedDate),
-      state: getDayState(habit, snapshot.logs, selectedDate, {
-        today,
-        weekStartsOn: snapshot.preferences.weekStartsOn,
-      }),
-    }))
+    .map((habit) => {
+      const config = configurationForDate(habit, selectedDate);
+      return {
+        habit,
+        config,
+        state: getDayState(habit, snapshot.logs, selectedDate, {
+          today,
+          weekStartsOn: snapshot.preferences.weekStartsOn,
+        }),
+        periodProgress: getSchedulePeriodProgress(habit, snapshot.logs, selectedDate, {
+          today,
+          weekStartsOn: snapshot.preferences.weekStartsOn,
+        }),
+      };
+    })
     .filter(({ state }) =>
       ['due', 'completed', 'partial', 'failed', 'skipped', 'missed'].includes(state.status)
     );
@@ -405,12 +413,13 @@ function TodayView({
                 <span>{groupRows.length}</span>
               </div>
               <div className="habit-card-list">
-                {groupRows.map(({ habit, state, config }) => (
+                {groupRows.map(({ habit, state, config, periodProgress }) => (
                   <TodayHabitCard
                     key={habit.id}
                     habit={habit}
                     state={state}
                     config={config}
+                    periodProgress={periodProgress}
                     dateKey={selectedDate}
                     onEdit={() => onEdit(habit.id)}
                     onHistory={() => onHistory(habit.id)}
@@ -490,7 +499,7 @@ function StarterPanel({ onCreate, onCustomize }) {
   );
 }
 
-function TodayHabitCard({ habit, state, config, dateKey, onEdit, onHistory }) {
+function TodayHabitCard({ habit, state, config, periodProgress, dateKey, onEdit, onHistory }) {
   const [value, setValue] = useState('');
   const [showActions, setShowActions] = useState(false);
   const completed = state.status === 'completed';
@@ -521,6 +530,16 @@ function TodayHabitCard({ habit, state, config, dateKey, onEdit, onHistory }) {
           <span className={`habit-status status-${state.status}`}>{statusLabel(state.status)}</span>
         </div>
         {habit.description && <p>{habit.description}</p>}
+
+        {periodProgress && (
+          <p className="habit-card-meta">
+            {periodProgress.completed} of {periodProgress.target} this{' '}
+            {config.schedule.type === 'monthlyTarget' ? 'month' : 'week'} ·{' '}
+            {periodProgress.remaining === 0
+              ? 'Target met'
+              : `${periodProgress.remaining} remaining across ${periodProgress.availableDays} available day${periodProgress.availableDays === 1 ? '' : 's'}`}
+          </p>
+        )}
 
         {config.tracking.type !== 'binary' && (
           <div className="habit-value-summary">

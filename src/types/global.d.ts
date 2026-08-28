@@ -17,7 +17,10 @@ declare module '../utils/jwLibraryLinks.js' {
 }
 
 declare module '../utils/ollama.js' {
-  export function summarizeDailyText(text: string, ai: { modelUrl: string; apiKey: string }): Promise<string>;
+  export function summarizeDailyText(
+    text: string,
+    ai: { modelUrl: string; apiKey: string }
+  ): Promise<string>;
   export function summarizeDailyTextViaOllama(text: string, endpoint: string): Promise<string>;
 }
 
@@ -52,7 +55,14 @@ declare module '../../components/Toast.jsx' {
 }
 
 declare module '../components/PageHeader.jsx' {
-  const PageHeader: React.FC<{ title: string; subtitle?: string; gradient?: string; shadow?: boolean; noBlurs?: boolean; icon?: any }>;
+  const PageHeader: React.FC<{
+    title: string;
+    subtitle?: string;
+    gradient?: string;
+    shadow?: boolean;
+    noBlurs?: boolean;
+    icon?: any;
+  }>;
   export default PageHeader;
 }
 
@@ -72,7 +82,9 @@ declare module '../components/settings/NotificationItems.js' {
     color?: string;
   }
   export function NotificationItem(props: NotificationItemProps): JSX.Element;
-  export function WeeklyNotificationItem(props: NotificationItemProps & { day?: string }): JSX.Element;
+  export function WeeklyNotificationItem(
+    props: NotificationItemProps & { day?: string }
+  ): JSX.Element;
 }
 
 declare module '../stores/settingsStore.js' {

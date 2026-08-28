@@ -1,30 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { format, startOfWeek, startOfMonth, isSameWeek, isSameMonth } from 'date-fns';
-
-const createSafeStorage = (key) => ({
-  getItem: (name) => {
-    try {
-      return localStorage.getItem(name);
-    } catch {
-      return null;
-    }
-  },
-  setItem: (name, value) => {
-    try {
-      localStorage.setItem(name, value);
-    } catch {
-      // Ignore quota errors
-    }
-  },
-  removeItem: (name) => {
-    try {
-      localStorage.removeItem(name);
-    } catch {
-      // Ignore
-    }
-  },
-});
+import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
 interface ServiceEntry {
   id: number;
@@ -83,7 +60,7 @@ const useServiceStore = create<ServiceState>()(
     }),
     {
       name: 'ls-service-storage',
-      storage: createSafeStorage('ls-service-storage') as any,
+      storage: createJSONStorage(() => createSafeStorage('ls-service-storage')),
       partialize: (state) => ({
         entries: state.entries,
         weeklyGoal: state.weeklyGoal,

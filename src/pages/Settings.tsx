@@ -1,7 +1,35 @@
-import { Trash2, Download, Upload, Moon, Sun, Bell, BellOff, Clock, Flame, BookOpen, Heart, Users, Calendar, ChevronDown, ChevronUp, RefreshCw, AlertTriangle, X, Bot, Eye, EyeOff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  Trash2,
+  Download,
+  Upload,
+  Moon,
+  Sun,
+  Bell,
+  BellOff,
+  Clock,
+  Flame,
+  BookOpen,
+  Heart,
+  Users,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  AlertTriangle,
+  X,
+  Bot,
+  Eye,
+  EyeOff,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import useProgressStore from '../stores/progressStore.js';
-import useSettingsStore, { redactSettingsSecrets, type Notifications } from '../stores/settingsStore.js';
+import useSettingsStore, {
+  redactSettingsSecrets,
+  type Notifications,
+} from '../stores/settingsStore.js';
 import { useToast } from '../components/Toast.jsx';
 import { haptics } from '../utils/native.js';
 import PageHeader from '../components/PageHeader.jsx';
@@ -9,9 +37,12 @@ import {
   isNotificationSupported,
   getNotificationPermission,
   requestNotificationPermission,
-  initializeReminders
+  initializeReminders,
 } from '../utils/notifications.js';
-import { NotificationItem, WeeklyNotificationItem } from '../components/settings/NotificationItems.js';
+import {
+  NotificationItem,
+  WeeklyNotificationItem,
+} from '../components/settings/NotificationItems.js';
 import { validateOllamaBaseUrl } from '../utils/safeNavigation.js';
 import {
   BACKUP_STORAGE_KEYS,
@@ -36,9 +67,13 @@ function Settings() {
   } = useSettingsStore();
 
   const [showApiKey, setShowApiKey] = useState(false);
-  const [aiTestStatus, setAiTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [aiTestStatus, setAiTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>(
+    'idle'
+  );
 
-  const [notificationPermission, setNotificationPermission] = useState(() => getNotificationPermission());
+  const [notificationPermission, setNotificationPermission] = useState(() =>
+    getNotificationPermission()
+  );
   const [notificationSupported] = useState(() => isNotificationSupported());
 
   useEffect(() => {
@@ -89,7 +124,7 @@ function Settings() {
     try {
       if ('caches' in window) {
         const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
       }
       toast.success('Checking for updates...');
       window.location.reload();
@@ -150,8 +185,7 @@ function Settings() {
         if (!raw) return;
         try {
           const parsed = JSON.parse(raw);
-          storeData[key] =
-            key === 'ls-progress-settings' ? redactSettingsSecrets(parsed) : parsed;
+          storeData[key] = key === 'ls-progress-settings' ? redactSettingsSecrets(parsed) : parsed;
         } catch {
           // Skip corrupt keys rather than failing the whole export
         }
@@ -175,7 +209,11 @@ function Settings() {
     }
   };
 
-  const [importModal, setImportModal] = useState<{ data: any; isOldFormat: boolean; versionMismatch: boolean } | null>(null);
+  const [importModal, setImportModal] = useState<{
+    data: any;
+    isOldFormat: boolean;
+    versionMismatch: boolean;
+  } | null>(null);
   const pendingImportData = useRef<any>(null);
 
   const handleImportData = () => {
@@ -259,9 +297,7 @@ function Settings() {
       STORAGE_KEYS.forEach((key) => {
         if (!storeData[key]) return;
         const payload =
-          key === 'ls-progress-settings'
-            ? redactSettingsSecrets(storeData[key])
-            : storeData[key];
+          key === 'ls-progress-settings' ? redactSettingsSecrets(storeData[key]) : storeData[key];
         localStorage.setItem(key, JSON.stringify(payload));
       });
     }
@@ -290,7 +326,9 @@ function Settings() {
       <div className="container mx-auto px-4 py-6 space-y-4 max-w-2xl">
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-lg"><Bell className="w-5 h-5" /> Notifications</h2>
+            <h2 className="card-title text-lg">
+              <Bell className="w-5 h-5" /> Notifications
+            </h2>
             <div className="divider my-2"></div>
             {!notificationSupported ? (
               <div className="alert alert-warning">Notifications not supported.</div>
@@ -299,17 +337,37 @@ function Settings() {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
-                  <div><p className="font-medium">Enable Reminders</p></div>
+                  <div>
+                    <p className="font-medium">Enable Reminders</p>
+                  </div>
                   {notificationsEnabled ? (
-                    <button onClick={handleDisableNotifications} className="btn btn-sm btn-outline">Disable</button>
+                    <button onClick={handleDisableNotifications} className="btn btn-sm btn-outline">
+                      Disable
+                    </button>
                   ) : (
-                    <button onClick={handleEnableNotifications} className="btn btn-sm btn-primary">Enable</button>
+                    <button onClick={handleEnableNotifications} className="btn btn-sm btn-primary">
+                      Enable
+                    </button>
                   )}
                 </div>
                 {notificationsEnabled && (
                   <div className="space-y-2">
-                    <NotificationItem icon={BookOpen} label="Daily Text" enabled={notifications?.dailyText?.enabled ?? true} onToggle={() => handleToggleNotification('dailyText')} onTimeChange={(time) => handleSetNotificationTime('dailyText', time)} time={notifications?.dailyText?.time ?? '07:00'} />
-                    <NotificationItem icon={Heart} label="Bible Reading" enabled={notifications?.bibleReading?.enabled ?? true} onToggle={() => handleToggleNotification('bibleReading')} onTimeChange={(time) => handleSetNotificationTime('bibleReading', time)} time={notifications?.bibleReading?.time ?? '20:00'} />
+                    <NotificationItem
+                      icon={BookOpen}
+                      label="Daily Text"
+                      enabled={notifications?.dailyText?.enabled ?? true}
+                      onToggle={() => handleToggleNotification('dailyText')}
+                      onTimeChange={(time) => handleSetNotificationTime('dailyText', time)}
+                      time={notifications?.dailyText?.time ?? '07:00'}
+                    />
+                    <NotificationItem
+                      icon={Heart}
+                      label="Bible Reading"
+                      enabled={notifications?.bibleReading?.enabled ?? true}
+                      onToggle={() => handleToggleNotification('bibleReading')}
+                      onTimeChange={(time) => handleSetNotificationTime('bibleReading', time)}
+                      time={notifications?.bibleReading?.time ?? '20:00'}
+                    />
                   </div>
                 )}
               </div>
@@ -330,18 +388,31 @@ function Settings() {
           <div className="card-body">
             <h2 className="card-title text-lg">Data Management</h2>
             <div className="divider my-2"></div>
-            <button onClick={handleExportData} className="btn btn-outline w-full justify-start"><Download className="w-5 h-5" /> Export Data</button>
-            <button onClick={handleImportData} className="btn btn-outline w-full justify-start"><Upload className="w-5 h-5" /> Import Data</button>
-            <button onClick={handleClearData} className="btn btn-error btn-outline w-full justify-start"><Trash2 className="w-5 h-5" /> Clear All Data</button>
+            <button onClick={handleExportData} className="btn btn-outline w-full justify-start">
+              <Download className="w-5 h-5" /> Export Data
+            </button>
+            <button onClick={handleImportData} className="btn btn-outline w-full justify-start">
+              <Upload className="w-5 h-5" /> Import Data
+            </button>
+            <button
+              onClick={handleClearData}
+              className="btn btn-error btn-outline w-full justify-start"
+            >
+              <Trash2 className="w-5 h-5" /> Clear All Data
+            </button>
           </div>
         </div>
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-lg"><Bot className="w-5 h-5" /> AI Assistant</h2>
+            <h2 className="card-title text-lg">
+              <Bot className="w-5 h-5" /> AI Assistant
+            </h2>
             <div className="divider my-2"></div>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
-                <div><p className="font-medium">AI Provider</p></div>
+                <div>
+                  <p className="font-medium">AI Provider</p>
+                </div>
                 <select
                   id="ai-provider"
                   aria-label="AI provider"
@@ -356,7 +427,12 @@ function Settings() {
               {ai.provider === 'ollama' && (
                 <>
                   <div className="space-y-1">
-                    <label htmlFor="ollama-base-url" className="text-sm font-medium text-base-content/70">Base URL</label>
+                    <label
+                      htmlFor="ollama-base-url"
+                      className="text-sm font-medium text-base-content/70"
+                    >
+                      Base URL
+                    </label>
                     <input
                       id="ollama-base-url"
                       type="text"
@@ -371,10 +447,17 @@ function Settings() {
                       }}
                       placeholder="https://ollama.com or http://localhost:11434"
                     />
-                    <p className="text-xs text-base-content/50">Allowed: ollama.com (HTTPS) or localhost / 127.0.0.1</p>
+                    <p className="text-xs text-base-content/50">
+                      Allowed: ollama.com (HTTPS) or localhost / 127.0.0.1
+                    </p>
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor="ollama-api-key" className="text-sm font-medium text-base-content/70">API Key</label>
+                    <label
+                      htmlFor="ollama-api-key"
+                      className="text-sm font-medium text-base-content/70"
+                    >
+                      API Key
+                    </label>
                     <div className="flex gap-2">
                       <input
                         id="ollama-api-key"
@@ -398,7 +481,12 @@ function Settings() {
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor="ollama-model" className="text-sm font-medium text-base-content/70">Model</label>
+                    <label
+                      htmlFor="ollama-model"
+                      className="text-sm font-medium text-base-content/70"
+                    >
+                      Model
+                    </label>
                     <input
                       id="ollama-model"
                       type="text"
@@ -407,7 +495,10 @@ function Settings() {
                       onChange={(e) => setAiSettings({ ollamaModel: e.target.value })}
                       placeholder="llama3.2, mistral-small3.1, deepseek-r1, etc."
                     />
-                    <p className="text-xs text-base-content/50">Cloud models: llama3.2, llama3.3, mistral-small3.1, qwen3, gemma3, phi4, deepseek-r1</p>
+                    <p className="text-xs text-base-content/50">
+                      Cloud models: llama3.2, llama3.3, mistral-small3.1, qwen3, gemma3, phi4,
+                      deepseek-r1
+                    </p>
                   </div>
                   <button
                     onClick={handleTestAi}
@@ -415,7 +506,9 @@ function Settings() {
                     className="btn btn-outline btn-sm w-full gap-2"
                   >
                     {aiTestStatus === 'testing' && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {aiTestStatus === 'success' && <CheckCircle2 className="w-4 h-4 text-success" />}
+                    {aiTestStatus === 'success' && (
+                      <CheckCircle2 className="w-4 h-4 text-success" />
+                    )}
                     {aiTestStatus === 'error' && <XCircle className="w-4 h-4 text-error" />}
                     Test Connection
                   </button>
@@ -426,9 +519,13 @@ function Settings() {
         </div>
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-lg"><RefreshCw className="w-5 h-5" /> App Updates</h2>
+            <h2 className="card-title text-lg">
+              <RefreshCw className="w-5 h-5" /> App Updates
+            </h2>
             <div className="divider my-2"></div>
-            <button onClick={handleUpdateApp} className="btn btn-primary w-full justify-start"><RefreshCw className="w-5 h-5" /> Check for Updates</button>
+            <button onClick={handleUpdateApp} className="btn btn-primary w-full justify-start">
+              <RefreshCw className="w-5 h-5" /> Check for Updates
+            </button>
           </div>
         </div>
       </div>
@@ -451,16 +548,22 @@ function Settings() {
               {importModal.versionMismatch && (
                 <div className="alert alert-warning mb-3">
                   <AlertTriangle className="w-5 h-5" />
-                  <span className="text-sm">This backup was created by a different version of the app. Some data may not import correctly.</span>
+                  <span className="text-sm">
+                    This backup was created by a different version of the app. Some data may not
+                    import correctly.
+                  </span>
                 </div>
               )}
               {importModal.isOldFormat && (
                 <div className="alert alert-info mb-3">
-                  <span className="text-sm">This is a legacy backup file. Only progress and settings data will be imported.</span>
+                  <span className="text-sm">
+                    This is a legacy backup file. Only progress and settings data will be imported.
+                  </span>
                 </div>
               )}
               <p className="text-base-content/70 mb-4">
-                This will <strong>replace all your current data</strong> with the imported backup. This action cannot be undone.
+                This will <strong>replace all your current data</strong> with the imported backup.
+                This action cannot be undone.
               </p>
               {importModal.data.exportedAt && (
                 <p className="text-xs text-base-content/50 mb-4">
@@ -468,8 +571,12 @@ function Settings() {
                 </p>
               )}
               <div className="flex gap-2 justify-end">
-                <button onClick={cancelImport} className="btn btn-ghost">Cancel</button>
-                <button onClick={confirmImport} className="btn btn-error">Replace Data</button>
+                <button onClick={cancelImport} className="btn btn-ghost">
+                  Cancel
+                </button>
+                <button onClick={confirmImport} className="btn btn-error">
+                  Replace Data
+                </button>
               </div>
             </div>
           </div>

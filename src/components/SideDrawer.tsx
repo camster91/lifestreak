@@ -53,21 +53,18 @@ function SideDrawer({ children }: SideDrawerProps) {
         />
 
         {/* Main content */}
-        <div className="drawer-content">
-          {children}
-        </div>
+        <div className="drawer-content">{children}</div>
 
         {/* Drawer sidebar */}
         <div className="drawer-side z-50">
           {/* Overlay */}
-          <label
-            htmlFor="side-drawer"
-            className="drawer-overlay"
-            aria-label="Close menu"
-          />
+          <label htmlFor="side-drawer" className="drawer-overlay" aria-label="Close menu" />
 
           {/* Sidebar content */}
-          <aside className="bg-base-100 min-h-full w-72 flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          <aside
+            className="bg-base-100 min-h-full w-72 flex flex-col"
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-base-200">
               <div>
@@ -100,10 +97,14 @@ function SideDrawer({ children }: SideDrawerProps) {
                     }`}
                   >
                     <div className={`p-2 rounded-xl ${isActive ? 'bg-primary/15' : 'bg-base-200'}`}>
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-base-content/60'}`} />
+                      <Icon
+                        className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-base-content/60'}`}
+                      />
                     </div>
                     <div className="text-left">
-                      <p className={`font-medium text-sm ${isActive ? 'text-primary' : ''}`}>{item.label}</p>
+                      <p className={`font-medium text-sm ${isActive ? 'text-primary' : ''}`}>
+                        {item.label}
+                      </p>
                       <p className="text-xs text-base-content/50">{item.description}</p>
                     </div>
                   </button>
@@ -113,9 +114,7 @@ function SideDrawer({ children }: SideDrawerProps) {
 
             {/* Footer */}
             <div className="p-4 border-t border-base-200">
-              <p className="text-xs text-base-content/40 text-center">
-                LifeStreak
-              </p>
+              <p className="text-xs text-base-content/40 text-center">LifeStreak</p>
             </div>
           </aside>
         </div>

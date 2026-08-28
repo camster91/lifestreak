@@ -170,6 +170,10 @@ describe('starter suggestion onboarding', () => {
 
   it('offers Retry for a recoverable failed habit save', async () => {
     const workingStorage = window.localStorage;
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add habit' }));
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Retry routine' } });
+
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
       value: {
@@ -185,22 +189,20 @@ describe('starter suggestion onboarding', () => {
         },
       },
     });
-    expect(
-      habitStore.createHabit({
-        name: 'Retry routine',
-        startDate: toLocalDate(),
-        schedule: { type: 'daily', anchorDate: toLocalDate() },
-        tracking: { type: 'binary' },
-      })
-    ).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Create habit' }));
+    expect(await screen.findByRole('button', { name: 'Retry save' })).toBeInTheDocument();
+    expect(habitStore.getSnapshot().habits).toEqual([]);
+
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
       value: workingStorage,
     });
-    render(<App />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
-    expect(await screen.findByRole('heading', { name: 'Retry routine' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry save' }));
+    expect(await screen.findByRole('dialog', { name: 'Retry routine' })).toBeInTheDocument();
+    expect(habitStore.getSnapshot().habits).toEqual([
+      expect.objectContaining({ name: 'Retry routine' }),
+    ]);
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
 });

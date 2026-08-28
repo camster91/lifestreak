@@ -1728,12 +1728,25 @@ function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
         ? habitStore.updateHabit(habit.id, input, form.effectiveDate)
         : habitStore.createHabit(input);
       if (result) onSaved(habit?.id || result);
-      else setError('The habit was not saved. Review the message above and try again.');
+      else {
+        setError('The habit was not saved. Review the message above and try again.');
+      }
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : 'The habit could not be saved.'
       );
     }
+  };
+
+  const retrySave = () => {
+    setError('');
+    const existingIds = new Set(habitStore.getSnapshot().habits.map(({ id }) => id));
+    if (!habitStore.retryLastOperation()) {
+      setError('The habit was not saved. Review the message above and try again.');
+      return;
+    }
+    const createdHabit = habitStore.getSnapshot().habits.find(({ id }) => !existingIds.has(id));
+    onSaved(habit?.id || createdHabit?.id || null);
   };
 
   return (
@@ -1746,7 +1759,12 @@ function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
       <form className="habit-form" onSubmit={submit}>
         {error && (
           <div className="habit-form-error" role="alert">
-            {error}
+            <span>{error}</span>
+            {error === 'The habit was not saved. Review the message above and try again.' && (
+              <button type="button" onClick={retrySave}>
+                Retry save
+              </button>
+            )}
           </div>
         )}
         <div className="habit-form-grid">

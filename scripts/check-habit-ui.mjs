@@ -134,7 +134,10 @@ async function inspectPage(page, viewportName, stateName) {
     `${viewportName}/${stateName}: serious accessibility violations: ${blockingViolations
       .map(
         ({ id, nodes }) =>
-          `${id} (${nodes.map(({ target }) => target.join(' ')).slice(0, 3).join(', ')})`
+          `${id} (${nodes
+            .map(({ target }) => target.join(' '))
+            .slice(0, 3)
+            .join(', ')})`
       )
       .join('; ')}`
   );
@@ -217,7 +220,10 @@ async function main() {
         else await browserDialog.accept();
       });
       await page.keyboard.press('Escape');
-      assert(await dialog.isVisible(), `${viewport.name}: rejected discard still closed the dialog.`);
+      assert(
+        await dialog.isVisible(),
+        `${viewport.name}: rejected discard still closed the dialog.`
+      );
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'detached' });
       assert(
@@ -389,7 +395,13 @@ async function main() {
             habit(
               'habit-browser-count',
               'Quantitative browser workflow',
-              { type: 'count', target: 10, stretchTarget: null, unit: 'reps', anyAmountCounts: false },
+              {
+                type: 'count',
+                target: 10,
+                stretchTarget: null,
+                unit: 'reps',
+                anyAmountCounts: false,
+              },
               1
             ),
             habit(
@@ -425,7 +437,10 @@ async function main() {
     const nextDay = dailyWorkflowPage.getByRole('button', { name: 'Next day' });
     assert(await nextDay.isDisabled(), 'Today allowed navigation into a future date.');
     await dailyWorkflowPage.getByRole('button', { name: 'Previous day' }).click();
-    assert(!(await nextDay.isDisabled()), 'A historical date did not allow navigation toward today.');
+    assert(
+      !(await nextDay.isDisabled()),
+      'A historical date did not allow navigation toward today.'
+    );
     await dailyWorkflowPage.getByRole('button', { name: 'Return to today' }).click();
     assert(await nextDay.isDisabled(), 'Returning to today did not restore the future safeguard.');
     const binaryCard = dailyWorkflowPage
@@ -442,9 +457,13 @@ async function main() {
     const flexibleCard = dailyWorkflowPage
       .locator('article.habit-today-card')
       .filter({ hasText: 'Flexible weekly browser workflow' });
-    await flexibleCard.getByText(/0 of 2 this week · 2 remaining across \d+ available days?/).waitFor();
+    await flexibleCard
+      .getByText(/0 of 2 this week · 2 remaining across \d+ available days?/)
+      .waitFor();
     await flexibleCard.getByRole('button', { name: 'Complete', exact: true }).click();
-    await flexibleCard.getByText(/1 of 2 this week · 1 remaining across \d+ available days?/).waitFor();
+    await flexibleCard
+      .getByText(/1 of 2 this week · 1 remaining across \d+ available days?/)
+      .waitFor();
 
     const quantitativeCard = dailyWorkflowPage
       .locator('article.habit-today-card')
@@ -490,9 +509,9 @@ async function main() {
       'Today did not reflect corrected and removed source entries.'
     );
     await dailyWorkflowPage.getByRole('button', { name: 'Insights', exact: true }).click();
-    await dailyWorkflowPage.getByRole('combobox', { name: 'Habit' }).selectOption(
-      'habit-browser-count'
-    );
+    await dailyWorkflowPage
+      .getByRole('combobox', { name: 'Habit' })
+      .selectOption('habit-browser-count');
     const loggedMetric = dailyWorkflowPage.locator('article').filter({ hasText: 'Logged reps' });
     await loggedMetric.getByText('5', { exact: true }).waitFor();
     await inspectPage(dailyWorkflowPage, 'phone', 'corrected-quantitative-insights');
@@ -761,6 +780,60 @@ async function main() {
         localStorage.getItem('ls-service-storage') !== null
     );
     await backupContext.close();
+
+    const storageFailureContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    const storageFailurePage = await storageFailureContext.newPage();
+    await storageFailurePage.goto(origin, { waitUntil: 'networkidle' });
+    await storageFailurePage.getByRole('button', { name: 'Create my own' }).click();
+    const beforeFailedCreate = await storageFailurePage.evaluate(() =>
+      localStorage.getItem('lifestreak-habit-tracker-v1')
+    );
+    await storageFailurePage.evaluate(() => {
+      const originalSetItem = Storage.prototype.setItem;
+      window.__lifestreakStorageFailure = true;
+      Storage.prototype.setItem = function setItemWithControlledFailure(key, value) {
+        if (window.__lifestreakStorageFailure && key === 'lifestreak-habit-tracker-v1') {
+          throw new DOMException('Controlled browser quota exhaustion', 'QuotaExceededError');
+        }
+        return originalSetItem.call(this, key, value);
+      };
+    });
+    await storageFailurePage.getByLabel(/Name/).fill('Quota recovery fixture');
+    await storageFailurePage.getByRole('button', { name: 'Create habit' }).click();
+    await storageFailurePage
+      .getByRole('alert')
+      .getByText('The habit was not saved. Review the message above and try again.')
+      .waitFor();
+    const failedCreateDialog = storageFailurePage.getByRole('dialog', { name: 'Create a habit' });
+    await failedCreateDialog.getByRole('button', { name: 'Retry save' }).waitFor();
+    const afterFailedCreate = await storageFailurePage.evaluate(() =>
+      localStorage.getItem('lifestreak-habit-tracker-v1')
+    );
+    assert(
+      afterFailedCreate === beforeFailedCreate,
+      'A browser storage failure published a partial habit database.'
+    );
+    await storageFailurePage.evaluate(() => {
+      window.__lifestreakStorageFailure = false;
+    });
+    await failedCreateDialog.getByRole('button', { name: 'Retry save' }).click();
+    await storageFailurePage.getByRole('dialog', { name: 'Quota recovery fixture' }).waitFor();
+    const recoveredDatabase = await storageFailurePage.evaluate(() =>
+      JSON.parse(localStorage.getItem('lifestreak-habit-tracker-v1'))
+    );
+    assert(
+      recoveredDatabase.habits.filter(({ name }) => name === 'Quota recovery fixture').length === 1,
+      'Browser storage recovery did not persist the exact failed create once.'
+    );
+    await storageFailurePage
+      .getByRole('dialog', { name: 'Quota recovery fixture' })
+      .getByRole('button', { name: 'Close dialog' })
+      .click();
+    await inspectPage(storageFailurePage, 'phone', 'storage-failure-recovered');
+    await storageFailureContext.close();
 
     const unitTransitionContext = await browser.newContext({
       viewport: { width: 390, height: 844 },

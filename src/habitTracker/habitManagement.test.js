@@ -65,6 +65,35 @@ describe('habit management', () => {
     expect(habitStore.getSnapshot().logs).toEqual([]);
   });
 
+  it('does not report success or create records for repeated habit operations', () => {
+    const today = toLocalDate();
+    const habitId = habitStore.createHabit({
+      ...input('Stable habit'),
+      startDate: today,
+      schedule: { type: 'daily', anchorDate: today },
+    });
+
+    expect(habitStore.updateHabit(habitId, { name: 'Stable habit' })).toBe(false);
+    expect(habitStore.setLifecycle(habitId, 'active', today)).toBe(false);
+    expect(habitStore.setNote(habitId, today, '')).toBe(false);
+    expect(habitStore.getSnapshot().logs).toEqual([]);
+
+    expect(habitStore.setDayStatus(habitId, today, 'completed')).toBe(true);
+    const afterCompletion = structuredClone(habitStore.getSnapshot().logs);
+    expect(habitStore.setDayStatus(habitId, today, 'completed')).toBe(false);
+    expect(habitStore.getSnapshot().logs).toEqual(afterCompletion);
+
+    expect(habitStore.setNote(habitId, today, 'Kept going')).toBe(true);
+    expect(habitStore.setNote(habitId, today, 'Kept going')).toBe(false);
+  });
+
+  it('does not report success for repeated preference and onboarding actions', () => {
+    const initialPreference = habitStore.getSnapshot().preferences.reduceMotion;
+    expect(habitStore.setPreference('reduceMotion', initialPreference)).toBe(false);
+    expect(habitStore.dismissOnboarding()).toBe(true);
+    expect(habitStore.dismissOnboarding()).toBe(false);
+  });
+
   it('refuses malformed, future, not-started, and inactive new logs', () => {
     const futureHabitId = habitStore.createHabit({
       ...input('Future habit'),

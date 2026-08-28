@@ -558,7 +558,7 @@ function upsertRevision(habit, changes, effectiveDate) {
     JSON.stringify(previous.schedule) !== JSON.stringify(nextSchedule) ||
     JSON.stringify(previous.tracking) !== JSON.stringify(nextTracking) ||
     previous.timeOfDay !== nextTimeOfDay;
-  if (!changed) return;
+  if (!changed) return false;
 
   const revision = {
     id: createId('revision'),
@@ -571,6 +571,7 @@ function upsertRevision(habit, changes, effectiveDate) {
   habit.revisions = (habit.revisions || []).filter((item) => item.effectiveDate !== effectiveDate);
   habit.revisions.push(revision);
   habit.revisions.sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+  return true;
 }
 
 function findOrCreateLog(draft, habitId, dateKey) {
@@ -669,10 +670,14 @@ export const habitStore = {
     });
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
-      upsertRevision(habit, changes, effectiveDate);
+      let changed = upsertRevision(habit, changes, effectiveDate);
       ['name', 'description', 'category', 'icon', 'colour', 'reminderTime'].forEach((key) => {
-        if (Object.prototype.hasOwnProperty.call(changes, key)) habit[key] = changes[key];
+        if (Object.prototype.hasOwnProperty.call(changes, key) && habit[key] !== changes[key]) {
+          habit[key] = changes[key];
+          changed = true;
+        }
       });
+      if (!changed) return false;
       habit.updatedAt = new Date().toISOString();
     }, 'Habit changes were saved.');
   },
@@ -685,6 +690,7 @@ export const habitStore = {
     }
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
+      if (lifecycleAt(habit, effectiveDate) === lifecycleState) return false;
       habit.lifecycleState = lifecycleState;
       habit.lifecycleHistory = (habit.lifecycleHistory || []).filter(
         (event) => event.effectiveDate !== effectiveDate
@@ -754,6 +760,14 @@ export const habitStore = {
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
       assertLogCreationAllowed(draft, habit, dateKey);
+      const existingLog = draft.logs.find(
+        (item) => item.habitId === habitId && item.date === dateKey
+      );
+      const clearsBinaryEntries =
+        explicitStatus === 'completed' &&
+        currentConfig(habit, dateKey).tracking.type === 'binary' &&
+        existingLog?.entries.length > 0;
+      if (existingLog?.explicitStatus === explicitStatus && !clearsBinaryEntries) return false;
       const log = findOrCreateLog(draft, habitId, dateKey);
       log.explicitStatus = explicitStatus;
       if (
@@ -843,9 +857,14 @@ export const habitStore = {
     }
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
+      const normalizedNote = String(note || '').slice(0, 2000);
+      const existingLog = draft.logs.find(
+        (item) => item.habitId === habitId && item.date === dateKey
+      );
+      if ((!existingLog && !normalizedNote) || existingLog?.note === normalizedNote) return false;
       assertLogCreationAllowed(draft, habit, dateKey);
       const log = findOrCreateLog(draft, habitId, dateKey);
-      log.note = String(note || '').slice(0, 2000);
+      log.note = normalizedNote;
       log.updatedAt = new Date().toISOString();
     }, 'Note saved.');
   },
@@ -884,6 +903,7 @@ export const habitStore = {
   dismissOnboarding() {
     return transact(
       (draft) => {
+        if (draft.onboarding.completed && draft.onboarding.dismissedAt) return false;
         draft.onboarding.completed = true;
         draft.onboarding.dismissedAt = new Date().toISOString();
       },
@@ -907,6 +927,7 @@ export const habitStore = {
         if (!Object.prototype.hasOwnProperty.call(draft.preferences, key)) {
           throw new Error('Unknown preference.');
         }
+        if (JSON.stringify(draft.preferences[key]) === JSON.stringify(value)) return false;
         draft.preferences[key] = value;
       },
       'Preference saved.',

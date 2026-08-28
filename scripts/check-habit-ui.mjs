@@ -11,6 +11,7 @@ let serverOutput = '';
 const viewports = [
   { name: 'small-phone', width: 320, height: 568 },
   { name: 'phone', width: 390, height: 844 },
+  { name: 'phone-landscape', width: 844, height: 390 },
   { name: 'tablet', width: 768, height: 1024 },
   { name: 'desktop', width: 1440, height: 900 },
 ];
@@ -167,6 +168,20 @@ async function main() {
         `${viewport.name}: advanced options could not be expanded.`
       );
       await inspectPage(page, viewport.name, 'create-dialog-advanced');
+
+      if (viewport.name === 'phone') {
+        await page.getByLabel(/Name/).focus();
+        await page.setViewportSize({ width: viewport.width, height: 420 });
+        const primaryAction = page.getByRole('button', { name: 'Create habit' });
+        await primaryAction.scrollIntoViewIfNeeded();
+        const actionRect = await primaryAction.boundingBox();
+        assert(
+          actionRect && actionRect.y >= 0 && actionRect.y + actionRect.height <= 420,
+          'phone/virtual-keyboard: primary form action could not be brought above the keyboard viewport.'
+        );
+        await inspectPage(page, viewport.name, 'virtual-keyboard-dialog');
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      }
 
       await page.keyboard.press('Shift+Tab');
       assert(

@@ -72,6 +72,17 @@ describe('starter suggestion onboarding', () => {
         expect.objectContaining({ name: 'Simple routine', category: 'Personal' }),
       ]);
     });
+
+    expect(await screen.findByRole('heading', { name: 'Your habit is ready' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Complete first check-in' }));
+    await waitFor(() => {
+      expect(habitStore.getSnapshot().logs).toEqual([
+        expect.objectContaining({ explicitStatus: 'completed' }),
+      ]);
+    });
+    expect(
+      screen.queryByRole('button', { name: 'Complete first check-in' })
+    ).not.toBeInTheDocument();
   });
 
   it('offers a future effective date when editing tracked history', async () => {
@@ -91,6 +102,29 @@ describe('starter suggestion onboarding', () => {
     expect(effectiveDate.getAttribute('min')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(effectiveDate.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(screen.getByText(/future date when today already has progress/i)).toBeVisible();
+  });
+
+  it('guides a quantitative habit through its first source value', async () => {
+    const today = toLocalDate();
+    habitStore.createHabit({
+      name: 'First measured routine',
+      startDate: today,
+      schedule: { type: 'daily', anchorDate: today },
+      tracking: { type: 'duration', target: 20, unit: 'min' },
+    });
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Habits' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'History' }));
+
+    fireEvent.change(await screen.findByLabelText('First value in min'), {
+      target: { value: '12.5' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save first check-in' }));
+    await waitFor(() => {
+      expect(habitStore.getSnapshot().logs[0].entries).toEqual([
+        expect.objectContaining({ value: 12.5, unit: 'min' }),
+      ]);
+    });
   });
 
   it('collapses completed habits while keeping them available on demand', async () => {

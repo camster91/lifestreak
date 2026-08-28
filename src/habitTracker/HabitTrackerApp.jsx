@@ -1984,12 +1984,16 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
   const [note, setNote] = useState(logForDate(snapshot.logs, habit.id, today)?.note || '');
   const [editingEntryId, setEditingEntryId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
+  const [firstValue, setFirstValue] = useState('');
   const config = configurationForDate(habit, selectedDate);
   const log = logForDate(snapshot.logs, habit.id, selectedDate);
   const dayState = getDayState(habit, snapshot.logs, selectedDate, {
     today,
     weekStartsOn: snapshot.preferences.weekStartsOn,
   });
+  const hasAnyLog = snapshot.logs.some((item) => item.habitId === habit.id);
+  const canGuideFirstCheckIn =
+    !hasAnyLog && selectedDate === today && ['due', 'missed'].includes(dayState.status);
 
   const selectDate = (dateKey) => {
     setSelectedDate(dateKey);
@@ -2022,6 +2026,44 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
       </label>
       <section className="habit-history-day" aria-labelledby="selected-history-heading">
         <h3 id="selected-history-heading">{formatDate(selectedDate)}</h3>
+        {canGuideFirstCheckIn && (
+          <div className="habit-empty-state">
+            <h4>Your habit is ready</h4>
+            <p>Record the first check-in now. You can correct or clear it at any time.</p>
+            {config.tracking.type === 'binary' ? (
+              <button
+                type="button"
+                className="habit-button habit-button-primary"
+                onClick={() => habitStore.setDayStatus(habit.id, selectedDate, 'completed')}
+              >
+                Complete first check-in
+              </button>
+            ) : (
+              <form
+                className="habit-value-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (habitStore.addValue(habit.id, selectedDate, firstValue)) setFirstValue('');
+                }}
+              >
+                <label>
+                  <span>First value in {config.tracking.unit}</span>
+                  <input
+                    inputMode="decimal"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={firstValue}
+                    onChange={(event) => setFirstValue(event.target.value)}
+                  />
+                </label>
+                <button type="submit" className="habit-button habit-button-primary">
+                  Save first check-in
+                </button>
+              </form>
+            )}
+          </div>
+        )}
         {log?.entries?.length ? (
           <ul className="habit-entry-list">
             {log.entries.map((entry) => (

@@ -87,53 +87,53 @@ describe('progressStore', () => {
 
   describe('Bible Reading Progress', () => {
     it('should mark bible reading complete', () => {
-      const dayOfYear = 20;
+      const dateKey = '2026-01-20';
 
       act(() => {
-        useProgressStore.getState().markBibleReadingComplete(dayOfYear);
+        useProgressStore.getState().markBibleReadingComplete(dateKey);
       });
 
       const state = useProgressStore.getState();
-      expect(state.bibleReadings[dayOfYear].read).toBe(true);
-      expect(state.bibleReadings[dayOfYear].progress).toBe(100);
-      expect(state.bibleReadings[dayOfYear].status).toBe('completed');
+      expect(state.bibleReadings[dateKey].read).toBe(true);
+      expect(state.bibleReadings[dateKey].progress).toBe(100);
+      expect(state.bibleReadings[dateKey].status).toBe('completed');
     });
 
     it('should update bible reading progress partially', () => {
-      const dayOfYear = 20;
+      const dateKey = '2026-01-20';
 
       act(() => {
-        useProgressStore.getState().updateBibleReadingProgress(dayOfYear, 50, ['Gen 1', 'Gen 2']);
+        useProgressStore.getState().updateBibleReadingProgress(dateKey, 50, ['Gen 1', 'Gen 2']);
       });
 
       const state = useProgressStore.getState();
-      expect(state.bibleReadings[dayOfYear].progress).toBe(50);
-      expect(state.bibleReadings[dayOfYear].chaptersRead).toEqual(['Gen 1', 'Gen 2']);
-      expect(state.bibleReadings[dayOfYear].status).toBe('in_progress');
+      expect(state.bibleReadings[dateKey].progress).toBe(50);
+      expect(state.bibleReadings[dateKey].chaptersRead).toEqual(['Gen 1', 'Gen 2']);
+      expect(state.bibleReadings[dateKey].status).toBe('in_progress');
     });
 
     it('should check if bible reading is complete', () => {
-      const dayOfYear = 20;
+      const dateKey = '2026-01-20';
 
-      expect(useProgressStore.getState().isBibleReadingComplete(dayOfYear)).toBe(false);
+      expect(useProgressStore.getState().isBibleReadingComplete(dateKey)).toBe(false);
 
       act(() => {
-        useProgressStore.getState().markBibleReadingComplete(dayOfYear);
+        useProgressStore.getState().markBibleReadingComplete(dateKey);
       });
 
-      expect(useProgressStore.getState().isBibleReadingComplete(dayOfYear)).toBe(true);
+      expect(useProgressStore.getState().isBibleReadingComplete(dateKey)).toBe(true);
     });
 
     it('should get bible reading progress percentage', () => {
-      const dayOfYear = 20;
+      const dateKey = '2026-01-20';
 
-      expect(useProgressStore.getState().getBibleReadingProgress(dayOfYear)).toBe(0);
+      expect(useProgressStore.getState().getBibleReadingProgress(dateKey)).toBe(0);
 
       act(() => {
-        useProgressStore.getState().updateBibleReadingProgress(dayOfYear, 75, []);
+        useProgressStore.getState().updateBibleReadingProgress(dateKey, 75, []);
       });
 
-      expect(useProgressStore.getState().getBibleReadingProgress(dayOfYear)).toBe(75);
+      expect(useProgressStore.getState().getBibleReadingProgress(dateKey)).toBe(75);
     });
 
     it('keeps the same calendar day in different years separate', () => {
@@ -147,6 +147,24 @@ describe('progressStore', () => {
       expect(state.bibleReadings['2025-01-20'].progress).toBe(100);
       expect(state.bibleReadings['2026-01-20'].progress).toBe(50);
     });
+
+    it.each([20, '20', 'legacy-day-of-year:20', '2025-02-29', '2026-1-20'])(
+      'refuses invalid or yearless Bible history key %s at every boundary',
+      (invalidKey) => {
+        act(() => {
+          const store = useProgressStore.getState();
+          store.markBibleReadingComplete(invalidKey);
+          store.updateBibleReadingProgress(invalidKey, 50, []);
+          store.toggleBibleChapter(invalidKey, 1);
+        });
+        const state = useProgressStore.getState();
+        expect(state.bibleReadings).not.toHaveProperty(String(invalidKey));
+        expect(state.bibleChapters).not.toHaveProperty(String(invalidKey));
+        expect(state.isBibleReadingComplete(invalidKey)).toBe(false);
+        expect(state.getBibleReadingProgress(invalidKey)).toBe(0);
+        expect(state.getBibleChapterProgress(invalidKey)).toEqual({});
+      }
+    );
 
     it('calculates a streak across December and January', () => {
       vi.useFakeTimers();
@@ -219,7 +237,7 @@ describe('progressStore', () => {
       act(() => {
         const store = useProgressStore.getState();
         store.markDailyTextRead('2026-01-20');
-        store.markBibleReadingComplete(20);
+        store.markBibleReadingComplete('2026-01-20');
         store.markMeetingPrepared('2026-W03', 'midweek');
         store.clearAll();
       });

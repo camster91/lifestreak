@@ -12,7 +12,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 
 - `main` still contains the archived product documentation and legacy default experience.
 - The active `codex/lifestreak-habit-first` branch contains the independent-app implementation in open draft PR #106; it is not merged or deployed.
-- The branch is reconciled with current `main` and passes formatting, typecheck, lint, 27 files / 226 tests, production web build, the responsive Chromium matrix, dependency audit, product-identity, native-contract, and supply-chain checks locally.
+- The branch is reconciled with current `main` and passes formatting, typecheck, lint, 27 files / 231 tests, production web build, the responsive Chromium matrix, dependency audit, product-identity, native-contract, and supply-chain checks locally.
 - A local Android debug build previously stopped because the Mac had no Java runtime. The current local Docker image gate cannot run because no Docker daemon is available. GitHub-hosted and third-party checks currently fail before useful execution, except the Dependabot configuration check.
 - The branch has not passed the full migration, native archive, device, accessibility, privacy, or release evidence required by the issues below.
 - Issues #95-#102 remain open because source on a draft branch is not completion on the default branch and required external/manual evidence is incomplete.
@@ -28,7 +28,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 3. **#56 — durable service and reading persistence**
    Implemented on the revival branch: v1 schemas validate and quarantine invalid service/reading records, reload tests cover v0 migration, and non-destructive storage failures expose retry/download recovery UI. Keep open for real browser/private-mode/quota and native restart verification.
 4. **#61 and #62 — calendar-safe specialist history**
-   Implemented on the revival branch: Bible history now uses full local dates with an explicit quarantine for ambiguous legacy day-of-year keys, and service totals validate local dates and bound both ends of each period. Keep the issues open until the branch is integrated and timezone/device verification is recorded.
+   Implemented on the revival branch: Bible history now uses full local dates with an explicit quarantine for ambiguous legacy day-of-year keys. Every live Bible read/write boundary rejects numeric, yearless, prefixed-quarantine, malformed, and impossible dates, preventing the old collision shape from being recreated after migration. Multi-year, year-boundary streak, leap-day, and invalid-key tests cover the contract. Service totals validate local dates and bound both ends of each period. Keep the issues open until the branch is integrated and timezone/device verification is recorded.
 5. **#96 — unified versioned habit/log model**
    The source and calendar contract is documented in [habit-domain.md](habit-domain.md). The revival branch now has TypeScript domain types, runtime validation on load, idempotent v1 migration, and read-after-write verification; native restart and the complete schedule fixture matrix remain tied to #71, #96, and #98.
 6. **#57 and #59 — canonical identity, permissions, and privacy metadata**

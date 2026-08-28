@@ -80,6 +80,7 @@ For these cases, retain the exact key and raw string in a timestamped recovery e
 - All seven Zustand specialist stores now use JSON-aware persistence rather than raw string storage.
 - Regression tests verify valid JSON writes for every specialist store and write/rehydrate round trips for service and reading.
 - The shared JSON storage adapter never evicts other LifeStreak keys. Failed writes and malformed raw JSON trigger a global recovery banner with retry and download actions; malformed source strings stay untouched at their original key.
+- Progress hydration quarantines legacy yearless Bible keys, and every current Bible history reader/writer refuses yearless, malformed, or impossible date keys so later use cannot recreate the old cross-year collision.
 - A headless Chromium reload check seeded v1 service and reading histories, opened each Collections route, reloaded it, and confirmed both records remained rendered after hydration.
 - Habit storage already fails safely when storage access is blocked and exports detected legacy values without reinterpretation.
 - Historical-key schema validation, conflict classification, explicit copy UI, verified pre-copy recovery, byte-identical source preservation, idempotent retry, and interrupted-write tests are implemented on the revival branch.

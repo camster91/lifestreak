@@ -125,6 +125,19 @@ export const LEGACY_BIBLE_DAY_PREFIX = 'legacy-day-of-year:';
 
 export const getLocalDateKey = (date = new Date()): string => format(date, 'yyyy-MM-dd');
 
+export function isValidProgressDateKey(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const candidate = new Date(year, month - 1, day);
+  return (
+    candidate.getFullYear() === year &&
+    candidate.getMonth() === month - 1 &&
+    candidate.getDate() === day
+  );
+}
+
 function quarantineYearlessBibleKeys<T>(record: Record<string, T> = {}): Record<string, T> {
   return Object.fromEntries(
     Object.entries(record).map(([key, value]) => [
@@ -437,27 +450,31 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
         return Math.round((completed / days) * 100);
       },
 
-      toggleBibleChapter: (dayOfYear, chapterIndex) =>
+      toggleBibleChapter: (dateKey, chapterIndex) => {
+        if (!isValidProgressDateKey(dateKey)) return;
         set((state) => ({
           bibleChapters: {
             ...state.bibleChapters,
-            [dayOfYear]: {
-              ...(state.bibleChapters[dayOfYear] || {}),
-              [chapterIndex]: !(state.bibleChapters[dayOfYear] || {})[chapterIndex],
+            [dateKey]: {
+              ...(state.bibleChapters[dateKey] || {}),
+              [chapterIndex]: !(state.bibleChapters[dateKey] || {})[chapterIndex],
             },
           },
-        })),
-
-      getBibleChapterProgress: (dayOfYear) => {
-        const state = get();
-        return state.bibleChapters[dayOfYear] || {};
+        }));
       },
 
-      updateBibleReadingProgress: (dayOfYear, progress, chaptersRead = []) =>
+      getBibleChapterProgress: (dateKey) => {
+        if (!isValidProgressDateKey(dateKey)) return {};
+        const state = get();
+        return state.bibleChapters[dateKey] || {};
+      },
+
+      updateBibleReadingProgress: (dateKey, progress, chaptersRead = []) => {
+        if (!isValidProgressDateKey(dateKey)) return;
         set((state) => ({
           bibleReadings: {
             ...state.bibleReadings,
-            [dayOfYear]: {
+            [dateKey]: {
               progress,
               chaptersRead,
               read: progress === 100,
@@ -466,39 +483,44 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
               timestamp: new Date().toISOString(),
             },
           },
-        })),
+        }));
+      },
 
-      markBibleReadingComplete: (dayOfYear) =>
+      markBibleReadingComplete: (dateKey) => {
+        if (!isValidProgressDateKey(dateKey)) return;
         set((state) => ({
           bibleReadings: {
             ...state.bibleReadings,
-            [dayOfYear]: {
+            [dateKey]: {
               progress: 100,
               read: true,
               status: 'completed',
               timestamp: new Date().toISOString(),
             },
           },
-        })),
+        }));
+      },
 
-      isBibleReadingComplete: (dayOfYear) => {
+      isBibleReadingComplete: (dateKey) => {
+        if (!isValidProgressDateKey(dateKey)) return false;
         const state = get();
-        const chapters = state.bibleChapters[dayOfYear] || {};
+        const chapters = state.bibleChapters[dateKey] || {};
         const completedCount = Object.values(chapters).filter(Boolean).length;
         if (completedCount > 0) {
           const hasIncomplete = Object.values(chapters).some((v) => v === false);
           if (!hasIncomplete && completedCount > 0) return true;
         }
         return (
-          state.bibleReadings[dayOfYear]?.read ||
-          state.bibleReadings[dayOfYear]?.progress === 100 ||
+          state.bibleReadings[dateKey]?.read ||
+          state.bibleReadings[dateKey]?.progress === 100 ||
           false
         );
       },
 
-      getBibleReadingProgress: (dayOfYear) => {
+      getBibleReadingProgress: (dateKey) => {
+        if (!isValidProgressDateKey(dateKey)) return 0;
         const state = get();
-        return state.bibleReadings[dayOfYear]?.progress || 0;
+        return state.bibleReadings[dateKey]?.progress || 0;
       },
 
       getWeeklyReadingProgress: (weekKey) => {

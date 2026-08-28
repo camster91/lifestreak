@@ -253,6 +253,11 @@ function OperationBanner({ operation, onDismiss }) {
             Undo
           </button>
         )}
+        {operation.type === 'error' && operation.retryable && (
+          <button type="button" onClick={() => habitStore.retryLastOperation()}>
+            Retry
+          </button>
+        )}
         <button type="button" onClick={onDismiss} aria-label="Dismiss message">
           Dismiss
         </button>

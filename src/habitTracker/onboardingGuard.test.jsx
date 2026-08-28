@@ -118,4 +118,40 @@ describe('starter suggestion onboarding', () => {
       'true'
     );
   });
+
+  it('offers Retry for a recoverable failed habit save', async () => {
+    const workingStorage = window.localStorage;
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key) => workingStorage.getItem(key),
+        setItem: () => {
+          throw new DOMException('Quota exceeded', 'QuotaExceededError');
+        },
+        removeItem: (key) => workingStorage.removeItem(key),
+        clear: () => workingStorage.clear(),
+        key: (index) => workingStorage.key(index),
+        get length() {
+          return workingStorage.length;
+        },
+      },
+    });
+    expect(
+      habitStore.createHabit({
+        name: 'Retry routine',
+        startDate: toLocalDate(),
+        schedule: { type: 'daily', anchorDate: toLocalDate() },
+        tracking: { type: 'binary' },
+      })
+    ).toBeNull();
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: workingStorage,
+    });
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
+    expect(await screen.findByRole('heading', { name: 'Retry routine' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
 });

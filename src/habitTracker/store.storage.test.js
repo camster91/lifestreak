@@ -89,6 +89,40 @@ describe('habit storage failures', () => {
     expect(habitStore.getSnapshot().operation?.message).toMatch(/nothing was saved/i);
   });
 
+  it('retries the same rolled-back transaction after storage recovers', async () => {
+    let storedValue = null;
+    let storageFailed = true;
+    const storage = {
+      getItem: vi.fn(() => storedValue),
+      setItem: vi.fn((_key, value) => {
+        if (storageFailed) throw new DOMException('Quota exceeded', 'QuotaExceededError');
+        storedValue = value;
+      }),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(() => null),
+      length: 0,
+    };
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: storage,
+    });
+    vi.resetModules();
+
+    const { habitStore, HABIT_STORAGE_KEY } = await import('./store');
+    expect(habitStore.createHabit(simpleHabit())).toBeNull();
+    expect(habitStore.getSnapshot().operation).toMatchObject({
+      type: 'error',
+      retryable: true,
+    });
+
+    storageFailed = false;
+    expect(habitStore.retryLastOperation()).toBe(true);
+    expect(habitStore.getSnapshot().habits).toEqual([expect.objectContaining({ name: 'Move' })]);
+    expect(JSON.parse(storage.getItem(HABIT_STORAGE_KEY)).habits).toHaveLength(1);
+    expect(habitStore.getSnapshot().operation?.type).toBe('success');
+  });
+
   it('preserves but refuses to load a structurally invalid v1 database', async () => {
     const corrupt = JSON.stringify({
       version: 1,

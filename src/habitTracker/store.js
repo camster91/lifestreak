@@ -82,6 +82,7 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/;
 
 const listeners = new Set();
 let undoSnapshot = null;
+let retryTransaction = null;
 let state = loadState();
 
 function createId(prefix) {
@@ -379,6 +380,7 @@ function emit() {
 }
 
 function setOperation(type, message) {
+  retryTransaction = null;
   state = {
     ...state,
     operation: { type, message, at: new Date().toISOString() },
@@ -387,6 +389,7 @@ function setOperation(type, message) {
 }
 
 function transact(mutator, successMessage, { undoable = true } = {}) {
+  retryTransaction = null;
   const previous = clone(state);
   try {
     const draft = clone(state);
@@ -419,9 +422,11 @@ function transact(mutator, successMessage, { undoable = true } = {}) {
       operation: {
         type: 'error',
         message: `Nothing was saved. ${storageMessage(error)}`,
+        retryable: true,
         at: new Date().toISOString(),
       },
     };
+    retryTransaction = () => transact(mutator, successMessage, { undoable });
     emit();
     return false;
   }
@@ -618,8 +623,19 @@ export const habitStore = {
   },
 
   dismissOperation() {
+    retryTransaction = null;
     state = { ...state, operation: null };
     emit();
+  },
+
+  retryLastOperation() {
+    if (!retryTransaction) {
+      setOperation('warning', 'There is no failed change to retry.');
+      return false;
+    }
+    const retry = retryTransaction;
+    retryTransaction = null;
+    return retry();
   },
 
   undo() {

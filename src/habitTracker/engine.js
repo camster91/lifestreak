@@ -189,10 +189,13 @@ function defaultUnit(type) {
 
 export function lifecycleAt(habit, dateKey) {
   if (dateKey < habit.startDate) return 'not-started';
-  let state = habit.lifecycleState || 'active';
   const history = [...(habit.lifecycleHistory || [])].sort((a, b) =>
     a.effectiveDate.localeCompare(b.effectiveDate)
   );
+  // A recorded transition describes when the current lifecycle state began.
+  // Before the first transition, the habit was active. Older persisted records
+  // without history retain their explicit current state as a compatibility fallback.
+  let state = history.length === 0 ? habit.lifecycleState || 'active' : 'active';
   for (const event of history) {
     if (event.effectiveDate > dateKey) break;
     if (LIFECYCLE_STATES.includes(event.state)) state = event.state;

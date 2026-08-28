@@ -397,4 +397,36 @@ describe('completion and insight rules', () => {
     expect(getDayState(paused, [], '2026-08-12', { today: '2026-08-17' }).status).toBe('paused');
     expect(getDayState(paused, [], '2026-08-16', { today: '2026-08-17' }).status).toBe('missed');
   });
+
+  it('does not apply the current archived state before its recorded transition', () => {
+    const archived = habit({
+      lifecycleState: 'archived',
+      lifecycleHistory: [{ id: 'archive', state: 'archived', effectiveDate: '2026-08-17' }],
+    });
+    expect(getDayState(archived, [], '2026-08-16', { today: '2026-08-17' })).toMatchObject({
+      status: 'missed',
+      lifecycle: 'active',
+      scheduled: true,
+    });
+    expect(getDayState(archived, [], '2026-08-17', { today: '2026-08-17' })).toMatchObject({
+      status: 'archived',
+      lifecycle: 'archived',
+      scheduled: false,
+    });
+    expect(
+      calculateHabitStats(archived, [log('2026-08-15')], {
+        endDate: '2026-08-17',
+        today: '2026-08-17',
+        days: 3,
+      })
+    ).toMatchObject({ expected: 2, completed: 1, missed: 1 });
+  });
+
+  it('retains the explicit state for compatibility records without lifecycle history', () => {
+    const legacyArchived = habit({ lifecycleState: 'archived', lifecycleHistory: [] });
+    expect(getDayState(legacyArchived, [], '2026-08-17', { today: '2026-08-17' })).toMatchObject({
+      status: 'archived',
+      lifecycle: 'archived',
+    });
+  });
 });

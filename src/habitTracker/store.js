@@ -7,6 +7,7 @@ import {
   lifecycleAt,
   normalizeSchedule,
   normalizeTracking,
+  startOfWeek,
   starterTemplates,
   toLocalDate,
 } from './engine';
@@ -35,6 +36,7 @@ export const CURRENT_SPECIALIST_STORAGE_KEYS = [
 ];
 
 const AUXILIARY_STORAGE_KEYS = ['ls-error-logs', 'dailyReminderTime', 'installPromptDismissed'];
+const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/;
 
 const listeners = new Set();
 let undoSnapshot = null;
@@ -53,6 +55,23 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function sanitizeWeeklyReviewDismissals(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([weekStart, habitIds]) => isValidLocalDate(weekStart) && Array.isArray(habitIds))
+      .sort(([left], [right]) => right.localeCompare(left))
+      .slice(0, 26)
+      .map(([weekStart, habitIds]) => [
+        weekStart,
+        [...new Set(habitIds.filter((id) => typeof id === 'string' && ID_PATTERN.test(id)))].slice(
+          0,
+          500
+        ),
+      ])
+  );
+}
+
 function defaultState() {
   return {
     version: HABIT_SCHEMA_VERSION,
@@ -63,6 +82,7 @@ function defaultState() {
       completedPlacement: 'bottom',
       showHabitNamesInNotifications: false,
       timeGroupOrder: [...TIME_GROUPS],
+      weeklyReviewDismissals: {},
     },
     onboarding: {
       completed: false,
@@ -255,6 +275,7 @@ function loadState() {
           TIME_GROUPS.every((group) => preferences.timeGroupOrder.includes(group))
             ? [...preferences.timeGroupOrder]
             : [...TIME_GROUPS],
+        weeklyReviewDismissals: sanitizeWeeklyReviewDismissals(preferences.weeklyReviewDismissals),
       },
       onboarding: {
         completed: Boolean(onboarding.completed),
@@ -736,6 +757,29 @@ export const habitStore = {
         draft.preferences[key] = value;
       },
       'Preference saved.',
+      { undoable: false }
+    );
+  },
+
+  dismissWeeklyReviewSuggestion(habitId, dateKey = toLocalDate()) {
+    if (typeof habitId !== 'string' || !state.habits.some((habit) => habit.id === habitId)) {
+      setOperation('error', 'The weekly review suggestion could not be found.');
+      return false;
+    }
+    if (!isValidLocalDate(dateKey)) {
+      setOperation('error', 'The weekly review date is invalid.');
+      return false;
+    }
+    const weekStart = startOfWeek(dateKey, state.preferences.weekStartsOn);
+    return transact(
+      (draft) => {
+        const dismissals = sanitizeWeeklyReviewDismissals(draft.preferences.weeklyReviewDismissals);
+        const current = dismissals[weekStart] || [];
+        if (current.includes(habitId)) return false;
+        dismissals[weekStart] = [...current, habitId];
+        draft.preferences.weeklyReviewDismissals = sanitizeWeeklyReviewDismissals(dismissals);
+      },
+      'Suggestion dismissed for this weekly review.',
       { undoable: false }
     );
   },

@@ -14,7 +14,15 @@ const viewports = [
 
 const server = spawn(
   process.execPath,
-  ['node_modules/vite/bin/vite.js', 'preview', '--host', '127.0.0.1', '--port', String(port)],
+  [
+    'node_modules/vite/bin/vite.js',
+    'preview',
+    '--host',
+    '127.0.0.1',
+    '--port',
+    String(port),
+    '--strictPort',
+  ],
   { stdio: ['ignore', 'pipe', 'pipe'] }
 );
 
@@ -28,11 +36,19 @@ server.stderr.on('data', (chunk) => {
 
 async function waitForServer() {
   for (let attempt = 0; attempt < 50; attempt += 1) {
+    if (server.exitCode !== null) {
+      throw new Error(`Vite preview exited before verification.\n${serverOutput}`);
+    }
+    let response;
     try {
-      const response = await fetch(origin);
-      if (response.ok) return;
+      response = await fetch(origin);
     } catch {
       // The preview process is still starting.
+    }
+    if (response?.ok) {
+      const html = await response.text();
+      if (html.includes('<title>LifeStreak — Habit Tracker</title>')) return;
+      throw new Error(`Port ${port} is serving a different application.`);
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
@@ -288,6 +304,12 @@ async function main() {
     assert(
       (await backupPage.getByRole('button', { name: 'Dismiss suggestion' }).count()) === 0,
       'Weekly review suggestion was not dismissible.'
+    );
+    await backupPage.reload({ waitUntil: 'networkidle' });
+    await backupPage.getByRole('button', { name: 'Insights', exact: true }).click();
+    assert(
+      (await backupPage.getByRole('button', { name: 'Dismiss suggestion' }).count()) === 0,
+      'Weekly review dismissal did not survive an application reload.'
     );
     await backupPage.getByRole('button', { name: 'Settings', exact: true }).click();
     await backupPage.evaluate(() => {

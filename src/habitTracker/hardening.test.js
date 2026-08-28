@@ -125,4 +125,17 @@ describe('habit import hardening', () => {
       'anytime',
     ]);
   });
+
+  it('bounds persisted weekly-review dismissals to valid weeks and habit IDs', () => {
+    const input = validState();
+    input.preferences.weeklyReviewDismissals = {
+      '2026-08-17': ['habit-1', 'habit-1', 'invalid id'],
+      __proto__: ['habit-1'],
+      'not-a-date': ['habit-1'],
+    };
+
+    expect(sanitizeImportedState(input).preferences.weeklyReviewDismissals).toEqual({
+      '2026-08-17': ['habit-1'],
+    });
+  });
 });

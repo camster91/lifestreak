@@ -118,4 +118,26 @@ describe('habit storage failures', () => {
     expect(storage.setItem).not.toHaveBeenCalled();
     expect(storage.getItem()).toBe(corrupt);
   });
+
+  it('persists a dismissal for its review week and not a later week', async () => {
+    window.localStorage.clear();
+    vi.resetModules();
+    const { habitStore, HABIT_STORAGE_KEY } = await import('./store');
+    const habitId = habitStore.createHabit(simpleHabit());
+
+    expect(habitStore.dismissWeeklyReviewSuggestion(habitId, '2026-08-19')).toBe(true);
+    expect(habitStore.getSnapshot().preferences.weeklyReviewDismissals).toEqual({
+      '2026-08-17': [habitId],
+    });
+
+    const persisted = JSON.parse(window.localStorage.getItem(HABIT_STORAGE_KEY));
+    expect(persisted.preferences.weeklyReviewDismissals['2026-08-17']).toEqual([habitId]);
+    expect(persisted.preferences.weeklyReviewDismissals['2026-08-24']).toBeUndefined();
+
+    vi.resetModules();
+    const { habitStore: reloadedStore } = await import('./store');
+    expect(reloadedStore.getSnapshot().preferences.weeklyReviewDismissals).toEqual({
+      '2026-08-17': [habitId],
+    });
+  });
 });

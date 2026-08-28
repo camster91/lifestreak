@@ -14,6 +14,7 @@ import {
   parseLocalDate,
   starterTemplates,
   statusLabel,
+  startOfWeek,
   summarizeQuantitativePeriod,
   TIME_GROUPS,
   toLocalDate,
@@ -803,7 +804,6 @@ function InsightsView({ snapshot, onEdit }) {
   const categories = Array.from(new Set(snapshot.habits.map((habit) => habit.category))).sort();
   const [category, setCategory] = useState('all');
   const [rangeDays, setRangeDays] = useState(84);
-  const [dismissedReviewIds, setDismissedReviewIds] = useState([]);
   const filteredHabits =
     category === 'all'
       ? snapshot.habits
@@ -856,10 +856,11 @@ function InsightsView({ snapshot, onEdit }) {
     today,
     weekStartsOn: snapshot.preferences.weekStartsOn,
   });
+  const reviewWeekStart = startOfWeek(today, snapshot.preferences.weekStartsOn);
+  const dismissedReviewIds = snapshot.preferences.weeklyReviewDismissals?.[reviewWeekStart] || [];
   const visibleReview = (rows) =>
     rows.filter(({ habit }) => !dismissedReviewIds.includes(habit.id));
-  const dismissReview = (habitId) =>
-    setDismissedReviewIds((current) => [...new Set([...current, habitId])]);
+  const dismissReview = (habitId) => habitStore.dismissWeeklyReviewSuggestion(habitId, today);
 
   if (!snapshot.habits.length) {
     return (

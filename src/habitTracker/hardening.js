@@ -30,6 +30,23 @@ const SCHEDULE_TYPES = [
   'monthlyTarget',
 ];
 
+function sanitizeWeeklyReviewDismissals(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([weekStart, habitIds]) => isValidLocalDate(weekStart) && Array.isArray(habitIds))
+      .sort(([left], [right]) => right.localeCompare(left))
+      .slice(0, 26)
+      .map(([weekStart, habitIds]) => [
+        weekStart,
+        [...new Set(habitIds.filter((id) => typeof id === 'string' && ID_PATTERN.test(id)))].slice(
+          0,
+          500
+        ),
+      ])
+  );
+}
+
 function requireObject(value, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${label} is invalid.`);
@@ -342,6 +359,9 @@ export function sanitizeImportedState(payload) {
         TIME_GROUPS.every((group) => raw.preferences.timeGroupOrder.includes(group))
           ? [...raw.preferences.timeGroupOrder]
           : [...TIME_GROUPS],
+      weeklyReviewDismissals: sanitizeWeeklyReviewDismissals(
+        raw.preferences?.weeklyReviewDismissals
+      ),
     },
     onboarding: {
       completed: Boolean(raw.onboarding?.completed),

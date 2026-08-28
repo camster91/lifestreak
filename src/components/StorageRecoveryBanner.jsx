@@ -61,11 +61,6 @@ export default function StorageRecoveryBanner() {
             Retry after enabling storage
           </button>
         )}
-        {!storageAccessBlocked && (
-          <button type="button" onClick={() => setFailure(null)}>
-            Dismiss
-          </button>
-        )}
       </div>
     </aside>
   );

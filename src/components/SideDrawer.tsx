@@ -48,6 +48,7 @@ function SideDrawer({ children }: SideDrawerProps) {
           id="side-drawer"
           type="checkbox"
           className="drawer-toggle"
+          aria-label="Toggle navigation menu"
           checked={isOpen}
           onChange={(e) => setIsOpen(e.target.checked)}
         />
@@ -73,7 +74,7 @@ function SideDrawer({ children }: SideDrawerProps) {
               </div>
               <button
                 onClick={closeDrawer}
-                className="btn btn-ghost btn-sm btn-square"
+                className="btn btn-ghost btn-square min-h-11 min-w-11"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5" />

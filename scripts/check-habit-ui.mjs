@@ -927,6 +927,99 @@ async function main() {
     );
     await blockedStorageContext.close();
 
+    const specialistFailureContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    const specialistFailurePage = await specialistFailureContext.newPage();
+    await specialistFailurePage.goto(`${origin}/service?legacy=1`, { waitUntil: 'networkidle' });
+    const beforeFailedServiceWrite = await specialistFailurePage.evaluate(() => {
+      const key = 'ls-service-storage';
+      const before = localStorage.getItem(key);
+      const originalSetItem = Storage.prototype.setItem;
+      window.__lifestreakSpecialistFailureKey = key;
+      Storage.prototype.setItem = function setItemWithSpecialistFailure(storageKey, value) {
+        if (storageKey === window.__lifestreakSpecialistFailureKey) {
+          throw new DOMException('Controlled specialist quota exhaustion', 'QuotaExceededError');
+        }
+        return originalSetItem.call(this, storageKey, value);
+      };
+      return before;
+    });
+    await specialistFailurePage.getByLabel('Service hours').fill('1.25');
+    await specialistFailurePage
+      .getByLabel('Service notes (optional)')
+      .fill('Service retry fixture');
+    await specialistFailurePage.getByRole('button', { name: 'Add Entry' }).click();
+    await specialistFailurePage.getByText('LifeStreak could not safely save local data.').waitFor();
+    assert(
+      (await specialistFailurePage.getByRole('button', { name: 'Dismiss' }).count()) === 0,
+      'A failed specialist write could be dismissed before recovery.'
+    );
+    assert(
+      (await specialistFailurePage.evaluate(() => localStorage.getItem('ls-service-storage'))) ===
+        beforeFailedServiceWrite,
+      'A failed service write changed persistent data.'
+    );
+    await specialistFailurePage.evaluate(() => {
+      window.__lifestreakSpecialistFailureKey = null;
+    });
+    await specialistFailurePage.getByRole('button', { name: 'Retry save' }).click();
+    await specialistFailurePage.getByText('LifeStreak could not safely save local data.').waitFor({
+      state: 'detached',
+    });
+    await specialistFailurePage.reload({ waitUntil: 'networkidle' });
+    await specialistFailurePage.getByText('Service retry fixture').waitFor();
+    const recoveredServiceEntries = await specialistFailurePage.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem('ls-service-storage')).state.entries.filter(
+          ({ notes }) => notes === 'Service retry fixture'
+        ).length
+    );
+    assert(recoveredServiceEntries === 1, 'Service Retry did not persist exactly one entry.');
+
+    await specialistFailurePage.goto(`${origin}/reading?legacy=1`, { waitUntil: 'networkidle' });
+    const beforeFailedReadingWrite = await specialistFailurePage.evaluate(() => {
+      const key = 'ls-reading-storage';
+      const before = localStorage.getItem(key);
+      const originalSetItem = Storage.prototype.setItem;
+      window.__lifestreakSpecialistFailureKey = key;
+      Storage.prototype.setItem = function setItemWithSpecialistFailure(storageKey, value) {
+        if (storageKey === window.__lifestreakSpecialistFailureKey) {
+          throw new DOMException('Controlled specialist quota exhaustion', 'QuotaExceededError');
+        }
+        return originalSetItem.call(this, storageKey, value);
+      };
+      return before;
+    });
+    await specialistFailurePage.getByLabel('Reading title').fill('Reading retry fixture');
+    await specialistFailurePage.getByLabel('Total reading units').fill('12');
+    await specialistFailurePage.getByRole('button', { name: 'Add', exact: true }).click();
+    await specialistFailurePage.getByText('LifeStreak could not safely save local data.').waitFor();
+    assert(
+      (await specialistFailurePage.evaluate(() => localStorage.getItem('ls-reading-storage'))) ===
+        beforeFailedReadingWrite,
+      'A failed reading write changed persistent data.'
+    );
+    await specialistFailurePage.evaluate(() => {
+      window.__lifestreakSpecialistFailureKey = null;
+    });
+    await specialistFailurePage.getByRole('button', { name: 'Retry save' }).click();
+    await specialistFailurePage.getByText('LifeStreak could not safely save local data.').waitFor({
+      state: 'detached',
+    });
+    await specialistFailurePage.reload({ waitUntil: 'networkidle' });
+    await specialistFailurePage.getByText('Reading retry fixture').waitFor();
+    const recoveredReadingItems = await specialistFailurePage.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem('ls-reading-storage')).state.items.filter(
+          ({ title }) => title === 'Reading retry fixture'
+        ).length
+    );
+    assert(recoveredReadingItems === 1, 'Reading Retry did not persist exactly one item.');
+    await inspectPage(specialistFailurePage, 'phone', 'specialist-storage-recovered');
+    await specialistFailureContext.close();
+
     const unitTransitionContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       serviceWorkers: 'block',

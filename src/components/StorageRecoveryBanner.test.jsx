@@ -15,6 +15,7 @@ describe('StorageRecoveryBanner', () => {
     render(<StorageRecoveryBanner />);
     expect(screen.getByRole('alert')).toHaveTextContent('could not safely save');
     expect(screen.getByRole('button', { name: 'Download recovery data' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Retry save' }));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });

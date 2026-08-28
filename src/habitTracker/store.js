@@ -313,7 +313,9 @@ function loadState() {
         weekStartsOn: [0, 1, 6].includes(Number(preferences.weekStartsOn))
           ? Number(preferences.weekStartsOn)
           : fallback.preferences.weekStartsOn,
-        completedPlacement: preferences.completedPlacement === 'keep' ? 'keep' : 'bottom',
+        completedPlacement: ['keep', 'hide'].includes(preferences.completedPlacement)
+          ? preferences.completedPlacement
+          : 'bottom',
         showHabitNamesInNotifications: Boolean(preferences.showHabitNamesInNotifications),
         timeGroupOrder:
           Array.isArray(preferences.timeGroupOrder) &&

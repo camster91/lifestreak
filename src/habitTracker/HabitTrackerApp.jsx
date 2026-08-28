@@ -271,6 +271,7 @@ function TodayView({
   onHistory,
 }) {
   const today = toLocalDate();
+  const [showCollapsedCompleted, setShowCollapsedCompleted] = useState(false);
   const ordered = [...snapshot.habits].sort((a, b) => a.order - b.order);
   const rows = ordered
     .map((habit) => ({
@@ -286,13 +287,21 @@ function TodayView({
     );
 
   const expectedRows = rows.filter(({ state }) => state.scheduled && state.status !== 'skipped');
-  const completed = expectedRows.filter(({ state }) => state.status === 'completed').length;
-  const progress = expectedRows.length ? Math.round((completed / expectedRows.length) * 100) : 0;
+  const completedExpected = expectedRows.filter(({ state }) => state.status === 'completed').length;
+  const completedRows = rows.filter(({ state }) => state.status === 'completed');
+  const progress = expectedRows.length
+    ? Math.round((completedExpected / expectedRows.length) * 100)
+    : 0;
+  const collapseCompleted = snapshot.preferences.completedPlacement === 'hide';
+  const visibleRows =
+    collapseCompleted && !showCollapsedCompleted
+      ? rows.filter(({ state }) => state.status !== 'completed')
+      : rows;
 
   const grouped = (snapshot.preferences.timeGroupOrder || TIME_GROUPS)
     .map((group) => ({
       group,
-      rows: rows
+      rows: visibleRows
         .filter(({ config }) => config.timeOfDay === group)
         .sort((a, b) => {
           if (snapshot.preferences.completedPlacement !== 'bottom') return 0;
@@ -339,18 +348,31 @@ function TodayView({
       {snapshot.habits.length > 0 && (
         <div
           className="habit-progress-card"
-          aria-label={`${completed} of ${expectedRows.length} expected habits completed`}
+          aria-label={`${completedExpected} of ${expectedRows.length} expected habits completed`}
         >
           <div>
             <strong>{progress}%</strong>
             <span>
-              {completed} of {expectedRows.length} completed
+              {completedExpected} of {expectedRows.length} completed
             </span>
           </div>
           <progress max="100" value={progress}>
             {progress}%
           </progress>
         </div>
+      )}
+
+      {collapseCompleted && completedRows.length > 0 && (
+        <button
+          type="button"
+          className="habit-button habit-button-quiet"
+          aria-expanded={showCollapsedCompleted}
+          onClick={() => setShowCollapsedCompleted((shown) => !shown)}
+        >
+          {showCollapsedCompleted
+            ? 'Hide completed habits'
+            : `Show ${completedRows.length} completed habit${completedRows.length === 1 ? '' : 's'}`}
+        </button>
       )}
 
       {!snapshot.habits.length && !snapshot.onboarding?.completed ? (
@@ -1178,6 +1200,7 @@ function SettingsView({ snapshot }) {
             >
               <option value="bottom">Move below outstanding habits</option>
               <option value="keep">Keep in their original order</option>
+              <option value="hide">Collapse with a reveal button</option>
             </select>
           </label>
           <fieldset className="habit-inline-fieldset">

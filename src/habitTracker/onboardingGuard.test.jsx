@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from '../App';
+import { toLocalDate } from './engine';
 import { habitStore } from './store';
 
 beforeEach(() => {
@@ -90,5 +91,31 @@ describe('starter suggestion onboarding', () => {
     expect(effectiveDate.getAttribute('min')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(effectiveDate.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(screen.getByText(/future date when today already has progress/i)).toBeVisible();
+  });
+
+  it('collapses completed habits while keeping them available on demand', async () => {
+    const today = toLocalDate();
+    const habitId = habitStore.createHabit({
+      name: 'Finished routine',
+      startDate: today,
+      schedule: { type: 'daily', anchorDate: today },
+      tracking: { type: 'binary' },
+    });
+    habitStore.setDayStatus(habitId, today, 'completed');
+    habitStore.setPreference('completedPlacement', 'hide');
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Show 1 completed habit' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+    expect(screen.queryByRole('heading', { name: 'Finished routine' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show 1 completed habit' }));
+    expect(await screen.findByRole('heading', { name: 'Finished routine' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hide completed habits' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
   });
 });

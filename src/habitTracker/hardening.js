@@ -386,7 +386,9 @@ export function sanitizeImportedState(payload) {
       weekStartsOn: [0, 1, 6].includes(Number(raw.preferences?.weekStartsOn))
         ? Number(raw.preferences.weekStartsOn)
         : 1,
-      completedPlacement: raw.preferences?.completedPlacement === 'keep' ? 'keep' : 'bottom',
+      completedPlacement: ['keep', 'hide'].includes(raw.preferences?.completedPlacement)
+        ? raw.preferences.completedPlacement
+        : 'bottom',
       showHabitNamesInNotifications: Boolean(raw.preferences?.showHabitNamesInNotifications),
       timeGroupOrder:
         Array.isArray(raw.preferences?.timeGroupOrder) &&

@@ -5,49 +5,33 @@ import App from './App.jsx';
 import { logWebVitals } from './utils/webVitals.js';
 import { initializeNative, isNative, appLifecycle } from './utils/native.js';
 import { sanitizeSameOriginPath } from './utils/safeNavigation.js';
+import { recordDiagnostic } from './utils/diagnostics.js';
 
-// Global error logging function
-function logGlobalError(type, message, source, error) {
-  const errorLog = {
-    timestamp: new Date().toISOString(),
-    type,
-    message: message || 'Unknown error',
-    source: source || 'unknown',
-    stack: error?.stack || '',
-    userAgent: navigator.userAgent,
-    url: window.location.href,
-  };
-
-  try {
-    const existingLogs = JSON.parse(localStorage.getItem('ls-error-logs') || '[]');
-    existingLogs.push(errorLog);
-    // Keep only the last 20 errors
-    const recentLogs = existingLogs.slice(-20);
-    localStorage.setItem('ls-error-logs', JSON.stringify(recentLogs));
-  } catch {
-    // Ignore storage errors
-  }
-
+function logGlobalError(type, error) {
+  recordDiagnostic(type, error);
   // Log to console in development
   if (import.meta.env.DEV) {
-    console.error(`[${type}]`, message, error);
+    console.error(`[${type}]`, error);
   }
 }
 
 // Global error handler for uncaught exceptions
 window.onerror = function (message, source, lineno, colno, error) {
-  logGlobalError('uncaught_exception', message, `${source}:${lineno}:${colno}`, error);
+  logGlobalError('uncaught_exception', error || new Error(String(message)));
   return false; // Let the error propagate
 };
 
 // Global handler for unhandled promise rejections
 window.onunhandledrejection = function (event) {
   const error = event.reason;
-  logGlobalError('unhandled_rejection', error?.message || String(error), 'Promise', error);
+  logGlobalError('unhandled_rejection', error);
 };
 
 // Initialize native mobile features
-initializeNative().catch(console.error);
+initializeNative().catch((error) => {
+  recordDiagnostic('native_init', error);
+  if (import.meta.env.DEV) console.error(error);
+});
 
 // Handle back button on Android
 if (isNative) {

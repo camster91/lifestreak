@@ -1,5 +1,6 @@
-/* global document */
+/* global document, window */
 import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
 const port = 4175;
@@ -289,6 +290,34 @@ async function main() {
       'Weekly review suggestion was not dismissible.'
     );
     await backupPage.getByRole('button', { name: 'Settings', exact: true }).click();
+    await backupPage.evaluate(() => {
+      const privateError = new Error('Private fixture habit and note');
+      privateError.stack = 'Private fixture stack';
+      window.dispatchEvent(
+        new ErrorEvent('error', { message: privateError.message, error: privateError })
+      );
+    });
+    const diagnosticsDownloadPromise = backupPage.waitForEvent('download');
+    await backupPage.getByRole('button', { name: 'Export sanitized diagnostics' }).click();
+    const diagnosticsDownload = await diagnosticsDownloadPromise;
+    const diagnosticsPath = await diagnosticsDownload.path();
+    assert(diagnosticsPath, 'Diagnostics export did not produce a readable file.');
+    const diagnosticsRaw = await readFile(diagnosticsPath, 'utf8');
+    const diagnostics = JSON.parse(diagnosticsRaw);
+    assert(diagnostics.records.length === 1, 'Controlled browser failure was not exported.');
+    assert(
+      /^[0-9a-f]{40}$/.test(diagnostics.records[0].releaseRevision),
+      'Controlled browser failure was not attributed to the full release revision.'
+    );
+    assert(
+      !diagnosticsRaw.includes('Private fixture'),
+      'Sanitized diagnostics retained private error content.'
+    );
+    await backupPage.getByRole('button', { name: 'Delete local diagnostics' }).click();
+    assert(
+      (await backupPage.evaluate(() => localStorage.getItem('ls-error-logs'))) === null,
+      'Diagnostics delete control did not remove the local records.'
+    );
     const downloadPromise = backupPage.waitForEvent('download');
     await backupPage.getByRole('button', { name: 'Export complete LifeStreak backup' }).click();
     const backupDownload = await downloadPromise;

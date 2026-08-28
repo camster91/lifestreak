@@ -34,7 +34,7 @@ No habit names, schedules, completion history, quantitative values, notes, servi
 
 ## Diagnostics
 
-`ls-error-logs` stores a bounded local record of errors, source/component stack, current URL, timestamp, and user agent. It is not transmitted automatically. Before release, verify error messages and URLs cannot include private habit content, and provide explicit local review/deletion if diagnostics remain enabled.
+`ls-error-logs` stores at most 20 schema-approved local diagnostic records for 30 days. Each contains only timestamp, fixed error kind/class/fingerprint, a fixed route class without query or fragment, platform, app version, and release revision. Raw messages, stacks, component stacks, arbitrary paths, full URLs, user-agent strings, identifiers, and LifeStreak records are excluded. Nothing is transmitted automatically; both interfaces provide explicit sanitized export and immediate deletion. The complete field/purpose/destination/retention/access inventory is in [incident-response.md](incident-response.md).
 
 ## Store disclosure gate
 

@@ -33,6 +33,10 @@ const buildIdentityPlugin = {
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __LIFESTREAK_VERSION__: JSON.stringify(packageJson.version),
+    __LIFESTREAK_REVISION__: JSON.stringify(revision),
+  },
   plugins: [
     react(),
     tailwindcss(),

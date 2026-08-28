@@ -103,3 +103,5 @@ declare module './PrayerTrackingCard.jsx' {
   const PrayerTrackingCard: React.FC<any>;
   export default PrayerTrackingCard;
 }
+declare const __LIFESTREAK_VERSION__: string;
+declare const __LIFESTREAK_REVISION__: string;

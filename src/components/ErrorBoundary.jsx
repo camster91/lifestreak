@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { AlertTriangle, RefreshCw, Home, Trash2 } from 'lucide-react';
+import { recordDiagnostic } from '../utils/diagnostics';
 
 /**
  * Error Boundary component to catch JavaScript errors in child components.
@@ -21,36 +22,14 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log error to console
-    console.error('ErrorBoundary caught an error:', error);
-    console.error('Component stack:', errorInfo.componentStack);
+    if (import.meta.env.DEV) {
+      console.error('ErrorBoundary caught an error:', error);
+      console.error('Component stack:', errorInfo.componentStack);
+    }
 
     this.setState({ errorInfo });
 
-    // Log to error tracking
-    this.logError(error, errorInfo);
-  }
-
-  logError(error, errorInfo) {
-    // Store error in localStorage for debugging
-    const errorLog = {
-      timestamp: new Date().toISOString(),
-      message: error?.message || 'Unknown error',
-      stack: error?.stack || '',
-      componentStack: errorInfo?.componentStack || '',
-      userAgent: navigator.userAgent,
-      url: window.location.href,
-    };
-
-    try {
-      const existingLogs = JSON.parse(localStorage.getItem('ls-error-logs') || '[]');
-      existingLogs.push(errorLog);
-      // Keep only the last 10 errors
-      const recentLogs = existingLogs.slice(-10);
-      localStorage.setItem('ls-error-logs', JSON.stringify(recentLogs));
-    } catch {
-      // Ignore storage errors
-    }
+    recordDiagnostic('react_boundary', error);
   }
 
   handleReload = () => {

@@ -24,6 +24,7 @@ import {
   restorePortableBackup,
   validatePortableBackup,
 } from '../utils/portableBackup';
+import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics';
 import './styles.css';
 
 const GROUP_LABELS = {
@@ -1414,6 +1415,40 @@ function SettingsView({ snapshot }) {
               ))}
             </div>
           )}
+        </section>
+
+        <section className="habit-settings-card" aria-labelledby="diagnostics-settings-heading">
+          <h3 id="diagnostics-settings-heading">Private diagnostics</h3>
+          <p>
+            LifeStreak keeps at most 20 sanitized failures locally for 30 days. Records contain only
+            an error class/fingerprint, fixed route, platform, app version, and release revision—no
+            habit names, notes, values, raw messages, stacks, queries, or device identifier.
+          </p>
+          <div className="habit-button-stack">
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => {
+                downloadJson(
+                  `lifestreak-diagnostics-${toLocalDate()}.json`,
+                  createDiagnosticsExport()
+                );
+                setBackupMessage('Sanitized local diagnostics downloaded.');
+              }}
+            >
+              Export sanitized diagnostics
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => {
+                clearDiagnostics();
+                setBackupMessage('Local diagnostics deleted.');
+              }}
+            >
+              Delete local diagnostics
+            </button>
+          </div>
         </section>
 
         <section className="habit-settings-card habit-danger-zone" aria-labelledby="danger-heading">

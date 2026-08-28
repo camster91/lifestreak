@@ -53,6 +53,7 @@ import {
   restorePortableBackup,
   validatePortableBackup,
 } from '../utils/portableBackup.js';
+import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics.js';
 
 function Settings() {
   const toast = useToast();
@@ -127,9 +128,13 @@ function Settings() {
   };
 
   const handleClearData = () => {
-    if (confirm('This will clear all data. Continue?')) {
+    if (
+      confirm(
+        'Clear Daily Text, prayer, worship, Bible-reading, and meeting-preparation progress? Habits, goals, service, reading, memories, settings, diagnostics, and notification schedules are not changed.'
+      )
+    ) {
       clearAll();
-      toast.success('Data cleared');
+      toast.success('Spiritual progress cleared; other LifeStreak stores were preserved');
       window.location.reload();
     }
   };
@@ -208,6 +213,19 @@ function Settings() {
       console.error('Export failed:', error);
       toast.error(error instanceof Error ? error.message : 'Could not export data');
     }
+  };
+
+  const handleExportDiagnostics = () => {
+    const blob = new Blob([JSON.stringify(createDiagnosticsExport(), null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `lifestreak-diagnostics-${new Date().toISOString().split('T')[0]}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success('Sanitized local diagnostics exported');
   };
 
   const [importModal, setImportModal] = useState<{
@@ -392,6 +410,32 @@ function Settings() {
         </div>
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
+            <h2 className="card-title text-lg">Private Diagnostics</h2>
+            <p className="text-sm text-base-content/70">
+              Up to 20 sanitized failures are kept locally for 30 days. Raw messages, stacks, full
+              URLs, user-agent strings, habits, notes, and values are excluded.
+            </p>
+            <button
+              type="button"
+              onClick={handleExportDiagnostics}
+              className="btn btn-outline w-full justify-start"
+            >
+              <Download className="w-5 h-5" /> Export Sanitized Diagnostics
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearDiagnostics();
+                toast.success('Local diagnostics deleted');
+              }}
+              className="btn btn-outline w-full justify-start"
+            >
+              <Trash2 className="w-5 h-5" /> Delete Local Diagnostics
+            </button>
+          </div>
+        </div>
+        <div className="card bg-base-100 shadow-xl">
+          <div className="card-body">
             <h2 className="card-title text-lg">Appearance</h2>
             <div className="divider my-2"></div>
             <button onClick={toggleTheme} className="btn btn-outline w-full justify-start">
@@ -414,7 +458,7 @@ function Settings() {
               onClick={handleClearData}
               className="btn btn-error btn-outline w-full justify-start"
             >
-              <Trash2 className="w-5 h-5" /> Clear All Data
+              <Trash2 className="w-5 h-5" /> Clear Spiritual Progress
             </button>
           </div>
         </div>

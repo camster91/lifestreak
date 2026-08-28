@@ -17,6 +17,7 @@ export interface Habit {
   name: string;
   description: string;
   category: string;
+  icon?: string;
   timeOfDay: TimeGroup;
   startDate: string;
   schedule: { type: string; anchorDate: string };

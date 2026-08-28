@@ -219,6 +219,7 @@ function sanitizeHabit(sourceValue, index, seenHabitIds) {
     name,
     description: safeText(source.description, 500),
     category: safeText(source.category, 50, 'Personal'),
+    icon: safeText(source.icon, 8, '✓'),
     colour: safeColour(source.colour),
     timeOfDay: initialTimeOfDay,
     startDate: source.startDate,
@@ -373,6 +374,9 @@ function sanitizeHabitInput(input, { partial = false, fallbackStartDate = toLoca
   }
   if (Object.prototype.hasOwnProperty.call(source, 'category')) {
     result.category = safeText(source.category, 50, 'Personal');
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'icon')) {
+    result.icon = safeText(source.icon, 8, '✓');
   }
   if (Object.prototype.hasOwnProperty.call(source, 'colour')) {
     result.colour = safeColour(source.colour);

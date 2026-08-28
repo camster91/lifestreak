@@ -596,6 +596,7 @@ export function starterTemplates(today = toLocalDate()) {
   return [
     {
       templateId: 'bible-reading',
+      icon: '📖',
       name: 'Morning Bible reading',
       description: 'Read for at least five focused minutes.',
       category: 'Spiritual',
@@ -605,6 +606,7 @@ export function starterTemplates(today = toLocalDate()) {
     },
     {
       templateId: 'personal-prayer',
+      icon: '🙏',
       name: 'Personal prayer',
       description: 'Make time for an intentional, unrushed prayer.',
       category: 'Spiritual',
@@ -614,6 +616,7 @@ export function starterTemplates(today = toLocalDate()) {
     },
     {
       templateId: 'move-workout',
+      icon: '🏃',
       name: 'Move / workout',
       description: 'Walking, mobility, or a full workout can count.',
       category: 'Health',
@@ -623,6 +626,7 @@ export function starterTemplates(today = toLocalDate()) {
     },
     {
       templateId: 'plan-tomorrow',
+      icon: '🗓️',
       name: 'Plan tomorrow',
       description: 'Choose the next day’s priorities before winding down.',
       category: 'Planning',
@@ -632,6 +636,7 @@ export function starterTemplates(today = toLocalDate()) {
     },
     {
       templateId: 'water',
+      icon: '💧',
       name: 'Drink water',
       description: 'Track water without treating health data as medical advice.',
       category: 'Health',
@@ -641,12 +646,33 @@ export function starterTemplates(today = toLocalDate()) {
     },
     {
       templateId: 'learn',
+      icon: '💡',
       name: 'Learn something',
       description: 'Practise a skill or read material that develops it.',
       category: 'Learning',
       timeOfDay: 'anytime',
       schedule: { type: 'weekdays', weekdays: [1, 2, 3, 4, 5], anchorDate: today },
       tracking: { type: 'duration', target: 15, unit: 'min' },
+    },
+    {
+      templateId: 'home-reset',
+      icon: '🏠',
+      name: 'Ten-minute home reset',
+      description: 'Tidy one useful area without turning it into an all-day project.',
+      category: 'Home',
+      timeOfDay: 'evening',
+      schedule: { type: 'daily', anchorDate: today },
+      tracking: { type: 'duration', target: 10, unit: 'min' },
+    },
+    {
+      templateId: 'quiet-minute',
+      icon: '🌿',
+      name: 'Quiet minute',
+      description: 'Pause, breathe, and notice how you are doing.',
+      category: 'Wellbeing',
+      timeOfDay: 'anytime',
+      schedule: { type: 'daily', anchorDate: today },
+      tracking: { type: 'duration', target: 1, unit: 'min' },
     },
   ];
 }

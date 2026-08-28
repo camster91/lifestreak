@@ -43,7 +43,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 9. **#64 — supported Node/npm/Vite toolchain**
    The supported contract is documented in [toolchain.md](toolchain.md): exact Node 22.22.0 and npm 11.17.0 with compatible Vite 7/plugin-react 5/React 19 majors across local version files, CI, Docker, and native workflows. Keep open until clean installs and native builds run on the pinned environment; then triage each dependency PR independently.
 10. **#70 and #97 — onboarding and habit management**
-    The recovered branch partially implements both. Finish progressive disclosure, template customization, restored-user behavior, failure recovery, accessibility, and device verification.
+    The revival branch has optional/replayable private offline onboarding, restored-user guards, minimal and advanced creation, editable ordinary templates across spiritual/health/planning/learning/home/wellbeing, icons, duplicate/edit/lifecycle/delete/undo workflows, and visible failed-save recovery. Template pre-customization, unsaved-change browser walkthroughs, and responsive/device verification remain.
 11. **#71 and #98 — schedule, due-state, streak, and calendar contract**
     The revival branch now adds weekly-window and monthly-target schedules/statistics, optional end dates, period opportunity summaries, future-log exclusion, live schedule previews, user-reorderable time groups, accessible calendar names, specific streak-break explanations, and a UTC−12/UTC+14/DST automated matrix. Real browser/native interaction walkthroughs remain.
 12. **#74, #75, #99, and #100 — truthful daily operations**

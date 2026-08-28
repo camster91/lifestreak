@@ -355,6 +355,10 @@ function normalizeHabitInput(input, id = createId('habit')) {
     name: String(input.name || '').trim(),
     description: String(input.description || '').trim(),
     category: String(input.category || 'Personal').trim() || 'Personal',
+    icon:
+      String(input.icon || '✓')
+        .trim()
+        .slice(0, 8) || '✓',
     colour: String(input.colour || '#4f46e5'),
     timeOfDay: input.timeOfDay || 'anytime',
     startDate,
@@ -498,7 +502,7 @@ export const habitStore = {
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
       upsertRevision(habit, changes, effectiveDate);
-      ['name', 'description', 'category', 'colour', 'reminderTime'].forEach((key) => {
+      ['name', 'description', 'category', 'icon', 'colour', 'reminderTime'].forEach((key) => {
         if (Object.prototype.hasOwnProperty.call(changes, key)) habit[key] = changes[key];
       });
       habit.updatedAt = new Date().toISOString();
@@ -531,6 +535,28 @@ export const habitStore = {
       draft.habits = draft.habits.filter((habit) => habit.id !== habitId);
       draft.logs = draft.logs.filter((log) => log.habitId !== habitId);
     }, `“${name}” and its history were deleted. Use Undo to restore them.`);
+  },
+
+  duplicateHabit(habitId) {
+    const source = state.habits.find((habit) => habit.id === habitId);
+    if (!source) {
+      setOperation('error', 'Habit no longer exists.');
+      return null;
+    }
+    const config = currentConfig(source);
+    return this.createHabit({
+      name: `${source.name} copy`,
+      description: source.description,
+      category: source.category,
+      icon: source.icon,
+      colour: source.colour,
+      timeOfDay: config.timeOfDay,
+      startDate: toLocalDate(),
+      schedule: { ...config.schedule, anchorDate: toLocalDate() },
+      tracking: config.tracking,
+      reminderTime: source.reminderTime,
+      sourceTemplateId: null,
+    });
   },
 
   moveHabit(habitId, direction) {

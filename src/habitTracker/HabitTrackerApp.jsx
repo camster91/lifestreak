@@ -92,18 +92,21 @@ export default function HabitTrackerApp({ onOpenCollections }) {
   const [view, setView] = useState('today');
   const [selectedDate, setSelectedDate] = useState(toLocalDate());
   const [editingHabitId, setEditingHabitId] = useState(null);
+  const [createDefaults, setCreateDefaults] = useState(null);
   const [historyHabitId, setHistoryHabitId] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
   useOpenAppNotifications(snapshot);
 
-  const openCreate = () => {
+  const openCreate = (defaults = null) => {
     setEditingHabitId(null);
+    setCreateDefaults(defaults?.templateId ? defaults : null);
     setShowForm(true);
   };
 
   const openEdit = (habitId) => {
     setEditingHabitId(habitId);
+    setCreateDefaults(null);
     setShowForm(true);
   };
 
@@ -145,6 +148,7 @@ export default function HabitTrackerApp({ onOpenCollections }) {
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             onCreate={openCreate}
+            onCustomize={openCreate}
             onEdit={openEdit}
             onHistory={setHistoryHabitId}
           />
@@ -153,6 +157,7 @@ export default function HabitTrackerApp({ onOpenCollections }) {
           <HabitsView
             snapshot={snapshot}
             onCreate={openCreate}
+            onCustomize={openCreate}
             onEdit={openEdit}
             onHistory={setHistoryHabitId}
           />
@@ -179,9 +184,14 @@ export default function HabitTrackerApp({ onOpenCollections }) {
       {showForm && (
         <HabitFormDialog
           habit={editingHabit}
-          onClose={() => setShowForm(false)}
+          initial={createDefaults}
+          onClose={() => {
+            setShowForm(false);
+            setCreateDefaults(null);
+          }}
           onSaved={(habitId) => {
             setShowForm(false);
+            setCreateDefaults(null);
             if (habitId) setHistoryHabitId(habitId);
           }}
         />
@@ -227,7 +237,15 @@ function OperationBanner({ operation, onDismiss }) {
   );
 }
 
-function TodayView({ snapshot, selectedDate, setSelectedDate, onCreate, onEdit, onHistory }) {
+function TodayView({
+  snapshot,
+  selectedDate,
+  setSelectedDate,
+  onCreate,
+  onCustomize,
+  onEdit,
+  onHistory,
+}) {
   const today = toLocalDate();
   const ordered = [...snapshot.habits].sort((a, b) => a.order - b.order);
   const rows = ordered
@@ -312,7 +330,7 @@ function TodayView({ snapshot, selectedDate, setSelectedDate, onCreate, onEdit, 
       )}
 
       {!snapshot.habits.length && !snapshot.onboarding?.completed ? (
-        <StarterPanel onCreate={onCreate} />
+        <StarterPanel onCreate={onCreate} onCustomize={onCustomize} />
       ) : !snapshot.habits.length ? (
         <EmptyState
           title="No habits yet"
@@ -356,7 +374,7 @@ function TodayView({ snapshot, selectedDate, setSelectedDate, onCreate, onEdit, 
   );
 }
 
-function StarterPanel({ onCreate }) {
+function StarterPanel({ onCreate, onCustomize }) {
   const templates = starterTemplates();
   return (
     <section className="habit-starter-panel" aria-labelledby="starter-heading">
@@ -366,6 +384,10 @@ function StarterPanel({ onCreate }) {
         <p>
           Templates are optional and fully editable. Spiritual, health, planning, and learning
           habits use the same private habit engine.
+        </p>
+        <p>
+          Your records stay in this browser or installed app, work offline, and are never sent to an
+          account unless you explicitly export a backup.
         </p>
         <div className="habit-button-row">
           <button
@@ -391,7 +413,10 @@ function StarterPanel({ onCreate }) {
         {templates.map((template) => (
           <article key={template.templateId} className="habit-template-card">
             <span>{template.category}</span>
-            <h3>{template.name}</h3>
+            <h3>
+              <span aria-hidden="true">{template.icon || '✓'} </span>
+              {template.name}
+            </h3>
             <p>{template.description}</p>
             <button
               type="button"
@@ -399,6 +424,13 @@ function StarterPanel({ onCreate }) {
               onClick={() => habitStore.addTemplate(template.templateId)}
             >
               Add template
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-quiet"
+              onClick={() => onCustomize(template)}
+            >
+              Customize first
             </button>
           </article>
         ))}
@@ -430,7 +462,10 @@ function TodayHabitCard({ habit, state, config, dateKey, onEdit, onHistory }) {
             <p className="habit-card-meta">
               {habit.category} · {describeSchedule(config.schedule)}
             </p>
-            <h4>{habit.name}</h4>
+            <h4>
+              <span aria-hidden="true">{habit.icon || '✓'} </span>
+              {habit.name}
+            </h4>
           </div>
           <span className={`habit-status status-${state.status}`}>{statusLabel(state.status)}</span>
         </div>
@@ -530,7 +565,7 @@ function TodayHabitCard({ habit, state, config, dateKey, onEdit, onHistory }) {
   );
 }
 
-function HabitsView({ snapshot, onCreate, onEdit, onHistory }) {
+function HabitsView({ snapshot, onCreate, onCustomize, onEdit, onHistory }) {
   const [filter, setFilter] = useState('active');
   const today = toLocalDate();
   const rows = [...snapshot.habits]
@@ -587,7 +622,10 @@ function HabitsView({ snapshot, onCreate, onEdit, onHistory }) {
                     <p className="habit-card-meta">
                       {habit.category} · {GROUP_LABELS[config.timeOfDay]}
                     </p>
-                    <h3>{habit.name}</h3>
+                    <h3>
+                      <span aria-hidden="true">{habit.icon || '✓'} </span>
+                      {habit.name}
+                    </h3>
                   </div>
                   <span className={`habit-status status-${lifecycle}`}>
                     {statusLabel(lifecycle)}
@@ -614,6 +652,9 @@ function HabitsView({ snapshot, onCreate, onEdit, onHistory }) {
                   </button>
                   <button type="button" onClick={() => onHistory(habit.id)}>
                     History
+                  </button>
+                  <button type="button" onClick={() => habitStore.duplicateHabit(habit.id)}>
+                    Duplicate
                   </button>
                   <button
                     type="button"
@@ -690,6 +731,13 @@ function HabitsView({ snapshot, onCreate, onEdit, onHistory }) {
                   onClick={() => habitStore.addTemplate(template.templateId)}
                 >
                   {added ? 'Added' : 'Add template'}
+                </button>
+                <button
+                  type="button"
+                  className="habit-button habit-button-quiet"
+                  onClick={() => onCustomize(template)}
+                >
+                  Customize
                 </button>
               </article>
             );
@@ -1172,14 +1220,24 @@ function SettingsView({ snapshot }) {
   );
 }
 
-function HabitFormDialog({ habit, onClose, onSaved }) {
+function HabitFormDialog({ habit, initial, onClose, onSaved }) {
   const today = toLocalDate();
-  const current = habit ? configurationForDate(habit, today) : null;
+  const seed = habit || initial;
+  const current = habit
+    ? configurationForDate(habit, today)
+    : initial
+      ? {
+          schedule: initial.schedule,
+          tracking: initial.tracking,
+          timeOfDay: initial.timeOfDay,
+        }
+      : null;
   const [form, setForm] = useState(() => ({
-    name: habit?.name || '',
-    description: habit?.description || '',
-    category: habit?.category || 'Personal',
-    colour: habit?.colour || '#4f46e5',
+    name: seed?.name || '',
+    description: seed?.description || '',
+    category: seed?.category || 'Personal',
+    icon: seed?.icon || '✓',
+    colour: seed?.colour || '#4f46e5',
     timeOfDay: current?.timeOfDay || 'anytime',
     startDate: habit?.startDate || today,
     scheduleType: current?.schedule.type || 'daily',
@@ -1194,7 +1252,7 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
     stretchTarget: current?.tracking.stretchTarget || '',
     unit: current?.tracking.unit || 'rep',
     anyAmountCounts: current?.tracking.anyAmountCounts || false,
-    reminderTime: habit?.reminderTime || '',
+    reminderTime: seed?.reminderTime || '',
   }));
   const [error, setError] = useState('');
 
@@ -1214,6 +1272,7 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
       name: form.name,
       description: form.description,
       category: form.category,
+      icon: form.icon,
       colour: form.colour,
       timeOfDay: form.timeOfDay,
       startDate: form.startDate,
@@ -1289,6 +1348,16 @@ function HabitFormDialog({ habit, onClose, onSaved }) {
               value={form.category}
               onChange={(event) => set('category', event.target.value)}
             />
+          </label>
+          <label className="habit-field">
+            <span>Icon</span>
+            <input
+              value={form.icon}
+              maxLength="8"
+              onChange={(event) => set('icon', event.target.value)}
+              aria-describedby="habit-icon-help"
+            />
+            <small id="habit-icon-help">Choose a short symbol or emoji.</small>
           </label>
           <label className="habit-field">
             <span>Colour</span>

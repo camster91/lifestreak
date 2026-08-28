@@ -31,9 +31,10 @@ The habit-first architecture, calendar rules, migration policy, representative r
 
 The habit-first transition is under review in pull request #106 on `codex/lifestreak-habit-first`. The original application shell is retained as `src/LegacyApp.jsx`, and the integration can be rolled back without altering either the new habit database or existing specialist storage.
 
-The pull request must remain unmerged until automated checks can run and representative device, accessibility, import/export, upgrade, and legacy-data QA are complete.
+The pull request must remain unmerged until hosted checks execute successfully and representative device, accessibility, import/export, upgrade, and legacy-data QA are complete.
 
 The prioritized, reconciled backlog is maintained in [docs/ISSUE_ROADMAP.md](docs/ISSUE_ROADMAP.md).
+The product charter, evidence register, market position, metrics, and launch risks are maintained in [docs/product-control.md](docs/product-control.md).
 Canonical product, bundle, version, origin, and release identity values are maintained in [docs/product-identity.md](docs/product-identity.md).
 
 ## Licence

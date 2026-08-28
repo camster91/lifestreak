@@ -2,7 +2,7 @@
 
 Last reconciled: 2026-08-28
 
-This is the authoritative ordering for LifeStreak work. GitHub issues contain the detailed acceptance criteria; this file records disposition, dependencies, and execution order. `TODO.md`, `APP_STORE_TODO.md`, and older feature plans are supporting or historical checklists and must not override this roadmap.
+This is the authoritative ordering for LifeStreak work. GitHub issues contain the detailed acceptance criteria; this file records disposition, dependencies, and execution order. [product-control.md](product-control.md) is the durable product charter and evidence register. `TODO.md`, `APP_STORE_TODO.md`, and older feature plans are supporting or historical checklists and must not override this roadmap.
 
 ## Product decision
 
@@ -11,18 +11,18 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 ## Current integration state
 
 - `main` still contains the archived product documentation and legacy default experience.
-- The recovered `codex/lifestreak-habit-first` branch contains the independent-app implementation from closed PR #106.
-- The recovered branch is reconciled with current `main` and passes clean install, formatting, typecheck, lint, 145 tests, production web build, Capacitor Android sync, and dependency audit locally.
-- A local Android debug build reaches a successful web build and Capacitor sync, then stops because the current Mac has no Java runtime. GitHub-hosted jobs currently fail before executing any steps, while the independent Ashbi Local CI check remains external to the repository.
+- The active `codex/lifestreak-habit-first` branch contains the independent-app implementation in open draft PR #106; it is not merged or deployed.
+- The branch is reconciled with current `main` and passes formatting, typecheck, lint, 27 files / 212 tests, production web build, the responsive Chromium matrix, dependency audit, product-identity, native-contract, and supply-chain checks locally.
+- A local Android debug build previously stopped because the Mac had no Java runtime. The current local Docker image gate cannot run because no Docker daemon is available. GitHub-hosted and third-party checks currently fail before useful execution, except the Dependabot configuration check.
 - The branch has not passed the full migration, native archive, device, accessibility, privacy, or release evidence required by the issues below.
-- Issues #95-#102 were reopened because PR #106 was closed without merge; source on a closed branch is not completion on the default branch.
+- Issues #95-#102 remain open because source on a draft branch is not completion on the default branch and required external/manual evidence is incomplete.
 
 ## Execution order
 
 ### P0 — establish a safe independent product
 
 1. **#69 and #95 — product contract and independent-app integration**
-   Reconcile terminology, navigation, platform scope, privacy promises, AI/push scope, and the recovered habit-first implementation. These are overlapping decision and implementation tracks and should be completed together.
+   [product-control.md](product-control.md) now records the initial customer, core job, launch wedge, privacy/platform constraints, explicit deferrals, pricing hypothesis, decision metrics, access, and risk register. The independent-app identity is implemented on the draft branch. Keep both tracks open until the matrix is cross-checked against every route/store promise, owner-approved where required, integrated to `main`, and tested with real pilot users.
 2. **#101 — legacy-data preservation and migration contract**
    The current and historical key inventory is maintained in [storage-migration-inventory.md](storage-migration-inventory.md). Implement and verify its non-destructive migration sequence after the persistence/date correctness work in #56, #61, and #62.
 3. **#56 — durable service and reading persistence**

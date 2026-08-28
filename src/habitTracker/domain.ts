@@ -5,6 +5,7 @@ import {
   TIME_GROUPS,
   TRACKING_TYPES,
   isValidLocalDate,
+  toLocalDate,
 } from './engine.js';
 
 export type TrackingType = (typeof TRACKING_TYPES)[number];
@@ -205,12 +206,22 @@ export function assertValidHabitDatabase(value: unknown): asserts value is Habit
         typeof event.state !== 'string' ||
         !LIFECYCLE_STATES.includes(event.state) ||
         !isValidLocalDate(event.effectiveDate) ||
+        String(event.effectiveDate) < habitStartDate ||
+        String(event.effectiveDate) > toLocalDate() ||
         lifecycleDates.has(String(event.effectiveDate)) ||
         !isTimestamp(event.createdAt)
       ) {
         throw new Error(`Habit ${index + 1} has invalid lifecycle history.`);
       }
       lifecycleDates.add(String(event.effectiveDate));
+    }
+    if (rawHabit.lifecycleHistory.length > 0) {
+      const latestLifecycleEvent = [...rawHabit.lifecycleHistory].sort((left, right) =>
+        String(left.effectiveDate).localeCompare(String(right.effectiveDate))
+      )[rawHabit.lifecycleHistory.length - 1];
+      if (latestLifecycleEvent.state !== rawHabit.lifecycleState) {
+        throw new Error(`Habit ${index + 1} lifecycle state contradicts its latest event.`);
+      }
     }
 
     const revisionIds = new Set<string>();

@@ -88,10 +88,11 @@ describe('habit domain schema', () => {
       {
         id: 'lifecycle-1',
         state: 'paused',
-        effectiveDate: '2026-08-29',
+        effectiveDate: '2026-08-28',
         createdAt: '2026-08-28T13:00:00.000Z',
       },
     ];
+    valid.habits[0].lifecycleState = 'paused';
     valid.habits[0].revisions = [
       {
         id: 'revision-1',
@@ -114,6 +115,20 @@ describe('habit domain schema', () => {
     const badLifecycle = structuredClone(valid);
     badLifecycle.habits[0].lifecycleHistory[0].state = 'deleted';
     expect(() => assertValidHabitDatabase(badLifecycle)).toThrow(/lifecycle/i);
+
+    const contradictoryLifecycle = structuredClone(valid);
+    contradictoryLifecycle.habits[0].lifecycleState = 'active';
+    expect(() => assertValidHabitDatabase(contradictoryLifecycle)).toThrow(/contradicts/i);
+
+    const preStartLifecycle = structuredClone(valid);
+    preStartLifecycle.habits[0].lifecycleState = 'paused';
+    preStartLifecycle.habits[0].lifecycleHistory[0].effectiveDate = '2026-08-27';
+    expect(() => assertValidHabitDatabase(preStartLifecycle)).toThrow(/lifecycle history/i);
+
+    const futureLifecycle = structuredClone(valid);
+    futureLifecycle.habits[0].lifecycleState = 'paused';
+    futureLifecycle.habits[0].lifecycleHistory[0].effectiveDate = '9999-12-31';
+    expect(() => assertValidHabitDatabase(futureLifecycle)).toThrow(/lifecycle history/i);
 
     const badRevision = structuredClone(valid);
     badRevision.habits[0].revisions[0].schedule.weekdays = [];

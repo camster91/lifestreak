@@ -100,4 +100,29 @@ describe('habit import hardening', () => {
     expect(Object.prototype.polluted).toBeUndefined();
     expect(Object.prototype.hasOwnProperty.call(result, '__proto__')).toBe(false);
   });
+
+  it('preserves only a complete user-defined time-group order', () => {
+    const ordered = validState({
+      preferences: {
+        weekStartsOn: 1,
+        completedPlacement: 'bottom',
+        showHabitNamesInNotifications: false,
+        timeGroupOrder: ['anytime', 'morning', 'afternoon', 'evening'],
+      },
+    });
+    expect(sanitizeImportedState(ordered).preferences.timeGroupOrder).toEqual([
+      'anytime',
+      'morning',
+      'afternoon',
+      'evening',
+    ]);
+
+    ordered.preferences.timeGroupOrder = ['morning'];
+    expect(sanitizeImportedState(ordered).preferences.timeGroupOrder).toEqual([
+      'morning',
+      'afternoon',
+      'evening',
+      'anytime',
+    ]);
+  });
 });

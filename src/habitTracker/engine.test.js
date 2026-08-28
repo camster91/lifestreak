@@ -129,6 +129,32 @@ describe('schedule evaluation', () => {
     });
     expect(progress).toMatchObject({ target: 1, completed: 1, remaining: 0, availableDays: 2 });
   });
+
+  it('calculates monthly-target statistics by month rather than by day', () => {
+    const monthly = habit({
+      schedule: { type: 'monthlyTarget', monthlyTarget: 2, anchorDate: '2026-01-01' },
+    });
+    const stats = calculateHabitStats(
+      monthly,
+      [log('2026-07-02'), log('2026-07-20'), log('2026-08-03')],
+      { endDate: '2026-08-17', today: '2026-08-17', days: 48 }
+    );
+    expect(stats).toMatchObject({ expected: 2, completed: 1, partial: 1, missed: 0 });
+    expect(stats.completionRate).toBe(50);
+  });
+
+  it('marks a finished month with an unmet target as one missed period', () => {
+    const monthly = habit({
+      schedule: { type: 'monthlyTarget', monthlyTarget: 3, anchorDate: '2026-01-01' },
+    });
+    const stats = calculateHabitStats(monthly, [log('2026-07-02')], {
+      endDate: '2026-08-17',
+      today: '2026-08-17',
+      days: 48,
+    });
+    expect(stats).toMatchObject({ expected: 2, completed: 0, partial: 1, missed: 1 });
+    expect(explainStreak(stats)).toContain('monthly target missed');
+  });
 });
 
 describe('historical configuration', () => {

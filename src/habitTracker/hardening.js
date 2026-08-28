@@ -335,6 +335,12 @@ export function sanitizeImportedState(payload) {
         : 1,
       completedPlacement: raw.preferences?.completedPlacement === 'keep' ? 'keep' : 'bottom',
       showHabitNamesInNotifications: Boolean(raw.preferences?.showHabitNamesInNotifications),
+      timeGroupOrder:
+        Array.isArray(raw.preferences?.timeGroupOrder) &&
+        raw.preferences.timeGroupOrder.length === TIME_GROUPS.length &&
+        TIME_GROUPS.every((group) => raw.preferences.timeGroupOrder.includes(group))
+          ? [...raw.preferences.timeGroupOrder]
+          : [...TIME_GROUPS],
     },
     onboarding: {
       completed: Boolean(raw.onboarding?.completed),

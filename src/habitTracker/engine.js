@@ -73,6 +73,24 @@ export function endOfWeek(dateKey, weekStartsOn = 1) {
   return addDays(startOfWeek(dateKey, weekStartsOn), 6);
 }
 
+export function startOfMonth(dateKey) {
+  parseLocalDate(dateKey);
+  return `${dateKey.slice(0, 7)}-01`;
+}
+
+export function endOfMonth(dateKey) {
+  const date = parseLocalDate(dateKey);
+  date.setMonth(date.getMonth() + 1, 0);
+  return toLocalDate(date);
+}
+
+export function nextMonth(dateKey) {
+  const date = parseLocalDate(dateKey);
+  date.setDate(1);
+  date.setMonth(date.getMonth() + 1);
+  return toLocalDate(date);
+}
+
 export function eachDate(fromDate, toDate) {
   if (fromDate > toDate) return [];
   const dates = [];
@@ -290,13 +308,8 @@ export function getSchedulePeriodProgress(
   const monthly = schedule.type === 'monthlyTarget';
   if (!weekly && !monthly) return null;
 
-  const periodStart = weekly ? startOfWeek(dateKey, weekStartsOn) : `${dateKey.slice(0, 7)}-01`;
-  const periodEnd = weekly
-    ? endOfWeek(dateKey, weekStartsOn)
-    : addDays(
-        `${dateKey.slice(0, 7)}-01`,
-        new Date(Number(dateKey.slice(0, 4)), Number(dateKey.slice(5, 7)), 0).getDate() - 1
-      );
+  const periodStart = weekly ? startOfWeek(dateKey, weekStartsOn) : startOfMonth(dateKey);
+  const periodEnd = weekly ? endOfWeek(dateKey, weekStartsOn) : endOfMonth(dateKey);
   const target =
     schedule.type === 'weekly' ? 1 : weekly ? schedule.timesPerWeek : schedule.monthlyTarget;
   const completedDates = Array.from(
@@ -461,6 +474,52 @@ function evaluateFlexibleWeeks(habit, logs, fromDate, toDate, weekStartsOn, toda
   return { expected, completed, partial, failed, missed, skipped, streakStates };
 }
 
+function evaluateFlexibleMonths(habit, logs, fromDate, toDate, today) {
+  let expected = 0;
+  let completed = 0;
+  let partial = 0;
+  let failed = 0;
+  let missed = 0;
+  let skipped = 0;
+  const streakStates = [];
+
+  for (let month = startOfMonth(fromDate); month <= toDate; month = nextMonth(month)) {
+    const monthEnd = endOfMonth(month);
+    const boundedStart = month < fromDate ? fromDate : month;
+    const boundedEnd = monthEnd > toDate ? toDate : monthEnd;
+    const activeDays = eachDate(boundedStart, boundedEnd).filter(
+      (dateKey) => lifecycleAt(habit, dateKey) === 'active' && dateKey <= today
+    );
+    if (!activeDays.length) continue;
+
+    const { schedule } = configurationForDate(habit, activeDays[0]);
+    const results = activeDays.map((dateKey) =>
+      dailyResult(habit, logForDate(logs, habit.id, dateKey), dateKey)
+    );
+    const completions = results.filter((result) => result.status === 'completed').length;
+    const allSkipped = results.length > 0 && results.every((result) => result.status === 'skipped');
+    const periodFinished = boundedEnd < today || monthEnd < today;
+
+    if (allSkipped) {
+      skipped += 1;
+      streakStates.push({ date: month, status: 'neutral' });
+      continue;
+    }
+    expected += 1;
+    if (completions >= schedule.monthlyTarget) {
+      completed += 1;
+      streakStates.push({ date: month, status: 'completed' });
+    } else if (!periodFinished) {
+      partial += 1;
+    } else {
+      missed += 1;
+      streakStates.push({ date: month, status: 'broken', reason: 'monthly target missed' });
+    }
+  }
+
+  return { expected, completed, partial, failed, missed, skipped, streakStates };
+}
+
 export function explainStreak(stats) {
   const lastDecisive = [...(stats?.streakStates || [])]
     .reverse()
@@ -481,7 +540,9 @@ export function calculateHabitStats(
   const schedule = configurationForDate(habit, endDate).schedule;
   const metrics = ['timesPerWeek', 'weekly'].includes(schedule.type)
     ? evaluateFlexibleWeeks(habit, logs, fromDate, endDate, weekStartsOn, today)
-    : evaluateFixedSchedule(habit, logs, fromDate, endDate, weekStartsOn, today);
+    : schedule.type === 'monthlyTarget'
+      ? evaluateFlexibleMonths(habit, logs, fromDate, endDate, today)
+      : evaluateFixedSchedule(habit, logs, fromDate, endDate, weekStartsOn, today);
 
   let currentStreak = 0;
   let bestStreak = 0;

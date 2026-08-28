@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import {
   HABIT_SCHEMA_VERSION,
+  TIME_GROUPS,
   configurationForDate,
   isValidLocalDate,
   lifecycleAt,
@@ -61,6 +62,7 @@ function defaultState() {
       weekStartsOn: 1,
       completedPlacement: 'bottom',
       showHabitNamesInNotifications: false,
+      timeGroupOrder: [...TIME_GROUPS],
     },
     onboarding: {
       completed: false,
@@ -247,6 +249,12 @@ function loadState() {
           : fallback.preferences.weekStartsOn,
         completedPlacement: preferences.completedPlacement === 'keep' ? 'keep' : 'bottom',
         showHabitNamesInNotifications: Boolean(preferences.showHabitNamesInNotifications),
+        timeGroupOrder:
+          Array.isArray(preferences.timeGroupOrder) &&
+          preferences.timeGroupOrder.length === TIME_GROUPS.length &&
+          TIME_GROUPS.every((group) => preferences.timeGroupOrder.includes(group))
+            ? [...preferences.timeGroupOrder]
+            : [...TIME_GROUPS],
       },
       onboarding: {
         completed: Boolean(onboarding.completed),
@@ -650,6 +658,15 @@ export const habitStore = {
   },
 
   setPreference(key, value) {
+    if (
+      key === 'timeGroupOrder' &&
+      (!Array.isArray(value) ||
+        value.length !== TIME_GROUPS.length ||
+        !TIME_GROUPS.every((group) => value.includes(group)))
+    ) {
+      setOperation('error', 'Time groups must include each supported group exactly once.');
+      return false;
+    }
     return transact(
       (draft) => {
         if (!Object.prototype.hasOwnProperty.call(draft.preferences, key)) {

@@ -247,15 +247,17 @@ function TodayView({ snapshot, selectedDate, setSelectedDate, onCreate, onEdit, 
   const completed = expectedRows.filter(({ state }) => state.status === 'completed').length;
   const progress = expectedRows.length ? Math.round((completed / expectedRows.length) * 100) : 0;
 
-  const grouped = TIME_GROUPS.map((group) => ({
-    group,
-    rows: rows
-      .filter(({ config }) => config.timeOfDay === group)
-      .sort((a, b) => {
-        if (snapshot.preferences.completedPlacement !== 'bottom') return 0;
-        return Number(a.state.status === 'completed') - Number(b.state.status === 'completed');
-      }),
-  })).filter(({ rows: groupRows }) => groupRows.length);
+  const grouped = (snapshot.preferences.timeGroupOrder || TIME_GROUPS)
+    .map((group) => ({
+      group,
+      rows: rows
+        .filter(({ config }) => config.timeOfDay === group)
+        .sort((a, b) => {
+          if (snapshot.preferences.completedPlacement !== 'bottom') return 0;
+          return Number(a.state.status === 'completed') - Number(b.state.status === 'completed');
+        }),
+    }))
+    .filter(({ rows: groupRows }) => groupRows.length);
 
   return (
     <section aria-labelledby="today-heading">
@@ -973,6 +975,38 @@ function SettingsView({ snapshot }) {
               <option value="keep">Keep in their original order</option>
             </select>
           </label>
+          <fieldset className="habit-inline-fieldset">
+            <legend>Time-of-day order</legend>
+            {(snapshot.preferences.timeGroupOrder || TIME_GROUPS).map((group, index, order) => (
+              <div key={group} className="habit-inline-actions">
+                <span>{GROUP_LABELS[group]}</span>
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  aria-label={`Move ${GROUP_LABELS[group]} earlier`}
+                  onClick={() => {
+                    const next = [...order];
+                    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                    habitStore.setPreference('timeGroupOrder', next);
+                  }}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  disabled={index === order.length - 1}
+                  aria-label={`Move ${GROUP_LABELS[group]} later`}
+                  onClick={() => {
+                    const next = [...order];
+                    [next[index], next[index + 1]] = [next[index + 1], next[index]];
+                    habitStore.setPreference('timeGroupOrder', next);
+                  }}
+                >
+                  ↓
+                </button>
+              </div>
+            ))}
+          </fieldset>
         </section>
 
         <section className="habit-settings-card" aria-labelledby="notification-settings-heading">

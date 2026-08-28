@@ -291,6 +291,55 @@ async function main() {
     );
     await readingContext.close();
 
+    const serviceContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    await serviceContext.addInitScript(() => {
+      const localKey = (date) =>
+        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+          date.getDate()
+        ).padStart(2, '0')}`;
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      localStorage.setItem(
+        'ls-service-storage',
+        JSON.stringify({
+          state: {
+            entries: [
+              { id: 1, date: localKey(now), hours: 2, type: 'field', notes: '' },
+              { id: 2, date: localKey(tomorrow), hours: 20, type: 'field', notes: '' },
+              { id: 3, date: '2026-02-30', hours: 30, type: 'field', notes: 'preserved' },
+            ],
+            quarantinedEntries: [],
+            weeklyGoal: 4,
+            monthlyGoal: 16,
+          },
+          version: 1,
+        })
+      );
+    });
+    const servicePage = await serviceContext.newPage();
+    await servicePage.goto(`${origin}/service?legacy=1`, { waitUntil: 'networkidle' });
+    await servicePage.getByText(/1 invalid or duplicate service record is preserved/).waitFor();
+    await servicePage.getByText(/1 future-dated entry is preserved/).waitFor();
+    const weeklyServiceTotal = await servicePage
+      .locator('.card')
+      .filter({ hasText: 'This Week' })
+      .locator('.text-2xl')
+      .textContent();
+    const monthlyServiceTotal = await servicePage
+      .locator('.card')
+      .filter({ hasText: 'This Month' })
+      .locator('.text-2xl')
+      .textContent();
+    assert(
+      weeklyServiceTotal === '2.0h' && monthlyServiceTotal === '2.0h',
+      `Service totals included a future-dated or quarantined record (${weeklyServiceTotal}, ${monthlyServiceTotal}).`
+    );
+    await serviceContext.close();
+
     const backupContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       serviceWorkers: 'block',

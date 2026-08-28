@@ -41,6 +41,7 @@ function isServiceEntry(value: unknown): value is ServiceEntry {
     typeof entry.id === 'number' &&
     Number.isFinite(entry.id) &&
     typeof entry.date === 'string' &&
+    isValidLocalDateKey(entry.date) &&
     typeof entry.hours === 'number' &&
     Number.isFinite(entry.hours) &&
     entry.hours >= 0 &&
@@ -53,10 +54,20 @@ function isServiceEntry(value: unknown): value is ServiceEntry {
 export function normalizeServicePersistence(value: unknown): PersistedServiceState {
   const source = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
   const candidateEntries = Array.isArray(source.entries) ? source.entries : [];
-  const entries = candidateEntries.filter(isServiceEntry);
+  const seenIds = new Set<number>();
+  const entries: ServiceEntry[] = [];
+  const rejectedEntries: unknown[] = [];
+  for (const candidate of candidateEntries) {
+    if (!isServiceEntry(candidate) || seenIds.has(candidate.id)) {
+      rejectedEntries.push(candidate);
+      continue;
+    }
+    seenIds.add(candidate.id);
+    entries.push(candidate);
+  }
   const quarantinedEntries = [
     ...(Array.isArray(source.quarantinedEntries) ? source.quarantinedEntries : []),
-    ...candidateEntries.filter((entry) => !isServiceEntry(entry)),
+    ...rejectedEntries,
   ];
   return {
     entries,

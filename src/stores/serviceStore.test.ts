@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { getServicePeriodTotals, isValidLocalDateKey } from './serviceStore';
+import {
+  getServicePeriodTotals,
+  isValidLocalDateKey,
+  normalizeServicePersistence,
+} from './serviceStore';
 
 const entry = (date: string, hours: number) => ({
   id: Math.random(),
@@ -42,5 +46,21 @@ describe('service calendar totals', () => {
       new Date(2026, 0, 1, 12)
     );
     expect(totals).toEqual({ weekly: 6, monthly: 3 });
+  });
+
+  it('quarantines malformed dates and duplicate stable IDs without discarding raw records', () => {
+    const valid = entry('2026-08-28', 2);
+    valid.id = 7;
+    const duplicate = { ...valid, hours: 9, notes: 'duplicate raw record' };
+    const invalidDate = { ...entry('2026-02-30', 4), id: 8, notes: 'invalid date raw record' };
+
+    const normalized = normalizeServicePersistence({
+      entries: [valid, duplicate, invalidDate],
+      weeklyGoal: 4,
+      monthlyGoal: 16,
+    });
+
+    expect(normalized.entries).toEqual([valid]);
+    expect(normalized.quarantinedEntries).toEqual([duplicate, invalidDate]);
   });
 });

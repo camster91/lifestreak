@@ -487,7 +487,7 @@ async function main() {
         'jw-progress-storage',
         JSON.stringify({
           state: {
-            dailyTexts: { '2024-02-29': { read: true, progress: 100 } },
+            dailyTexts: { '2024-02-29': { readScripture: true, progress: 100 } },
             prayers: {},
             bibleReadings: {},
             weeklyReadings: {},

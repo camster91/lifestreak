@@ -267,7 +267,11 @@ describe('legacy storage classification', () => {
     const raw = JSON.stringify({
       state: {
         dailyTexts: {
-          '2024-02-29': { read: true, progress: 100, timestamp: 'private-timestamp' },
+          '2024-02-29': {
+            readScripture: true,
+            progress: 100,
+            timestamp: 'private-timestamp',
+          },
           '2024-03-01': { read: false, progress: 20 },
         },
         prayers: {

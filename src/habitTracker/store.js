@@ -1131,6 +1131,8 @@ export const habitStore = {
           .filter(([date, value]) => {
             if (!isValidLocalDate(date)) return false;
             if (mappingId.includes('prayer')) return value === true;
+            if (mappingId === 'daily-text')
+              return value?.read === true || value?.readScripture === true;
             return value?.completed === true || value?.read === true;
           })
           .map(([date]) => date)

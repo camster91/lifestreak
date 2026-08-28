@@ -963,6 +963,103 @@ export const habitStore = {
     }
   },
 
+  cleanupHistoricalStore(sourceKey, confirmation) {
+    const successor = HISTORICAL_STORAGE_KEYS[sourceKey];
+    const expectedConfirmation = `REMOVE ${sourceKey}`;
+    if (!successor || confirmation !== expectedConfirmation) {
+      setOperation('warning', `Type ${expectedConfirmation} to remove the historical source.`);
+      return false;
+    }
+    const { storage, error } = localStorageAccess();
+    if (!storage) {
+      setOperation('error', `Cleanup could not start: ${storageMessage(error)}`);
+      return false;
+    }
+
+    let sourceRaw;
+    try {
+      sourceRaw = storage.getItem(sourceKey);
+      const successorRaw = storage.getItem(successor);
+      if (typeof sourceRaw !== 'string' || sourceRaw !== successorRaw) {
+        setOperation(
+          'warning',
+          'Cleanup stopped because the historical source and successor no longer match exactly.'
+        );
+        return false;
+      }
+
+      let verifiedBackupKey = null;
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (!key?.startsWith(`${LEGACY_BACKUP_PREFIX}${sourceKey}-`)) continue;
+        try {
+          const backup = JSON.parse(storage.getItem(key));
+          if (
+            backup?.sourceKey === sourceKey &&
+            backup?.successor === successor &&
+            backup?.rawValue === sourceRaw
+          ) {
+            verifiedBackupKey = key;
+            break;
+          }
+        } catch {
+          // A malformed recovery value is not accepted as cleanup evidence.
+        }
+      }
+      if (!verifiedBackupKey) {
+        setOperation(
+          'warning',
+          'Cleanup stopped because no byte-exact recovery copy was verified.'
+        );
+        return false;
+      }
+
+      storage.removeItem(sourceKey);
+      if (storage.getItem(sourceKey) !== null) {
+        throw new Error('The historical source could not be removed and remains preserved.');
+      }
+
+      const recorded = transact(
+        (draft) => {
+          draft.legacy.detectedKeys = draft.legacy.detectedKeys.filter((key) => key !== sourceKey);
+          draft.legacy.migrationRecords = draft.legacy.migrationRecords.map((record) =>
+            record.key === sourceKey
+              ? {
+                  ...record,
+                  status: 'cleaned',
+                  cleanupAt: new Date().toISOString(),
+                  backupKey: verifiedBackupKey,
+                }
+              : record
+          );
+        },
+        'Historical source removed after exact successor and recovery verification.',
+        { undoable: false }
+      );
+      if (!recorded) {
+        storage.setItem(sourceKey, sourceRaw);
+        if (storage.getItem(sourceKey) !== sourceRaw) {
+          setOperation(
+            'error',
+            'Cleanup state could not be recorded and the historical source could not be restored. Use the retained recovery copy.'
+          );
+        }
+        return false;
+      }
+      return true;
+    } catch (cleanupError) {
+      try {
+        if (typeof sourceRaw === 'string' && storage.getItem(sourceKey) === null) {
+          storage.setItem(sourceKey, sourceRaw);
+        }
+      } catch {
+        // The retained recovery copy remains the fallback if source restoration is blocked.
+      }
+      setOperation('error', `Cleanup was not completed: ${storageMessage(cleanupError)}`);
+      return false;
+    }
+  },
+
   exportLegacyData() {
     const records = {};
     const { storage } = localStorageAccess();

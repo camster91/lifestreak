@@ -1097,6 +1097,7 @@ function SettingsView({ snapshot }) {
   const [pendingPortableImport, setPendingPortableImport] = useState(null);
   const [backupMessage, setBackupMessage] = useState('');
   const [resetText, setResetText] = useState('');
+  const [legacyCleanupText, setLegacyCleanupText] = useState({});
 
   const requestNotifications = async () => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -1412,6 +1413,39 @@ function SettingsView({ snapshot }) {
                     >
                       Preserve and migrate
                     </button>
+                  )}
+                  {record.status === 'migrated' && record.backupKey && (
+                    <div className="habit-inline-confirm">
+                      <label className="habit-field compact-field">
+                        <span>Type REMOVE {record.key} to remove only the historical source</span>
+                        <input
+                          value={legacyCleanupText[record.key] || ''}
+                          onChange={(event) =>
+                            setLegacyCleanupText((current) => ({
+                              ...current,
+                              [record.key]: event.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="habit-button habit-button-danger"
+                        disabled={legacyCleanupText[record.key] !== `REMOVE ${record.key}`}
+                        onClick={() => {
+                          if (
+                            habitStore.cleanupHistoricalStore(
+                              record.key,
+                              legacyCleanupText[record.key]
+                            )
+                          ) {
+                            setLegacyCleanupText((current) => ({ ...current, [record.key]: '' }));
+                          }
+                        }}
+                      >
+                        Remove verified historical source
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}

@@ -72,7 +72,7 @@ For these cases, retain the exact key and raw string in a timestamped recovery e
 6. Before a confirmed copy, write and read-verify a `lifestreak-legacy-backup-*` envelope containing the exact source string.
 7. Copy the byte-identical source value to an absent successor key without deleting the source, then read-verify it.
 8. Record migration version and outcome. An identical successor is an idempotently completed retry; divergent values remain a conflict.
-9. Keep source and recovery data until the user explicitly approves cleanup after verification.
+9. Keep source and recovery data until the user explicitly approves cleanup after verification. Cleanup requires typing `REMOVE <historical-key>`, re-verifies byte-identical source/successor values and a source-specific byte-exact recovery copy, removes only the historical source, and retains both successor and recovery data. Any mismatch or persistence failure stops cleanup and restores the source when possible.
 
 ## Current verification and remaining work
 
@@ -83,4 +83,5 @@ For these cases, retain the exact key and raw string in a timestamped recovery e
 - Habit storage already fails safely when storage access is blocked and exports detected legacy values without reinterpretation.
 - Historical-key schema validation, conflict classification, explicit copy UI, verified pre-copy recovery, byte-identical source preservation, idempotent retry, and interrupted-write tests are implemented on the revival branch.
 - Representative historical fixtures now cover all five `jw-*` stores with dated completion/prayer/reading detail, family notes/links, settings, counters, goals/projects/tasks, and a leap-day reflection. Tests compare SHA-256 of the raw source, successor, and distinct source-specific recovery copy after migration. Unknown future store versions are quarantined rather than copied.
-- Remaining #101 work: add released multi-year/malformed/duplicate fixtures beyond the representative supported shapes, implement only user-selected lossless habit mappings, verify PWA/Android/iOS upgrade paths, and add explicit cleanup approval after verification.
+- Typed post-verification cleanup is implemented and production-browser tested: it refuses missing approval, divergent values, or missing/corrupt recovery; a successful cleanup retains the exact successor and recovery copy while removing only the redundant historical key.
+- Remaining #101 work: add released multi-year/malformed/duplicate fixtures beyond the representative supported shapes, implement only user-selected lossless habit mappings, and verify PWA/Android/iOS upgrade paths.

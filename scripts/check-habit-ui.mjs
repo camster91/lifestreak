@@ -478,6 +478,59 @@ async function main() {
     );
     await unitTransitionContext.close();
 
+    const migrationContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    await migrationContext.addInitScript(() => {
+      localStorage.setItem(
+        'jw-progress-storage',
+        JSON.stringify({
+          state: {
+            dailyTexts: { '2024-02-29': { read: true, progress: 100 } },
+            prayers: {},
+            bibleReadings: {},
+            weeklyReadings: {},
+          },
+          version: 1,
+        })
+      );
+    });
+    const migrationPage = await migrationContext.newPage();
+    await migrationPage.goto(origin, { waitUntil: 'networkidle' });
+    await migrationPage.getByRole('button', { name: 'Settings', exact: true }).click();
+    await migrationPage.getByRole('button', { name: 'Scan for preserved stores' }).click();
+    await migrationPage.getByText(/jw-progress-storage.*migration-candidate/).waitFor();
+    await migrationPage.getByRole('button', { name: 'Preserve and migrate' }).click();
+    const cleanupInput = migrationPage.getByLabel(
+      'Type REMOVE jw-progress-storage to remove only the historical source'
+    );
+    await cleanupInput.waitFor();
+    const cleanupButton = migrationPage.getByRole('button', {
+      name: 'Remove verified historical source',
+    });
+    assert(await cleanupButton.isDisabled(), 'Historical cleanup did not require typed approval.');
+    await cleanupInput.fill('REMOVE jw-progress-storage');
+    await cleanupButton.click();
+    const migrationState = await migrationPage.evaluate(() => {
+      const source = localStorage.getItem('jw-progress-storage');
+      const successor = localStorage.getItem('ls-progress-storage');
+      const recoveryKeys = Array.from({ length: localStorage.length }, (_, index) =>
+        localStorage.key(index)
+      ).filter((key) => key?.startsWith('lifestreak-legacy-backup-jw-progress-storage-'));
+      return { source, successor, recoveryKeys };
+    });
+    assert(migrationState.source === null, 'Approved historical source cleanup did not finish.');
+    assert(
+      migrationState.successor?.includes('2024-02-29'),
+      'Historical cleanup changed or removed the verified successor.'
+    );
+    assert(
+      migrationState.recoveryKeys.length === 1,
+      'Historical cleanup did not retain its source-specific recovery copy.'
+    );
+    await migrationContext.close();
+
     const offlineContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
     });

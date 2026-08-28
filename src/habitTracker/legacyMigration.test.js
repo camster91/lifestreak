@@ -198,6 +198,37 @@ describe('legacy storage classification', () => {
     });
   });
 
+  it('requires typed approval and exact successor/recovery verification before cleanup', () => {
+    localStorage.setItem('jw-progress-storage', progressEnvelope);
+    habitStore.scanLegacyData();
+    expect(habitStore.migrateHistoricalStore('jw-progress-storage')).toBe(true);
+    const recoveryKey = Array.from({ length: localStorage.length }, (_, index) =>
+      localStorage.key(index)
+    ).find((key) => key?.startsWith(`${LEGACY_BACKUP_PREFIX}jw-progress-storage-`));
+
+    expect(habitStore.cleanupHistoricalStore('jw-progress-storage', 'REMOVE')).toBe(false);
+    expect(localStorage.getItem('jw-progress-storage')).toBe(progressEnvelope);
+
+    localStorage.setItem('ls-progress-storage', `${progressEnvelope} `);
+    expect(
+      habitStore.cleanupHistoricalStore('jw-progress-storage', 'REMOVE jw-progress-storage')
+    ).toBe(false);
+    expect(localStorage.getItem('jw-progress-storage')).toBe(progressEnvelope);
+
+    localStorage.setItem('ls-progress-storage', progressEnvelope);
+    expect(
+      habitStore.cleanupHistoricalStore('jw-progress-storage', 'REMOVE jw-progress-storage')
+    ).toBe(true);
+    expect(localStorage.getItem('jw-progress-storage')).toBeNull();
+    expect(localStorage.getItem('ls-progress-storage')).toBe(progressEnvelope);
+    expect(localStorage.getItem(recoveryKey)).not.toBeNull();
+    expect(
+      habitStore
+        .getSnapshot()
+        .legacy.migrationRecords.find((record) => record.key === 'jw-progress-storage')
+    ).toMatchObject({ status: 'cleaned', backupKey: recoveryKey });
+  });
+
   it('leaves a divergent successor untouched and reports a conflict', () => {
     localStorage.setItem('jw-progress-storage', progressEnvelope);
     localStorage.setItem(

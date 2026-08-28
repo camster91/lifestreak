@@ -1255,6 +1255,80 @@ async function main() {
     );
     await migrationContext.close();
 
+    const pwaUpgradeContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+    });
+    await pwaUpgradeContext.addInitScript(() => {
+      if (localStorage.getItem('jw-progress-storage') === null) {
+        localStorage.setItem(
+          'jw-progress-storage',
+          JSON.stringify({
+            state: {
+              dailyTexts: { '2024-02-29': { readScripture: true, progress: 100 } },
+              prayers: {},
+              bibleReadings: {},
+              weeklyReadings: {},
+            },
+            version: 1,
+          })
+        );
+      }
+    });
+    const pwaUpgradePage = await pwaUpgradeContext.newPage();
+    await pwaUpgradePage.goto(origin, { waitUntil: 'networkidle' });
+    await pwaUpgradePage.evaluate(() => navigator.serviceWorker.ready);
+    if (!(await pwaUpgradePage.evaluate(() => Boolean(navigator.serviceWorker.controller)))) {
+      await pwaUpgradePage.reload({ waitUntil: 'networkidle' });
+    }
+    assert(
+      await pwaUpgradePage.evaluate(() => Boolean(navigator.serviceWorker.controller)),
+      'Historical upgrade fixture was not running under the production service worker.'
+    );
+    await pwaUpgradePage.getByRole('button', { name: 'Settings', exact: true }).click();
+    await pwaUpgradePage.getByRole('button', { name: 'Scan for preserved stores' }).click();
+    await pwaUpgradePage.getByRole('button', { name: 'Preserve and migrate' }).click();
+    await pwaUpgradePage.getByLabel('Daily Text').check();
+    await pwaUpgradePage.getByRole('button', { name: 'Map selected completion history' }).click();
+    const preReloadUpgradeState = await pwaUpgradePage.evaluate(() => ({
+      source: localStorage.getItem('jw-progress-storage'),
+      habitDatabase: localStorage.getItem('lifestreak-habit-tracker-v1'),
+    }));
+    await pwaUpgradePage.reload({ waitUntil: 'networkidle' });
+    const reloadedUpgradeState = await pwaUpgradePage.evaluate(() => ({
+      source: localStorage.getItem('jw-progress-storage'),
+      successor: localStorage.getItem('ls-progress-storage'),
+      habitDatabase: localStorage.getItem('lifestreak-habit-tracker-v1'),
+      recoveryRawValues: Array.from({ length: localStorage.length }, (_, index) =>
+        localStorage.key(index)
+      )
+        .filter((key) => key?.startsWith('lifestreak-legacy-backup-jw-progress-storage-'))
+        .map((key) => JSON.parse(localStorage.getItem(key)).rawValue),
+    }));
+    assert(
+      reloadedUpgradeState.source === preReloadUpgradeState.source &&
+        reloadedUpgradeState.recoveryRawValues.length === 1 &&
+        reloadedUpgradeState.recoveryRawValues[0] === preReloadUpgradeState.source,
+      'A production PWA reload changed the byte-exact historical source or recovery copy.'
+    );
+    const upgradedSuccessor = JSON.parse(reloadedUpgradeState.successor);
+    assert(
+      upgradedSuccessor.version === 2 &&
+        upgradedSuccessor.state.dailyTexts['2024-02-29']?.readScripture === true,
+      'The live successor did not upgrade to v2 while preserving the historical completion.'
+    );
+    const reloadedHabitDatabase = JSON.parse(reloadedUpgradeState.habitDatabase);
+    assert(
+      reloadedUpgradeState.habitDatabase === preReloadUpgradeState.habitDatabase &&
+        reloadedHabitDatabase.habits.filter(
+          (habit) => habit.sourceTemplateId === 'legacy:ls-progress-storage:daily-text'
+        ).length === 1 &&
+        reloadedHabitDatabase.logs.filter(
+          (log) => log.date === '2024-02-29' && log.explicitStatus === 'completed'
+        ).length === 1,
+      'A production PWA reload duplicated or changed the mapped habit history.'
+    );
+    await pwaUpgradeContext.close();
+
     const offlineContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
     });

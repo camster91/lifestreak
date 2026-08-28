@@ -12,7 +12,8 @@ export const isPWACapable = () => {
 // Check if app is installed (standalone mode)
 export const isInstalled = () => {
   return (
-    window.matchMedia('(display-mode: standalone)').matches ||
+    (typeof window.matchMedia === 'function' &&
+      window.matchMedia('(display-mode: standalone)').matches) ||
     window.navigator.standalone === true ||
     document.referrer.includes('android-app://')
   );
@@ -74,16 +75,14 @@ export const checkForUpdates = async () => {
   }
 };
 
-// Force refresh to update the app
-export const forceUpdate = () => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      registrations.forEach((registration) => {
-        registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
-      });
-    });
-  }
-  window.location.reload();
+// Activate a waiting update. main.jsx reloads exactly once after controllerchange.
+export const forceUpdate = async () => {
+  if (!('serviceWorker' in navigator)) return false;
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  const waiting = registrations.map((registration) => registration.waiting).find(Boolean);
+  if (!waiting) return false;
+  waiting.postMessage({ type: 'SKIP_WAITING' });
+  return true;
 };
 
 // Get install prompt event (stored from beforeinstallprompt)

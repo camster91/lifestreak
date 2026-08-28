@@ -60,7 +60,12 @@ export function usePWA() {
 
   // Listen for service worker updates
   useEffect(() => {
-    if (!isPWACapable() || !('serviceWorker' in navigator)) return;
+    if (
+      !isPWACapable() ||
+      !navigator.serviceWorker?.addEventListener ||
+      !navigator.serviceWorker.ready?.then
+    )
+      return;
 
     let cancelled = false;
     let registration = null;
@@ -131,8 +136,8 @@ export function usePWA() {
   }, []);
 
   // Apply pending update
-  const applyUpdate = useCallback(() => {
-    forceUpdate();
+  const applyUpdate = useCallback(async () => {
+    return forceUpdate();
   }, []);
 
   // Check for updates manually

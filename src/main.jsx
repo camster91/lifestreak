@@ -83,8 +83,11 @@ logWebVitals();
 
 // Register service worker update handler
 if ('serviceWorker' in navigator) {
+  let reloadingForUpdate = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    // New service worker activated, reload to get updates
+    if (reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    // A user-approved worker activated; reload exactly once to use its immutable app shell.
     window.location.reload();
   });
 

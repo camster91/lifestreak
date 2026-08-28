@@ -7,6 +7,7 @@ import './habitTracker/operationGuard.css';
 import HabitTrackerRoot from './habitTracker/HabitTrackerRoot';
 import LegacyApp from './LegacyApp';
 import StorageRecoveryBanner from './components/StorageRecoveryBanner';
+import OfflineIndicator from './components/OfflineIndicator';
 
 function isLegacyMode() {
   if (typeof window === 'undefined') return false;
@@ -61,6 +62,7 @@ export default function App() {
   return (
     <>
       <StorageRecoveryBanner />
+      <OfflineIndicator />
       <HabitTrackerRoot onOpenCollections={openLegacyCollections} />
     </>
   );

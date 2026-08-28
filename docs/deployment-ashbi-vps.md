@@ -50,10 +50,9 @@ than the SPA fallback.
 1. Confirm the working tree is clean, the target commit is pushed, and the local gates pass:
    `npm ci`, `npm test`, `npm run lint`, `npm run format:check`, and `npm run build`.
 2. Create a source archive from the exact commit and copy it to the VPS using binary-safe SCP (`scp -O`). Do not copy `node_modules` or `dist`.
-3. Build an immutable image on the VPS:
-   `docker build -t lifestreak:<commit> /opt/lifestreak-src-<commit>`.
-4. Start the candidate on a new loopback port, for example `127.0.0.1:18082`, and verify it locally before changing Traefik:
-   `curl -fsSI http://127.0.0.1:18082/`.
+3. Build an immutable image on the VPS and embed the full source revision:
+   `docker build --build-arg LIFESTREAK_BUILD_REVISION=<40-character-commit> -t lifestreak:<commit> /opt/lifestreak-src-<commit>`.
+4. Start the candidate on a new loopback port, for example `127.0.0.1:18082`, and verify it locally before changing Traefik. Check `/`, `/manifest.webmanifest`, `/sw.js`, and confirm `/version.json` contains the exact candidate commit. Record the image digest; mutable tags are not deployment evidence.
 5. Update `/opt/traefik/dynamic/lifestreak.yml` to the candidate port. Copy the existing route to a timestamped `.bak` file before changing it, then check Traefik logs for configuration errors.
 6. Verify the public URL with the smoke script and inspect the candidate container logs. Keep the previous container and image until the release has passed its observation window.
 
@@ -75,6 +74,18 @@ The check validates HTTPS status, the LifeStreak document title, the PWA manifes
 2. Confirm `https://lifestreak.ashbi.ca` returns HTTP 200 and the expected LifeStreak title.
 3. Keep the failed candidate stopped for investigation; do not delete the prior image or container until the rollback is confirmed.
 4. Record the deployed image tag, image digest, route backup path, and verification result in the release notes.
+
+After restoring an older image, `/version.json` must identify the prior commit. Do not roll back local databases or clear browser storage: the habit schema and specialist migrations are forward-compatible and the previous app must leave unknown/newer local records untouched rather than rewriting them.
+
+## Emergency service-worker disable
+
+Use this only when a broken worker prevents the normal waiting-worker update or rollback:
+
+1. Preserve the current route and image as evidence. Copy `ops/emergency-disable-sw.js` to the active origin as `/sw.js` with JavaScript content type, `Cache-Control: no-store`, and service-worker scope `/`.
+2. Verify the emergency worker content by digest before exposing it. It activates immediately, deletes LifeStreak Cache Storage entries, unregisters itself, and reloads controlled windows. It does **not** clear localStorage or IndexedDB.
+3. Confirm a previously controlled browser becomes uncontrolled after reload and that its local habit/Collections records remain byte-identical.
+4. Deploy or restore a verified immutable LifeStreak image, remove the emergency override, load twice online so the normal worker installs, then repeat the offline smoke.
+5. Record timestamps, emergency-script digest, affected revision, preserved-data comparison, and final deployed revision. A real production use requires incident review; do not treat cache deletion as ordinary update behavior.
 
 ## Monitoring
 

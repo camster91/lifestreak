@@ -5,6 +5,9 @@
 # ─── Stage 1: build ─────────────────────────────────────────────────────
 FROM node:22.22.0-alpine AS build
 
+ARG LIFESTREAK_BUILD_REVISION=unknown
+ENV LIFESTREAK_BUILD_REVISION=$LIFESTREAK_BUILD_REVISION
+
 WORKDIR /app
 
 COPY package*.json ./

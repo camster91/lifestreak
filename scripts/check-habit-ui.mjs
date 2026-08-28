@@ -194,6 +194,39 @@ async function main() {
     );
     await privacyContext.close();
 
+    const offlineContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+    });
+    const offlinePage = await offlineContext.newPage();
+    await offlinePage.goto(origin, { waitUntil: 'networkidle' });
+    await offlinePage.evaluate(() => navigator.serviceWorker.ready);
+    if (!(await offlinePage.evaluate(() => Boolean(navigator.serviceWorker.controller)))) {
+      await offlinePage.reload({ waitUntil: 'networkidle' });
+    }
+    assert(
+      await offlinePage.evaluate(() => Boolean(navigator.serviceWorker.controller)),
+      'Production app shell was not controlled by its service worker.'
+    );
+    await offlinePage.getByRole('button', { name: 'Create my own' }).click();
+    await offlinePage.getByLabel(/Name/).fill('Offline continuity');
+    await offlinePage.getByRole('button', { name: 'Create habit' }).click();
+    await offlinePage.getByRole('dialog', { name: 'Offline continuity' }).waitFor();
+    await offlinePage.getByRole('button', { name: 'Close dialog' }).click();
+    const beforeOffline = await offlinePage.evaluate(() =>
+      localStorage.getItem('lifestreak-habit-tracker-v1')
+    );
+    assert(beforeOffline?.includes('Offline continuity'), 'Seed habit was not persisted.');
+
+    await offlineContext.setOffline(true);
+    await offlinePage.getByText("You're offline", { exact: false }).waitFor();
+    await offlinePage.reload({ waitUntil: 'domcontentloaded' });
+    await offlinePage.getByRole('heading', { name: 'Offline continuity' }).waitFor();
+    const afterOffline = await offlinePage.evaluate(() =>
+      localStorage.getItem('lifestreak-habit-tracker-v1')
+    );
+    assert(afterOffline === beforeOffline, 'Offline restart changed the persisted habit database.');
+    await offlineContext.close();
+
     console.log(`LifeStreak UI contract verified across ${viewports.length} responsive viewports.`);
   } finally {
     await browser?.close();

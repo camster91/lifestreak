@@ -2,11 +2,12 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Mock localStorage
+const localStorageValues = new Map();
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  clear: vi.fn(),
-  removeItem: vi.fn(),
+  getItem: vi.fn((key) => localStorageValues.get(key) ?? null),
+  setItem: vi.fn((key, value) => localStorageValues.set(key, String(value))),
+  clear: vi.fn(() => localStorageValues.clear()),
+  removeItem: vi.fn((key) => localStorageValues.delete(key)),
 };
 global.localStorage = localStorageMock;
 
@@ -26,5 +27,10 @@ global.navigator.serviceWorker = {
 // Reset mocks between tests
 beforeEach(() => {
   vi.clearAllMocks();
-  localStorageMock.getItem.mockReturnValue(null);
+  localStorageValues.clear();
+  localStorageMock.getItem.mockImplementation((key) => localStorageValues.get(key) ?? null);
+  localStorageMock.setItem.mockImplementation((key, value) =>
+    localStorageValues.set(key, String(value))
+  );
+  localStorageMock.removeItem.mockImplementation((key) => localStorageValues.delete(key));
 });

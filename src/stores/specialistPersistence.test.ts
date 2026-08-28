@@ -18,8 +18,13 @@ function expectJsonWrite(key: string) {
 }
 
 beforeEach(() => {
-  useReadingStore.setState({ items: [] });
-  useServiceStore.setState({ entries: [], weeklyGoal: 4, monthlyGoal: 16 });
+  useReadingStore.setState({ items: [], quarantinedItems: [] });
+  useServiceStore.setState({
+    entries: [],
+    quarantinedEntries: [],
+    weeklyGoal: 4,
+    monthlyGoal: 16,
+  });
 });
 
 function lastPersistedValue(key: string) {
@@ -73,7 +78,7 @@ describe('specialist store persistence', () => {
           },
         ],
       },
-      version: 0,
+      version: 1,
     });
 
     useReadingStore.setState({ items: [] });
@@ -100,7 +105,7 @@ describe('specialist store persistence', () => {
         weeklyGoal: 4,
         monthlyGoal: 16,
       },
-      version: 0,
+      version: 1,
     });
 
     useServiceStore.setState({ entries: [] });
@@ -110,5 +115,51 @@ describe('specialist store persistence', () => {
     await useServiceStore.persist.rehydrate();
     expect(useServiceStore.getState().entries).toHaveLength(1);
     expect(useServiceStore.getState().entries[0]?.hours).toBe(1.5);
+  });
+
+  it('migrates valid v0 data and quarantines malformed records', async () => {
+    const validReading = {
+      id: 1,
+      title: 'Preserved',
+      type: 'book',
+      totalUnits: 10,
+      completedUnits: 2,
+      startedDate: '2026-08-01',
+      notes: '',
+    };
+    vi.mocked(localStorage.getItem).mockImplementation((key) => {
+      if (key !== READING_KEY) return null;
+      return JSON.stringify({
+        state: { items: [validReading, { title: 'missing fields' }] },
+        version: 0,
+      });
+    });
+
+    await useReadingStore.persist.rehydrate();
+    expect(useReadingStore.getState().items).toEqual([validReading]);
+    expect(useReadingStore.getState().quarantinedItems).toEqual([{ title: 'missing fields' }]);
+  });
+
+  it('validates current-version service state during every hydration', async () => {
+    const validEntry = {
+      id: 1,
+      date: '2026-08-28',
+      hours: 2,
+      type: 'field',
+      notes: '',
+    };
+    vi.mocked(localStorage.getItem).mockImplementation((key) => {
+      if (key !== SERVICE_KEY) return null;
+      return JSON.stringify({
+        state: { entries: [validEntry, { id: 'bad' }], weeklyGoal: -1, monthlyGoal: 20 },
+        version: 1,
+      });
+    });
+
+    await useServiceStore.persist.rehydrate();
+    expect(useServiceStore.getState().entries).toEqual([validEntry]);
+    expect(useServiceStore.getState().quarantinedEntries).toEqual([{ id: 'bad' }]);
+    expect(useServiceStore.getState().weeklyGoal).toBe(4);
+    expect(useServiceStore.getState().monthlyGoal).toBe(20);
   });
 });

@@ -26,7 +26,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 2. **#101 — legacy-data preservation and migration contract**
    The current and historical key inventory is maintained in [storage-migration-inventory.md](storage-migration-inventory.md). Implement and verify its non-destructive migration sequence after the persistence/date correctness work in #56, #61, and #62.
 3. **#56 — durable service and reading persistence**
-   Prove reload/restart behavior, schema validation, migration, corruption recovery, and failed-write UX.
+   Implemented on the revival branch: v1 schemas validate and quarantine invalid service/reading records, reload tests cover v0 migration, and non-destructive storage failures expose retry/download recovery UI. Keep open for real browser/private-mode/quota and native restart verification.
 4. **#61 and #62 — calendar-safe specialist history**
    Implemented on the revival branch: Bible history now uses full local dates with an explicit quarantine for ambiguous legacy day-of-year keys, and service totals validate local dates and bound both ends of each period. Keep the issues open until the branch is integrated and timezone/device verification is recorded.
 5. **#96 — unified versioned habit/log model**

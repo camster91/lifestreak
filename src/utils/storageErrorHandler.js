@@ -1,82 +1,137 @@
-/**
- * Handles localStorage quota errors for Zustand persist middleware.
- * When storage is full, this catches the error, attempts cleanup, and
- * falls back to in-memory storage rather than crashing the app.
- */
+export const STORAGE_STATUS_EVENT = 'lifestreak:storage-status';
+
+const pendingRecovery = new Map();
+let latestFailure = null;
+
+function errorMessage(error) {
+  if (error instanceof Error && error.message) return error.message;
+  return 'Local storage is unavailable.';
+}
+
+function publishStorageStatus(detail) {
+  latestFailure = detail.status === 'recovered' ? null : detail;
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent(STORAGE_STATUS_EVENT, { detail }));
+  }
+}
+
+function rememberRecovery(storeName, key, value, operation, error) {
+  pendingRecovery.set(storeName, {
+    storeName,
+    key,
+    value,
+    operation,
+    capturedAt: new Date().toISOString(),
+  });
+  publishStorageStatus({
+    storeName,
+    operation,
+    status: 'error',
+    message: errorMessage(error),
+    recoveryAvailable: true,
+  });
+}
+
 export function createStorageErrorHandler(storeName) {
   return function onStorageError(error) {
-    if (
-      error instanceof DOMException &&
-      (error.name === 'QuotaExceededError' ||
-        error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
-        error.code === 22)
-    ) {
-      console.warn(
-        `[Zustand Persist] localStorage quota exceeded for "${storeName}". Attempting cleanup...`
-      );
-
-      try {
-        // LRU eviction: remove oldest app-owned keys first, keep recent data
-        const appPrefixes = ['ls-', 'lifestreak-'];
-        const appKeys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && appPrefixes.some((prefix) => key.startsWith(prefix))) {
-            appKeys.push(key);
-          }
-        }
-        // Sort by last modified (approximated by order) and remove oldest
-        // Remove up to 5 oldest app keys to free space
-        const keysToRemove = appKeys.slice(0, Math.min(5, appKeys.length));
-        keysToRemove.forEach((key) => {
-          console.warn(`[Zustand Persist] Evicting old key: ${key}`);
-          localStorage.removeItem(key);
-        });
-
-        console.warn(
-          `[Zustand Persist] Evicted ${keysToRemove.length} old app keys. ` +
-            `App will continue with in-memory state.`
-        );
-      } catch (cleanupError) {
-        console.error(
-          `[Zustand Persist] Failed to cleanup localStorage for "${storeName}":`,
-          cleanupError
-        );
-      }
-    } else {
-      console.error(`[Zustand Persist] Storage error for "${storeName}":`, error);
-    }
+    publishStorageStatus({
+      storeName,
+      operation: 'storage',
+      status: 'error',
+      message: errorMessage(error),
+      recoveryAvailable: pendingRecovery.has(storeName),
+    });
+    console.error(`[LifeStreak storage] ${storeName}:`, error);
   };
 }
 
+export function getStorageRecovery(storeName) {
+  return pendingRecovery.get(storeName) || null;
+}
+
+export function getLatestStorageFailure() {
+  return latestFailure;
+}
+
+export function exportStorageRecovery(storeName) {
+  const recovery = getStorageRecovery(storeName);
+  return recovery ? JSON.stringify(recovery, null, 2) : null;
+}
+
+export function retryStorageWrite(storeName) {
+  const recovery = getStorageRecovery(storeName);
+  if (!recovery || recovery.operation !== 'write') return false;
+  try {
+    localStorage.setItem(recovery.key, recovery.value);
+    if (localStorage.getItem(recovery.key) !== recovery.value) {
+      throw new Error('The saved value could not be verified.');
+    }
+    pendingRecovery.delete(storeName);
+    publishStorageStatus({
+      storeName,
+      operation: 'write',
+      status: 'recovered',
+      message: 'The pending data was saved successfully.',
+      recoveryAvailable: false,
+    });
+    return true;
+  } catch (error) {
+    rememberRecovery(storeName, recovery.key, recovery.value, 'write', error);
+    return false;
+  }
+}
+
+export function clearStorageRecoveryForTests() {
+  pendingRecovery.clear();
+  latestFailure = null;
+}
+
 /**
- * Custom storage that wraps localStorage with quota error handling.
- * Falls back to in-memory storage when localStorage is unavailable.
+ * JSON-string storage for Zustand. Failed writes remain available for retry/export;
+ * this adapter never evicts another LifeStreak data set to make space.
  */
 export function createSafeStorage(storeName) {
-  const errorHandler = createStorageErrorHandler(storeName);
-
   return {
     getItem: (name) => {
       try {
-        return localStorage.getItem(name);
+        const value = localStorage.getItem(name);
+        if (value !== null) {
+          try {
+            JSON.parse(value);
+          } catch (error) {
+            // Keep the original value at its key and make it downloadable for recovery.
+            rememberRecovery(storeName, name, value, 'read-corrupt', error);
+            return null;
+          }
+        }
+        return value;
       } catch (error) {
-        errorHandler(error);
+        rememberRecovery(storeName, name, '', 'read', error);
         return null;
       }
     },
     setItem: (name, value) => {
       try {
         localStorage.setItem(name, value);
+        if (localStorage.getItem(name) !== value) {
+          throw new Error('The saved value could not be verified.');
+        }
+        pendingRecovery.delete(storeName);
       } catch (error) {
-        errorHandler(error);
+        rememberRecovery(storeName, name, value, 'write', error);
       }
     },
     removeItem: (name) => {
       try {
         localStorage.removeItem(name);
       } catch (error) {
-        errorHandler(error);
+        publishStorageStatus({
+          storeName,
+          operation: 'remove',
+          status: 'error',
+          message: errorMessage(error),
+          recoveryAvailable: pendingRecovery.has(storeName),
+        });
       }
     },
   };

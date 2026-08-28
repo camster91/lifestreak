@@ -6,6 +6,7 @@ import './habitTracker/dialogGuards';
 import './habitTracker/operationGuard.css';
 import HabitTrackerRoot from './habitTracker/HabitTrackerRoot';
 import LegacyApp from './LegacyApp';
+import StorageRecoveryBanner from './components/StorageRecoveryBanner';
 
 function isLegacyMode() {
   if (typeof window === 'undefined') return false;
@@ -30,6 +31,7 @@ export default function App() {
   if (isLegacyMode()) {
     return (
       <>
+        <StorageRecoveryBanner />
         <button
           type="button"
           onClick={returnToHabits}
@@ -56,5 +58,10 @@ export default function App() {
     );
   }
 
-  return <HabitTrackerRoot onOpenCollections={openLegacyCollections} />;
+  return (
+    <>
+      <StorageRecoveryBanner />
+      <HabitTrackerRoot onOpenCollections={openLegacyCollections} />
+    </>
+  );
 }

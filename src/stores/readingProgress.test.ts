@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { readingItemPercent, summarizeReadingProgress } from './readingStore';
+import {
+  isValidReadingDateKey,
+  normalizeReadingPersistence,
+  readingItemPercent,
+  summarizeReadingProgress,
+} from './readingStore';
 
 const item = (overrides = {}) => ({
   id: 1,
@@ -45,5 +50,25 @@ describe('truthful reading progress', () => {
       percent: null,
       hasUnknownRecords: true,
     });
+  });
+
+  it('quarantines impossible dates, reversed ranges, and duplicate stable IDs', () => {
+    expect(isValidReadingDateKey('2024-02-29')).toBe(true);
+    expect(isValidReadingDateKey('2025-02-29')).toBe(false);
+    const valid = item({ id: 7, startedDate: '2026-08-01' });
+    const duplicate = { ...valid, title: 'Duplicate raw item' };
+    const impossible = { ...valid, id: 8, startedDate: '2026-02-30' };
+    const reversed = {
+      ...valid,
+      id: 9,
+      startedDate: '2026-08-10',
+      finishedDate: '2026-08-09',
+    };
+
+    const normalized = normalizeReadingPersistence({
+      items: [valid, duplicate, impossible, reversed],
+    });
+    expect(normalized.items).toEqual([valid]);
+    expect(normalized.quarantinedItems).toEqual([duplicate, impossible, reversed]);
   });
 });

@@ -260,6 +260,16 @@ async function main() {
                 startedDate: '2026-08-01',
                 notes: '',
               },
+              {
+                id: 3,
+                title: 'Invalid date fixture',
+                type: 'book',
+                totalUnits: 10,
+                completedUnits: 10,
+                unitLabel: 'chapters',
+                startedDate: '2026-02-30',
+                notes: 'preserved',
+              },
             ],
             quarantinedItems: [],
           },
@@ -272,11 +282,13 @@ async function main() {
     const dashboardProgress = readingPage.getByRole('progressbar', {
       name: 'Average progress across active reading items',
     });
+    const dashboardProgressValue = await dashboardProgress.getAttribute('aria-valuenow');
     assert(
-      (await dashboardProgress.getAttribute('aria-valuenow')) === '70',
-      'Reading dashboard did not average the persisted item percentages.'
+      dashboardProgressValue === '70',
+      `Reading dashboard did not average only valid persisted item percentages (${dashboardProgressValue}).`
     );
     await readingPage.goto(`${origin}/reading?legacy=1`, { waitUntil: 'networkidle' });
+    await readingPage.getByText(/1 invalid or duplicate reading record is preserved/).waitFor();
     assert(
       (await readingPage
         .getByRole('progressbar', { name: 'Chapters fixture progress' })

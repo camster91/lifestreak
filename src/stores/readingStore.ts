@@ -33,6 +33,19 @@ interface PersistedReadingState {
 const READING_TYPES = new Set(['book', 'audio', 'video', 'article']);
 const READING_UNITS = new Set(['chapters', 'pages', 'minutes', 'parts']);
 
+export function isValidReadingDateKey(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const candidate = new Date(year, month - 1, day);
+  return (
+    candidate.getFullYear() === year &&
+    candidate.getMonth() === month - 1 &&
+    candidate.getDate() === day
+  );
+}
+
 function isReadingItem(value: unknown): value is ReadingItem {
   if (!value || typeof value !== 'object') return false;
   const item = value as Partial<ReadingItem>;
@@ -49,8 +62,9 @@ function isReadingItem(value: unknown): value is ReadingItem {
     Number.isFinite(item.completedUnits) &&
     item.completedUnits >= 0 &&
     item.completedUnits <= item.totalUnits &&
-    typeof item.startedDate === 'string' &&
-    (item.finishedDate === undefined || typeof item.finishedDate === 'string') &&
+    isValidReadingDateKey(item.startedDate) &&
+    (item.finishedDate === undefined ||
+      (isValidReadingDateKey(item.finishedDate) && item.finishedDate >= item.startedDate)) &&
     typeof item.notes === 'string' &&
     (item.unitLabel === undefined ||
       (typeof item.unitLabel === 'string' && READING_UNITS.has(item.unitLabel)))
@@ -87,11 +101,22 @@ export function summarizeReadingProgress(items: ReadingItem[], quarantinedItems:
 export function normalizeReadingPersistence(value: unknown): PersistedReadingState {
   const source = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
   const candidates = Array.isArray(source.items) ? source.items : [];
+  const seenIds = new Set<number>();
+  const items: ReadingItem[] = [];
+  const rejectedItems: unknown[] = [];
+  for (const candidate of candidates) {
+    if (!isReadingItem(candidate) || seenIds.has(candidate.id)) {
+      rejectedItems.push(candidate);
+      continue;
+    }
+    seenIds.add(candidate.id);
+    items.push(candidate);
+  }
   return {
-    items: candidates.filter(isReadingItem),
+    items,
     quarantinedItems: [
       ...(Array.isArray(source.quarantinedItems) ? source.quarantinedItems : []),
-      ...candidates.filter((item) => !isReadingItem(item)),
+      ...rejectedItems,
     ],
   };
 }

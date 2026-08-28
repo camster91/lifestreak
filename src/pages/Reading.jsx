@@ -34,8 +34,15 @@ function Reading() {
   const [totalUnits, setTotalUnits] = useState('');
   const [unitLabel, setUnitLabel] = useState('chapters');
 
-  const { addItem, updateProgress, finishItem, deleteItem, getInProgress, getCompleted } =
-    useReadingStore();
+  const {
+    addItem,
+    updateProgress,
+    finishItem,
+    deleteItem,
+    getInProgress,
+    getCompleted,
+    quarantinedItems,
+  } = useReadingStore();
 
   const inProgress = getInProgress();
   const completed = getCompleted();
@@ -66,6 +73,15 @@ function Reading() {
       />
 
       <main className="container mx-auto px-4 pt-4 space-y-4 max-w-2xl">
+        {quarantinedItems.length > 0 && (
+          <div className="alert alert-warning" role="status">
+            <span>
+              {quarantinedItems.length} invalid or duplicate reading{' '}
+              {quarantinedItems.length === 1 ? 'record is' : 'records are'} preserved for recovery
+              and excluded from shelf progress.
+            </span>
+          </div>
+        )}
         {/* Add Item */}
         <div className="card bg-base-100 shadow-md">
           <div className="card-body p-4 space-y-3">

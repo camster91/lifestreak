@@ -520,6 +520,45 @@ function evaluateFlexibleMonths(habit, logs, fromDate, toDate, today) {
   return { expected, completed, partial, failed, missed, skipped, streakStates };
 }
 
+function scheduleSegments(habit, fromDate, toDate) {
+  const segments = [];
+  for (const dateKey of eachDate(fromDate, toDate)) {
+    const schedule = configurationForDate(habit, dateKey).schedule;
+    const signature = JSON.stringify(schedule);
+    const current = segments[segments.length - 1];
+    if (current?.signature === signature) {
+      current.toDate = dateKey;
+    } else {
+      segments.push({ fromDate: dateKey, toDate: dateKey, schedule, signature });
+    }
+  }
+  return segments;
+}
+
+function evaluateScheduleSegments(habit, logs, fromDate, toDate, weekStartsOn, today) {
+  const combined = {
+    expected: 0,
+    completed: 0,
+    partial: 0,
+    failed: 0,
+    missed: 0,
+    skipped: 0,
+    streakStates: [],
+  };
+  for (const segment of scheduleSegments(habit, fromDate, toDate)) {
+    const metrics = ['timesPerWeek', 'weekly'].includes(segment.schedule.type)
+      ? evaluateFlexibleWeeks(habit, logs, segment.fromDate, segment.toDate, weekStartsOn, today)
+      : segment.schedule.type === 'monthlyTarget'
+        ? evaluateFlexibleMonths(habit, logs, segment.fromDate, segment.toDate, today)
+        : evaluateFixedSchedule(habit, logs, segment.fromDate, segment.toDate, weekStartsOn, today);
+    for (const key of ['expected', 'completed', 'partial', 'failed', 'missed', 'skipped']) {
+      combined[key] += metrics[key];
+    }
+    combined.streakStates.push(...metrics.streakStates);
+  }
+  return combined;
+}
+
 export function explainStreak(stats) {
   const lastDecisive = [...(stats?.streakStates || [])]
     .reverse()
@@ -537,12 +576,7 @@ export function calculateHabitStats(
   { endDate = toLocalDate(), days = 84, weekStartsOn = 1, today = toLocalDate() } = {}
 ) {
   const fromDate = addDays(endDate, -(Math.max(1, days) - 1));
-  const schedule = configurationForDate(habit, endDate).schedule;
-  const metrics = ['timesPerWeek', 'weekly'].includes(schedule.type)
-    ? evaluateFlexibleWeeks(habit, logs, fromDate, endDate, weekStartsOn, today)
-    : schedule.type === 'monthlyTarget'
-      ? evaluateFlexibleMonths(habit, logs, fromDate, endDate, today)
-      : evaluateFixedSchedule(habit, logs, fromDate, endDate, weekStartsOn, today);
+  const metrics = evaluateScheduleSegments(habit, logs, fromDate, endDate, weekStartsOn, today);
 
   let currentStreak = 0;
   let bestStreak = 0;

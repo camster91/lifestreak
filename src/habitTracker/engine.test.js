@@ -176,6 +176,69 @@ describe('historical configuration', () => {
     expect(configurationForDate(changing, '2026-08-14').tracking.target).toBe(5);
     expect(configurationForDate(changing, '2026-08-15').tracking.target).toBe(20);
   });
+
+  it('calculates each effective-dated schedule segment under its own period rules', () => {
+    const changing = habit({
+      revisions: [
+        {
+          id: 'revision-weekly',
+          effectiveDate: '2026-08-17',
+          tracking: { type: 'binary' },
+          schedule: { type: 'timesPerWeek', timesPerWeek: 2, anchorDate: '2026-08-17' },
+          timeOfDay: 'anytime',
+        },
+      ],
+    });
+    const logs = [
+      ...[
+        '2026-08-10',
+        '2026-08-11',
+        '2026-08-12',
+        '2026-08-13',
+        '2026-08-14',
+        '2026-08-15',
+        '2026-08-16',
+      ].map((date) => log(date)),
+      log('2026-08-17'),
+      log('2026-08-19'),
+    ];
+
+    const stats = calculateHabitStats(changing, logs, {
+      endDate: '2026-08-23',
+      today: '2026-08-23',
+      days: 14,
+      weekStartsOn: 1,
+    });
+
+    expect(stats).toMatchObject({ expected: 8, completed: 8, completionRate: 100 });
+  });
+
+  it('starts a new bounded review period when a flexible target changes mid-week', () => {
+    const changing = habit({
+      schedule: { type: 'timesPerWeek', timesPerWeek: 1, anchorDate: '2026-08-17' },
+      revisions: [
+        {
+          id: 'revision-higher-target',
+          effectiveDate: '2026-08-20',
+          tracking: { type: 'binary' },
+          schedule: { type: 'timesPerWeek', timesPerWeek: 3, anchorDate: '2026-08-20' },
+          timeOfDay: 'anytime',
+        },
+      ],
+    });
+    const stats = calculateHabitStats(
+      changing,
+      [log('2026-08-17'), log('2026-08-20'), log('2026-08-21'), log('2026-08-22')],
+      {
+        endDate: '2026-08-23',
+        today: '2026-08-23',
+        days: 7,
+        weekStartsOn: 1,
+      }
+    );
+
+    expect(stats).toMatchObject({ expected: 2, completed: 2, completionRate: 100 });
+  });
 });
 
 describe('completion and insight rules', () => {

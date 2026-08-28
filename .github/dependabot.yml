@@ -25,6 +25,8 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
+      - dependency-name: 'http-proxy-middleware'
+        update-types: ['version-update:semver-major']
       - dependency-name: '@capacitor/*'
         update-types: ['version-update:semver-major']
   - package-ecosystem: 'github-actions'

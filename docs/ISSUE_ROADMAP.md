@@ -47,7 +47,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 11. **#71 and #98 — schedule, due-state, streak, and calendar contract**
     The revival branch now adds weekly-window and monthly-target schedules/statistics, optional end dates, period opportunity summaries, future-log exclusion, live schedule previews, user-reorderable time groups, accessible calendar names, specific streak-break explanations, and a UTC−12/UTC+14/DST automated matrix. Real browser/native interaction walkthroughs remain.
 12. **#74, #75, #99, and #100 — truthful daily operations**
-    Verify loading/error/retry/undo, lifecycle changes, Today, binary and quantitative tracking, corrections, and duplicate-action safety from one source model.
+    The revival branch now uses verified transactions with rollback on failed or silently dropped writes, warns instead of claiming success for no-op mutations, coalesces identical rapid submissions, and provides Undo. Today is generated from the shared habit/schedule/log model; pause/archive/restore and ordering preserve history; numeric source entries can be corrected or removed with destructive confirmation. Browser offline/failure workflows plus responsive, accessibility, reminder, native-restart, and exhaustive tracking-unit verification remain.
 13. **#72 and #73 — accessibility and responsive baseline**
     Apply to every primary workflow. Issue #41 is one concrete defect within #72 and remains open until its web fix is integrated and verified.
 14. **#63 and #76 — privacy-aligned optional AI, push, and reminders**

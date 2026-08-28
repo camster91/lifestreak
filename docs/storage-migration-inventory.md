@@ -65,13 +65,13 @@ For these cases, retain the exact key and raw string in a timestamped recovery e
 ## Migration sequence
 
 1. Enumerate keys without parsing or changing them.
-2. Create and verify a raw recovery export containing exact key/value strings.
+2. Offer a raw recovery export containing exact key/value strings.
 3. Classify each key using this inventory; unknown matching keys are quarantined.
 4. Parse and validate into an isolated candidate object.
-5. Present every optional mapping and conflict to the user; default to preservation, not conversion.
-6. Write a new versioned candidate without deleting the source key.
-7. Rehydrate and compare counts, dates, IDs, notes, links, values, and checksums.
-8. Record migration version and outcome so retry is idempotent.
+5. Present every historical-to-successor copy and conflict to the user; default to preservation, not conversion.
+6. Before a confirmed copy, write and read-verify a `lifestreak-legacy-backup-*` envelope containing the exact source string.
+7. Copy the byte-identical source value to an absent successor key without deleting the source, then read-verify it.
+8. Record migration version and outcome. An identical successor is an idempotently completed retry; divergent values remain a conflict.
 9. Keep source and recovery data until the user explicitly approves cleanup after verification.
 
 ## Current verification and remaining work
@@ -81,4 +81,5 @@ For these cases, retain the exact key and raw string in a timestamped recovery e
 - The shared JSON storage adapter never evicts other LifeStreak keys. Failed writes and malformed raw JSON trigger a global recovery banner with retry and download actions; malformed source strings stay untouched at their original key.
 - A headless Chromium reload check seeded v1 service and reading histories, opened each Collections route, reloaded it, and confirmed both records remained rendered after hydration.
 - Habit storage already fails safely when storage access is blocked and exports detected legacy values without reinterpretation.
-- Remaining #101 work: implement historical-key candidate validation and conflict UI; add fixtures for every store/version, malformed and interrupted states; compare record-level results; verify reload, PWA upgrade, Android upgrade, and iOS upgrade; and add explicit cleanup approval.
+- Historical-key schema validation, conflict classification, explicit copy UI, verified pre-copy recovery, byte-identical source preservation, idempotent retry, and interrupted-write tests are implemented on the revival branch.
+- Remaining #101 work: add representative fixtures and record-level summary comparisons for every historical store version; implement only user-selected lossless habit mappings; verify PWA, Android, and iOS upgrade paths; and add explicit cleanup approval after verification.

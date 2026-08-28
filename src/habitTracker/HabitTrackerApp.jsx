@@ -1092,6 +1092,22 @@ function SettingsView({ snapshot }) {
                   not changed. Export preserved stores before attempting migration.
                 </div>
               )}
+              {snapshot.legacy.migrationRecords?.map((record) => (
+                <div key={record.key} className="habit-inline-actions">
+                  <span>
+                    {record.key} → {record.successor} ({record.status})
+                  </span>
+                  {record.status === 'migration-candidate' && (
+                    <button
+                      type="button"
+                      className="habit-button habit-button-secondary"
+                      onClick={() => habitStore.migrateHistoricalStore(record.key)}
+                    >
+                      Preserve and migrate
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </section>

@@ -12,6 +12,7 @@ import {
 
 export const HABIT_STORAGE_KEY = 'lifestreak-habit-tracker-v1';
 export const HABIT_BACKUP_PREFIX = 'lifestreak-habit-backup-';
+export const LEGACY_BACKUP_PREFIX = 'lifestreak-legacy-backup-';
 
 export const HISTORICAL_STORAGE_KEYS = {
   'jw-progress-storage': 'ls-progress-storage',
@@ -68,6 +69,7 @@ function defaultState() {
       detectedKeys: [],
       scannedAt: null,
       quarantinedRecords: [],
+      migrationRecords: [],
     },
     operation: null,
     updatedAt: new Date().toISOString(),
@@ -91,7 +93,7 @@ function storageMessage(error) {
   return error instanceof Error ? error.message : 'Local storage is unavailable.';
 }
 
-export function classifyLegacyRecord(key, rawValue, availableKeys = []) {
+export function classifyLegacyRecord(key, rawValue, availableKeys = [], successorRaw = null) {
   const successor = HISTORICAL_STORAGE_KEYS[key] || null;
   const isSpecialist = CURRENT_SPECIALIST_STORAGE_KEYS.includes(key) || Boolean(successor);
 
@@ -134,7 +136,33 @@ export function classifyLegacyRecord(key, rawValue, availableKeys = []) {
         reason: 'The Zustand state envelope is missing or malformed.',
       };
     }
+    const canonicalKey = successor || key;
+    const requiredShape = {
+      'ls-progress-storage': ['dailyTexts', 'prayers', 'bibleReadings', 'weeklyReadings'],
+      'ls-progress-settings': ['notifications', 'bibleReadingSchedule', 'theme'],
+      'ls-gamification-storage': ['points', 'currentStreak'],
+      'ls-goals-storage': ['goals', 'projects'],
+      'ls-memories-storage': ['reflections'],
+      'ls-service-storage': ['entries', 'weeklyGoal', 'monthlyGoal'],
+      'ls-reading-storage': ['items'],
+    }[canonicalKey];
+    if (requiredShape && !requiredShape.every((field) => field in parsed.state)) {
+      return {
+        key,
+        successor,
+        status: 'quarantined',
+        reason: `The ${canonicalKey} payload does not match its known state schema.`,
+      };
+    }
     if (successor && availableKeys.includes(successor)) {
+      if (successorRaw === rawValue) {
+        return {
+          key,
+          successor,
+          status: 'migrated',
+          reason: 'Historical and successor stores match exactly; no copy is needed.',
+        };
+      }
       return {
         key,
         successor,
@@ -226,6 +254,9 @@ function loadState() {
           : [],
         scannedAt: typeof legacy.scannedAt === 'string' ? legacy.scannedAt : null,
         quarantinedRecords: [],
+        migrationRecords: Array.isArray(legacy.migrationRecords)
+          ? legacy.migrationRecords.slice(0, 100)
+          : [],
       },
       operation: null,
       updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : new Date().toISOString(),
@@ -630,13 +661,23 @@ export const habitStore = {
     const records = [];
     try {
       const availableKeys = [];
+      const availableValues = new Map();
       for (let index = 0; index < storage.length; index += 1) {
         const key = storage.key(index);
-        if (key) availableKeys.push(key);
+        if (key) {
+          availableKeys.push(key);
+          availableValues.set(key, storage.getItem(key));
+        }
       }
       for (let index = 0; index < storage.length; index += 1) {
         const key = storage.key(index);
-        if (!key || key === HABIT_STORAGE_KEY || key.startsWith(HABIT_BACKUP_PREFIX)) continue;
+        if (
+          !key ||
+          key === HABIT_STORAGE_KEY ||
+          key.startsWith(HABIT_BACKUP_PREFIX) ||
+          key.startsWith(LEGACY_BACKUP_PREFIX)
+        )
+          continue;
         if (
           CURRENT_SPECIALIST_STORAGE_KEYS.includes(key) ||
           Object.hasOwn(HISTORICAL_STORAGE_KEYS, key) ||
@@ -644,7 +685,16 @@ export const habitStore = {
           /life|streak|progress|service|reading|goal|memory|gamif|prayer|bible/i.test(key)
         ) {
           detectedKeys.push(key);
-          records.push(classifyLegacyRecord(key, storage.getItem(key), availableKeys));
+          records.push(
+            classifyLegacyRecord(
+              key,
+              storage.getItem(key),
+              availableKeys,
+              HISTORICAL_STORAGE_KEYS[key]
+                ? availableValues.get(HISTORICAL_STORAGE_KEYS[key])
+                : null
+            )
+          );
         }
       }
     } catch (scanError) {
@@ -659,6 +709,9 @@ export const habitStore = {
         draft.legacy.quarantinedRecords = records
           .filter(({ status }) => status === 'quarantined' || status === 'conflict')
           .map(({ key, status, reason, successor }) => ({ key, status, reason, successor }));
+        draft.legacy.migrationRecords = records
+          .filter(({ status }) => status === 'migration-candidate' || status === 'migrated')
+          .map(({ key, status, reason, successor }) => ({ key, status, reason, successor }));
       },
       detectedKeys.length
         ? `${detectedKeys.length} legacy data stores were preserved.`
@@ -666,6 +719,78 @@ export const habitStore = {
       { undoable: false }
     );
     return saved ? records.sort((a, b) => a.key.localeCompare(b.key)) : [];
+  },
+
+  migrateHistoricalStore(sourceKey) {
+    const successor = HISTORICAL_STORAGE_KEYS[sourceKey];
+    if (!successor) {
+      setOperation('error', 'The selected historical store has no verified successor.');
+      return false;
+    }
+    const { storage, error } = localStorageAccess();
+    if (!storage) {
+      setOperation('error', `Migration could not start: ${storageMessage(error)}`);
+      return false;
+    }
+    try {
+      const sourceRaw = storage.getItem(sourceKey);
+      const availableKeys = [];
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (key) availableKeys.push(key);
+      }
+      const classification = classifyLegacyRecord(
+        sourceKey,
+        sourceRaw,
+        availableKeys,
+        storage.getItem(successor)
+      );
+      if (classification.status === 'migrated') {
+        setOperation('success', classification.reason);
+        return true;
+      }
+      if (classification.status !== 'migration-candidate') {
+        setOperation('warning', classification.reason);
+        return false;
+      }
+
+      const backupKey = `${LEGACY_BACKUP_PREFIX}${new Date().toISOString().replace(/[:.]/g, '-')}`;
+      const backup = JSON.stringify({
+        migrationVersion: 1,
+        sourceKey,
+        successor,
+        capturedAt: new Date().toISOString(),
+        rawValue: sourceRaw,
+      });
+      storage.setItem(backupKey, backup);
+      if (storage.getItem(backupKey) !== backup) {
+        throw new Error('The pre-migration recovery copy could not be verified.');
+      }
+      storage.setItem(successor, sourceRaw);
+      if (storage.getItem(successor) !== sourceRaw) {
+        throw new Error('The migrated store could not be verified.');
+      }
+
+      return transact(
+        (draft) => {
+          draft.legacy.migrationRecords = draft.legacy.migrationRecords.map((record) =>
+            record.key === sourceKey
+              ? {
+                  ...record,
+                  status: 'migrated',
+                  backupKey,
+                  migratedAt: new Date().toISOString(),
+                }
+              : record
+          );
+        },
+        `${sourceKey} was copied to ${successor}. The original and recovery copy remain intact.`,
+        { undoable: false }
+      );
+    } catch (migrationError) {
+      setOperation('error', `Migration was not completed: ${storageMessage(migrationError)}`);
+      return false;
+    }
   },
 
   exportLegacyData() {

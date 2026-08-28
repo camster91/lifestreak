@@ -8,7 +8,11 @@ const localStorageMock = {
   setItem: vi.fn((key, value) => localStorageValues.set(key, String(value))),
   clear: vi.fn(() => localStorageValues.clear()),
   removeItem: vi.fn((key) => localStorageValues.delete(key)),
+  key: vi.fn((index) => [...localStorageValues.keys()][index] ?? null),
 };
+Object.defineProperty(localStorageMock, 'length', {
+  get: () => localStorageValues.size,
+});
 global.localStorage = localStorageMock;
 
 // Mock Notification API
@@ -33,4 +37,5 @@ beforeEach(() => {
     localStorageValues.set(key, String(value))
   );
   localStorageMock.removeItem.mockImplementation((key) => localStorageValues.delete(key));
+  localStorageMock.key.mockImplementation((index) => [...localStorageValues.keys()][index] ?? null);
 });

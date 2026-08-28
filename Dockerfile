@@ -3,19 +3,15 @@
 # Stage 2: serve dist/ via nginx
 
 # ─── Stage 1: build ─────────────────────────────────────────────────────
-FROM node:22-alpine AS build
+FROM node:22.22.0-alpine AS build
 
 WORKDIR /app
 
 COPY package*.json ./
-COPY pnpm-lock.yaml* ./
-RUN \
-  if [ -f pnpm-lock.yaml ]; then \
-    corepack enable && corepack prepare pnpm@latest --activate && \
-    pnpm install --frozen-lockfile; \
-  else \
-    npm ci --no-audit --no-fund --include=dev; \
-  fi
+COPY .npmrc .nvmrc .node-version ./
+RUN npm install --global npm@11.17.0 \
+  && npm run toolchain:check \
+  && npm ci --no-audit --no-fund --include=dev
 
 COPY . .
 RUN npm run build

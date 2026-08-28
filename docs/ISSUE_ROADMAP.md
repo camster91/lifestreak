@@ -41,7 +41,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 ### P1 — complete and verify the core habit experience
 
 9. **#64 — supported Node/npm/Vite toolchain**
-   Establish one reproducible runtime matrix before updating or merging dependency pull requests.
+   The supported contract is documented in [toolchain.md](toolchain.md): exact Node 22.22.0 and npm 11.17.0 with compatible Vite 7/plugin-react 5/React 19 majors across local version files, CI, Docker, and native workflows. Keep open until clean installs and native builds run on the pinned environment; then triage each dependency PR independently.
 10. **#70 and #97 — onboarding and habit management**
     The recovered branch partially implements both. Finish progressive disclosure, template customization, restored-user behavior, failure recovery, accessibility, and device verification.
 11. **#71 and #98 — schedule, due-state, streak, and calendar contract**

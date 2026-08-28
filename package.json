@@ -2,6 +2,7 @@
   "name": "lifestreak",
   "private": true,
   "version": "4.0.0",
+  "packageManager": "npm@11.17.0",
   "type": "module",
   "description": "A private, local-first habit and routine tracker with optional specialist collections.",
   "keywords": [
@@ -18,6 +19,7 @@
     "identity:check": "node scripts/check-identity.mjs",
     "permissions:check": "node scripts/check-permissions.mjs",
     "signing:check": "node scripts/check-android-signing.mjs",
+    "toolchain:check": "node scripts/check-toolchain.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
@@ -96,6 +98,7 @@
     "vitest": "^4.0.17"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": "22.22.0",
+    "npm": "11.17.0"
   }
 }

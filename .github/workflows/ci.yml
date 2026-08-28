@@ -38,14 +38,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check (if configured)
-        run: |
-          if grep -q '"typecheck"\|"type-check"\|"tsc"' package.json; then
-            echo "Running typecheck..."
-            npm run typecheck || npm run type-check || npx tsc --noEmit
-          else
-            echo "No typecheck script found, skipping."
-          fi
+      - name: Type check
+        run: npm run typecheck
 
       - name: Product identity check
         run: npm run identity:check
@@ -72,14 +66,8 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
 
-      - name: Lint (if configured)
-        run: |
-          if grep -q '"lint"' package.json; then
-            echo "Running lint..."
-            npm run lint
-          else
-            echo "No lint script found, skipping."
-          fi
+      - name: Lint
+        run: npm run lint
 
       - name: Test
         run: npm test
@@ -93,3 +81,6 @@ jobs:
           # CI-safe defaults so the build doesn't depend on real env vars
           NODE_ENV: production
           CI: true
+
+      - name: Sync native shells and reject generated drift
+        run: npm run cap:sync && git diff --exit-code -- android ios

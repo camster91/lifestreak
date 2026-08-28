@@ -36,7 +36,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 7. **#58 — fail-closed Android signing**
    The repository signing contract and protected workflow are documented in [android-signing.md](android-signing.md). Verify the external keystore fingerprint, backup recovery, signed AAB, and internal-track upgrade before closing.
 8. **#60 — required quality gates and immutable release artifacts**
-   Repair CI so pull requests validate without publishing and releases consume tested immutable artifacts.
+   Pull-request and trusted release-source workflows now enforce clean install/toolchain, format, typecheck, design-system, identity, permissions, fail-closed signing, supply-chain/advisory, lint, tests, production build, Capacitor sync, and a clean native generated diff; publishing remains dependent and cannot run from PR events. [ci-evidence.md](ci-evidence.md) records the exact external check state: GitHub jobs have no runner/steps because of an account billing gate, Ashbi Local CI is queued without execution evidence, and GitGuardian finding 36683862 is a high-confidence environment-variable false positive requiring owner disposition. Intentional gate failures, hosted reruns, immutable publish/deploy identity, and rollback rehearsal remain.
 
 ### P1 — complete and verify the core habit experience
 

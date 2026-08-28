@@ -90,6 +90,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Sync native shells and reject generated drift
+        run: npm run cap:sync && git diff --exit-code -- android ios
+
   build:
     name: Build & push image
     needs: verify

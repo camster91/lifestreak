@@ -86,7 +86,12 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 
 ## Dependency pull requests
 
-Do not merge #85, #88, #107, or #108 solely to clear Dependabot. First complete #64, then evaluate each update independently with clean install, lint, tests, web build, Android debug build, security review, and release-workflow behavior. Close any PR superseded by the selected supported dependency matrix.
+- **#85** — closed as superseded by the independently verified ESLint 10 alignment in `21cab47`.
+- **#88** — closed as incompatible: v4 is ESM-only while `dev-server.cjs` uses CommonJS. Dependabot now ignores this major until a deliberate server migration.
+- **#107** — closed as superseded by the independently verified Capacitor local-notifications 8.3.1 update in `5cfc4fe`; web gates and both native syncs pass.
+- **#108** — closed as an unsupported TypeScript 7 major under the pinned TypeScript 6 contract. Dependabot now ignores this major pending deliberate review.
+
+PR #106 is now the only open pull request. Future dependency updates must remain within [the supported toolchain contract](toolchain.md) and pass clean install, lint, tests, web build, native sync/build as applicable, security review, and release-workflow behavior.
 
 ## Completion rules
 

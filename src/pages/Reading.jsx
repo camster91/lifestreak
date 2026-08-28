@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import useReadingStore from '../stores/readingStore.js';
+import { readingItemPercent } from '../stores/readingStore.js';
 import PageHeader from '../components/PageHeader';
 import { haptics } from '../utils/native.js';
 
@@ -48,6 +49,7 @@ function Reading() {
       title: title.trim(),
       type: itemType,
       totalUnits: units,
+      unitLabel,
       notes: '',
     });
     setTitle('');
@@ -127,7 +129,7 @@ function Reading() {
               <div className="space-y-3">
                 {inProgress.map((item) => {
                   const Icon = TYPE_ICONS[item.type];
-                  const percent = Math.round((item.completedUnits / item.totalUnits) * 100);
+                  const percent = readingItemPercent(item) ?? 0;
                   return (
                     <div key={item.id} className="p-3 bg-base-200 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
@@ -165,10 +167,18 @@ function Reading() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-base-content/60">
                           {TYPE_LABELS[item.type]} · {item.completedUnits}/{item.totalUnits}{' '}
-                          {unitLabel}
+                          {item.unitLabel || 'units'}
                         </span>
                       </div>
-                      <div className="w-full bg-base-300 rounded-full h-2 mt-2">
+                      <div
+                        className="w-full bg-base-300 rounded-full h-2 mt-2"
+                        role="progressbar"
+                        aria-label={`${item.title} progress`}
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={percent}
+                        aria-valuetext={`${item.completedUnits} of ${item.totalUnits} ${item.unitLabel || 'units'}, ${percent}%`}
+                      >
                         <div
                           className="bg-amber-500 h-2 rounded-full transition-all"
                           style={{ width: `${percent}%` }}
@@ -200,7 +210,7 @@ function Reading() {
                         <Icon className="w-4 h-4 text-success" />
                         <span className="font-medium">{item.title}</span>
                         <span className="text-xs text-base-content/60">
-                          {TYPE_LABELS[item.type]} · {item.totalUnits} {unitLabel}
+                          {TYPE_LABELS[item.type]} · {item.totalUnits} {item.unitLabel || 'units'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

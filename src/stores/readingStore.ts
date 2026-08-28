@@ -11,6 +11,7 @@ interface ReadingItem {
   startedDate: string;
   finishedDate?: string;
   notes: string;
+  unitLabel?: 'chapters' | 'pages' | 'minutes' | 'parts';
 }
 
 interface ReadingState {
@@ -30,6 +31,7 @@ interface PersistedReadingState {
 }
 
 const READING_TYPES = new Set(['book', 'audio', 'video', 'article']);
+const READING_UNITS = new Set(['chapters', 'pages', 'minutes', 'parts']);
 
 function isReadingItem(value: unknown): value is ReadingItem {
   if (!value || typeof value !== 'object') return false;
@@ -46,10 +48,40 @@ function isReadingItem(value: unknown): value is ReadingItem {
     typeof item.completedUnits === 'number' &&
     Number.isFinite(item.completedUnits) &&
     item.completedUnits >= 0 &&
+    item.completedUnits <= item.totalUnits &&
     typeof item.startedDate === 'string' &&
     (item.finishedDate === undefined || typeof item.finishedDate === 'string') &&
-    typeof item.notes === 'string'
+    typeof item.notes === 'string' &&
+    (item.unitLabel === undefined ||
+      (typeof item.unitLabel === 'string' && READING_UNITS.has(item.unitLabel)))
   );
+}
+
+export function readingItemPercent(item: Pick<ReadingItem, 'completedUnits' | 'totalUnits'>) {
+  if (
+    !Number.isFinite(item.completedUnits) ||
+    !Number.isFinite(item.totalUnits) ||
+    item.totalUnits <= 0
+  ) {
+    return null;
+  }
+  return Math.round(
+    (Math.min(Math.max(item.completedUnits, 0), item.totalUnits) / item.totalUnits) * 100
+  );
+}
+
+export function summarizeReadingProgress(items: ReadingItem[], quarantinedItems: unknown[] = []) {
+  const active = items.filter((item) => !item.finishedDate);
+  const percentages = active
+    .map(readingItemPercent)
+    .filter((value): value is number => value !== null);
+  return {
+    activeCount: active.length,
+    percent: percentages.length
+      ? Math.round(percentages.reduce((total, value) => total + value, 0) / percentages.length)
+      : null,
+    hasUnknownRecords: quarantinedItems.length > 0 || percentages.length !== active.length,
+  };
 }
 
 export function normalizeReadingPersistence(value: unknown): PersistedReadingState {
@@ -83,7 +115,14 @@ const useReadingStore = create<ReadingState>()(
         })),
       updateProgress: (id, completedUnits) =>
         set((state) => ({
-          items: state.items.map((item) => (item.id === id ? { ...item, completedUnits } : item)),
+          items: state.items.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  completedUnits: Math.min(Math.max(completedUnits, 0), item.totalUnits),
+                }
+              : item
+          ),
         })),
       finishItem: (id) =>
         set((state) => ({

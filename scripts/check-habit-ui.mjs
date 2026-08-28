@@ -194,6 +194,67 @@ async function main() {
     );
     await privacyContext.close();
 
+    const readingContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    await readingContext.addInitScript(() => {
+      localStorage.setItem(
+        'ls-reading-storage',
+        JSON.stringify({
+          state: {
+            items: [
+              {
+                id: 1,
+                title: 'Chapters fixture',
+                type: 'book',
+                totalUnits: 10,
+                completedUnits: 5,
+                unitLabel: 'chapters',
+                startedDate: '2026-08-01',
+                notes: '',
+              },
+              {
+                id: 2,
+                title: 'Minutes fixture',
+                type: 'audio',
+                totalUnits: 100,
+                completedUnits: 90,
+                unitLabel: 'minutes',
+                startedDate: '2026-08-01',
+                notes: '',
+              },
+            ],
+            quarantinedItems: [],
+          },
+          version: 1,
+        })
+      );
+    });
+    const readingPage = await readingContext.newPage();
+    await readingPage.goto(`${origin}/?legacy=1`, { waitUntil: 'networkidle' });
+    const dashboardProgress = readingPage.getByRole('progressbar', {
+      name: 'Average progress across active reading items',
+    });
+    assert(
+      (await dashboardProgress.getAttribute('aria-valuenow')) === '70',
+      'Reading dashboard did not average the persisted item percentages.'
+    );
+    await readingPage.goto(`${origin}/reading?legacy=1`, { waitUntil: 'networkidle' });
+    assert(
+      (await readingPage
+        .getByRole('progressbar', { name: 'Chapters fixture progress' })
+        .getAttribute('aria-valuenow')) === '50',
+      'Reading detail disagreed with the chapters fixture.'
+    );
+    assert(
+      (await readingPage
+        .getByRole('progressbar', { name: 'Minutes fixture progress' })
+        .getAttribute('aria-valuenow')) === '90',
+      'Reading detail disagreed with the minutes fixture.'
+    );
+    await readingContext.close();
+
     const offlineContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
     });

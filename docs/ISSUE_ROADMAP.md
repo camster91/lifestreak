@@ -60,7 +60,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 ### P2 — polish, trust, and operations
 
 17. **#68 — truthful specialist reading data**
-    Replace placeholders using the corrected persistence/date contracts.
+    The fixed 60% dashboard placeholder is removed. New reading records persist their own unit; preserved legacy records without a known unit say `units` instead of borrowing the current form selection. Detail and dashboard use one bounded per-item percentage contract, while the dashboard labels its equal-item average so unlike chapters/minutes are not added together. Empty/completed-only states have no fabricated percentage, quarantined data is disclosed as unknown, and both views expose named progressbar values. Unit and production-browser fixtures prove the 50%/90% details agree with the 70% dashboard average. Keep open until the branch is integrated and responsive/screen-reader Collections verification is recorded.
 18. **#77 — portable export/import/reset/recovery**
     Reconcile specialist and habit-first backup formats and validate destructive recovery paths.
 19. **#78 — design system and complete interaction-state inventory**

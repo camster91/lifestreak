@@ -42,12 +42,12 @@
     "dev:full": "concurrently \"npm run dev:vite\" \"npm run dev:server\" --names \"VITE,API\" --prefix-colors \"blue,green\""
   },
   "dependencies": {
-    "@capacitor/android": "^8.3.0",
+    "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/browser": "^8.0.3",
     "@capacitor/core": "^8.5.0",
     "@capacitor/haptics": "^8.0.2",
-    "@capacitor/ios": "^8.4.2",
+    "@capacitor/ios": "^8.5.0",
     "@capacitor/keyboard": "^8.0.5",
     "@capacitor/local-notifications": "^8.2.0",
     "@capacitor/preferences": "^8.0.1",
@@ -64,7 +64,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.3.0",
+    "@capacitor/cli": "8.4.2",
     "@eslint/js": "^9.39.2",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^6.9.1",

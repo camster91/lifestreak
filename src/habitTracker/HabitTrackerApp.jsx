@@ -37,6 +37,19 @@ const TRACKING_LABELS = {
   custom: 'Custom number',
 };
 
+let lastDialogTrigger = null;
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'pointerdown',
+    (event) => {
+      const trigger =
+        event.target instanceof Element ? event.target.closest('button, a[href]') : null;
+      if (trigger instanceof HTMLElement) lastDialogTrigger = trigger;
+    },
+    true
+  );
+}
+
 function formatDate(dateKey, options = { weekday: 'long', month: 'long', day: 'numeric' }) {
   return new Intl.DateTimeFormat(undefined, options).format(parseLocalDate(dateKey));
 }
@@ -185,6 +198,7 @@ export default function HabitTrackerApp({ onOpenCollections }) {
         <HabitFormDialog
           habit={editingHabit}
           initial={createDefaults}
+          returnFocus={lastDialogTrigger}
           onClose={() => {
             setShowForm(false);
             setCreateDefaults(null);
@@ -200,6 +214,7 @@ export default function HabitTrackerApp({ onOpenCollections }) {
         <HabitHistoryDialog
           habit={historyHabit}
           snapshot={snapshot}
+          returnFocus={lastDialogTrigger}
           onClose={() => setHistoryHabitId(null)}
           onEdit={() => {
             setHistoryHabitId(null);
@@ -1220,7 +1235,7 @@ function SettingsView({ snapshot }) {
   );
 }
 
-function HabitFormDialog({ habit, initial, onClose, onSaved }) {
+function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
   const today = toLocalDate();
   const seed = habit || initial;
   const current = habit
@@ -1312,7 +1327,12 @@ function HabitFormDialog({ habit, initial, onClose, onSaved }) {
   };
 
   return (
-    <Dialog title={habit ? `Edit ${habit.name}` : 'Create a habit'} onClose={onClose} wide>
+    <Dialog
+      title={habit ? `Edit ${habit.name}` : 'Create a habit'}
+      onClose={onClose}
+      returnFocus={returnFocus}
+      wide
+    >
       <form className="habit-form" onSubmit={submit}>
         {error && (
           <div className="habit-form-error" role="alert">
@@ -1591,7 +1611,7 @@ function HabitFormDialog({ habit, initial, onClose, onSaved }) {
   );
 }
 
-function HabitHistoryDialog({ habit, snapshot, onClose, onEdit }) {
+function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
   const today = toLocalDate();
   const [selectedDate, setSelectedDate] = useState(today);
   const [note, setNote] = useState(logForDate(snapshot.logs, habit.id, today)?.note || '');
@@ -1610,7 +1630,7 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit }) {
   };
 
   return (
-    <Dialog title={habit.name} onClose={onClose} wide>
+    <Dialog title={habit.name} onClose={onClose} returnFocus={returnFocus} wide>
       <div className="habit-history-header">
         <div>
           <span className={`habit-status status-${dayState.status}`}>
@@ -1759,22 +1779,32 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit }) {
   );
 }
 
-function Dialog({ title, onClose, children, wide = false }) {
+function Dialog({ title, onClose, children, returnFocus = null, wide = false }) {
   const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
   useEffect(() => {
-    const previous = document.activeElement;
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    const active = document.activeElement;
+    const previous =
+      returnFocus ||
+      (active instanceof HTMLElement && active !== document.body ? active : lastDialogTrigger);
     const dialog = dialogRef.current;
     const first = dialog?.querySelector('input, select, textarea, button');
     first?.focus();
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       previous?.focus?.();
+      window.setTimeout(() => {
+        if (previous?.isConnected) previous.focus();
+      }, 0);
     };
-  }, [onClose]);
+  }, [returnFocus]);
 
   return (
     <div

@@ -49,7 +49,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 12. **#74, #75, #99, and #100 — truthful daily operations**
     The revival branch now uses verified transactions with rollback on failed or silently dropped writes, warns instead of claiming success for no-op mutations, coalesces identical rapid submissions, and provides Undo. Today is generated from the shared habit/schedule/log model; pause/archive/restore and ordering preserve history; numeric source entries can be corrected or removed with destructive confirmation. Browser offline/failure workflows plus responsive, accessibility, reminder, native-restart, and exhaustive tracking-unit verification remain.
 13. **#72 and #73 — accessibility and responsive baseline**
-    Apply to every primary workflow. Issue #41 is one concrete defect within #72 and remains open until its web fix is integrated and verified.
+    The revival branch replaces the concrete #41 interactions with named semantic buttons and adds a headless Chromium gate across 320px phone, phone, tablet, and desktop viewports. It checks primary empty routes and the creation dialog for horizontal overflow, accessible control names, 44px targets, reduced motion, focus containment, Escape close, and focus restoration. VoiceOver/TalkBack, 200% zoom, forced-colour, populated/long-content states, landscape, virtual keyboard, screenshot approval, and native device checks remain.
 14. **#63 and #76 — privacy-aligned optional AI, push, and reminders**
     Decide what ships, remove misleading capability claims, and verify private notification behavior and recovery.
 15. **#66 and #67 — web/PWA/native end-to-end and rollback tests**

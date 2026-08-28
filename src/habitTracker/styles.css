@@ -151,6 +151,18 @@
   align-items: stretch;
 }
 
+.habit-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.habit-inline-actions button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 .habit-button,
 .habit-icon-button,
 .habit-more-actions button,
@@ -276,7 +288,7 @@
 }
 
 .habit-operation button {
-  min-height: 36px;
+  min-height: 44px;
   border: 1px solid currentColor;
   border-radius: 9px;
   color: inherit;
@@ -1078,7 +1090,7 @@
 }
 
 .habit-entry-list button {
-  min-height: 36px;
+  min-height: 44px;
   border: 0;
   color: var(--habit-danger);
   background: transparent;
@@ -1270,7 +1282,7 @@
   }
 
   .habit-header-actions .habit-button {
-    min-height: 42px;
+    min-height: 44px;
     padding-inline: 0.55rem;
     font-size: 0.76rem;
   }

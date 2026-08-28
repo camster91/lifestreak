@@ -63,4 +63,32 @@ describe('habit management', () => {
     expect(habitStore.clearDay(habitId, '2026-08-28')).toBe(false);
     expect(habitStore.getSnapshot().logs).toEqual([]);
   });
+
+  it('refuses malformed, future, not-started, and inactive new logs', () => {
+    const futureHabitId = habitStore.createHabit({
+      ...input('Future habit'),
+      startDate: '2099-01-01',
+      schedule: { type: 'daily', anchorDate: '2099-01-01' },
+    });
+    expect(habitStore.setDayStatus(futureHabitId, '2099-01-01', 'completed')).toBe(false);
+    expect(habitStore.setNote(futureHabitId, 'not-a-date', 'No phantom note')).toBe(false);
+
+    const inactiveId = habitStore.createHabit(input('Inactive habit'));
+    expect(habitStore.setLifecycle(inactiveId, 'paused', '2026-08-28')).toBe(true);
+    expect(habitStore.setDayStatus(inactiveId, '2026-08-28', 'completed')).toBe(false);
+    expect(habitStore.getSnapshot().logs).toEqual([]);
+  });
+
+  it('uses the effective tracking unit and still permits deliberate off-schedule history', () => {
+    const habitId = habitStore.createHabit({
+      ...input('Water'),
+      schedule: { type: 'weekdays', weekdays: [1], anchorDate: '2026-08-28' },
+      tracking: { type: 'volume', target: 8, unit: 'cups' },
+    });
+    expect(habitStore.addValue(habitId, '2026-08-28', 2, 'litres')).toBe(true);
+    expect(habitStore.getSnapshot().logs[0]).toMatchObject({
+      date: '2026-08-28',
+      entries: [{ value: 2, unit: 'cups' }],
+    });
+  });
 });

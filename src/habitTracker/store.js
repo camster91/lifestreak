@@ -524,6 +524,13 @@ function assertHabit(draft, habitId) {
   return habit;
 }
 
+function assertLogCreationAllowed(draft, habit, dateKey) {
+  const existing = draft.logs.some((log) => log.habitId === habit.id && log.date === dateKey);
+  if (!existing && lifecycleAt(habit, dateKey) !== 'active') {
+    throw new Error('A new log cannot be created before the habit starts or while it is inactive.');
+  }
+}
+
 export const habitStore = {
   subscribe(listener) {
     listeners.add(listener);
@@ -655,10 +662,14 @@ export const habitStore = {
   },
 
   setDayStatus(habitId, dateKey, explicitStatus) {
-    if (!isValidLocalDate(dateKey)) return false;
+    if (!isValidLocalDate(dateKey) || dateKey > toLocalDate()) {
+      setOperation('error', 'Choose today or an earlier valid local date.');
+      return false;
+    }
     if (!['completed', 'failed', 'skipped'].includes(explicitStatus)) return false;
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
+      assertLogCreationAllowed(draft, habit, dateKey);
       const log = findOrCreateLog(draft, habitId, dateKey);
       log.explicitStatus = explicitStatus;
       if (
@@ -671,7 +682,11 @@ export const habitStore = {
     }, `Habit marked ${explicitStatus}.`);
   },
 
-  addValue(habitId, dateKey, value, unit) {
+  addValue(habitId, dateKey, value) {
+    if (!isValidLocalDate(dateKey) || dateKey > toLocalDate()) {
+      setOperation('error', 'Choose today or an earlier valid local date.');
+      return false;
+    }
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue) || numericValue <= 0) {
       setOperation('error', 'Enter a value greater than zero.');
@@ -679,6 +694,7 @@ export const habitStore = {
     }
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
+      assertLogCreationAllowed(draft, habit, dateKey);
       const tracking = currentConfig(habit, dateKey).tracking;
       if (tracking.type === 'binary')
         throw new Error('This habit does not accept a numeric value.');
@@ -687,7 +703,7 @@ export const habitStore = {
       log.entries.push({
         id: createId('entry'),
         value: numericValue,
-        unit: unit || tracking.unit,
+        unit: tracking.unit,
         createdAt: new Date().toISOString(),
       });
       log.updatedAt = new Date().toISOString();
@@ -737,8 +753,13 @@ export const habitStore = {
   },
 
   setNote(habitId, dateKey, note) {
+    if (!isValidLocalDate(dateKey) || dateKey > toLocalDate()) {
+      setOperation('error', 'Choose today or an earlier valid local date.');
+      return false;
+    }
     return transact((draft) => {
-      assertHabit(draft, habitId);
+      const habit = assertHabit(draft, habitId);
+      assertLogCreationAllowed(draft, habit, dateKey);
       const log = findOrCreateLog(draft, habitId, dateKey);
       log.note = String(note || '').slice(0, 2000);
       log.updatedAt = new Date().toISOString();

@@ -43,6 +43,21 @@ for (const ecosystem of ['npm', 'github-actions', 'docker']) {
 }
 
 const lockfile = JSON.parse(readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
+const packageManifest = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+);
+const installScriptPolicy = packageManifest.allowScripts || {};
+for (const [path, dependency] of Object.entries(lockfile.packages || {})) {
+  if (!path || !dependency.hasInstallScript) continue;
+  const packageName = path.split('node_modules/').at(-1);
+  const pinnedPolicy = `${packageName}@${dependency.version}`;
+  if (!(pinnedPolicy in installScriptPolicy) && !(packageName in installScriptPolicy)) {
+    failures.push(`${path} has an unreviewed install script`);
+  }
+  if (installScriptPolicy[packageName] === true) {
+    failures.push(`${packageName} install-script approval must be pinned to an exact version`);
+  }
+}
 const approvedLicenses = new Set([
   '0BSD',
   'Apache-2.0',
@@ -79,5 +94,5 @@ if (failures.length) {
 }
 
 console.log(
-  'Supply-chain contract verified: immutable inputs, read-only defaults, trusted PRs, update coverage, and provenance.'
+  'Supply-chain contract verified: immutable inputs, reviewed install scripts, read-only defaults, trusted PRs, update coverage, and provenance.'
 );

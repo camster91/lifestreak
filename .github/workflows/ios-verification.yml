@@ -1,0 +1,47 @@
+name: Verify iOS shell
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-build:
+    name: Compile unsigned iOS app
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup supported npm
+        run: npm install --global npm@11.17.0 && npm run toolchain:check
+
+      - name: Install, verify, build, and sync
+        run: |
+          npm ci
+          npm run identity:check
+          npm run permissions:check
+          npm run build
+          npx cap sync ios
+          git diff --exit-code -- ios
+
+      - name: Compile without signing
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/LifeStreakDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            clean build

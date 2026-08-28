@@ -1,10 +1,15 @@
 name: Build signed Android release
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
+  attestations: write
 
 jobs:
   signed-release:
@@ -65,13 +70,37 @@ jobs:
         run: |
           ./scripts/verify-android-keystore.sh
           npx cap sync android
+          git diff --exit-code -- android
           node scripts/run-gradle.js bundleRelease
           jarsigner -verify -strict -certs android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Record immutable artifact metadata
+        run: |
+          artifact="android/app/build/outputs/bundle/release/app-release.aab"
+          sha256sum "$artifact" | tee android-app-release.sha256
+          jq -n \
+            --arg app "LifeStreak" \
+            --arg applicationId "com.ashbi.lifestreak" \
+            --arg version "4.0.0" \
+            --arg build "400" \
+            --arg revision "${{ github.sha }}" \
+            --arg runner "$RUNNER_NAME" \
+            --arg workflow "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            '{app:$app,platform:"android",applicationId:$applicationId,version:$version,build:$build,revision:$revision,runner:$runner,workflow:$workflow}' \
+            > android-release-metadata.json
+
+      - name: Attest signed AAB provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: android/app/build/outputs/bundle/release/app-release.aab
 
       - name: Upload signed AAB
         uses: actions/upload-artifact@v7
         with:
           name: lifestreak-${{ github.sha }}-signed-aab
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android-app-release.sha256
+            android-release-metadata.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30

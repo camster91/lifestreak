@@ -40,7 +40,9 @@ jobs:
         run: npm run build
 
       - name: Sync Capacitor
-        run: npx cap sync android
+        run: |
+          npx cap sync android
+          git diff --exit-code -- android
 
       - name: Generate debug keystore
         run: |

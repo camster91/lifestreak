@@ -7,6 +7,17 @@ let suppressInformationalNotices = 0;
 let cachedBase = null;
 let cachedNotice = null;
 let cachedSnapshot = null;
+const recentOperations = new Map();
+const DUPLICATE_WINDOW_MS = 500;
+const duplicateGuardedMethods = new Set([
+  'createHabit',
+  'duplicateHabit',
+  'setDayStatus',
+  'addValue',
+  'updateValue',
+  'removeValue',
+  'clearDay',
+]);
 
 function clearInformationalNotice() {
   informationalNotice = null;
@@ -48,9 +59,11 @@ const undoableMethods = [
   'updateHabit',
   'setLifecycle',
   'deleteHabit',
+  'duplicateHabit',
   'moveHabit',
   'setDayStatus',
   'addValue',
+  'updateValue',
   'removeValue',
   'clearDay',
   'setNote',
@@ -65,10 +78,19 @@ undoableMethods.forEach((methodName) => {
   const original = habitStore[methodName]?.bind(habitStore);
   if (!original) return;
   habitStore[methodName] = (...args) => {
+    const signature = `${methodName}:${JSON.stringify(args)}`;
+    const now = Date.now();
+    const recent = recentOperations.get(signature);
+    if (duplicateGuardedMethods.has(methodName) && recent && now - recent.at < DUPLICATE_WINDOW_MS)
+      return recent.result;
     clearInformationalNotice();
     suppressInformationalNotices += 1;
     try {
-      return original(...args);
+      const result = original(...args);
+      if (duplicateGuardedMethods.has(methodName)) {
+        recentOperations.set(signature, { at: now, result });
+      }
+      return result;
     } finally {
       suppressInformationalNotices -= 1;
       clearInformationalNotice();

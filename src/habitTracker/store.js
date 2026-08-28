@@ -318,7 +318,19 @@ function transact(mutator, successMessage, { undoable = true } = {}) {
   const previous = clone(state);
   try {
     const draft = clone(state);
-    mutator(draft);
+    const changed = mutator(draft);
+    if (changed === false) {
+      state = {
+        ...previous,
+        operation: {
+          type: 'warning',
+          message: 'Nothing changed.',
+          at: new Date().toISOString(),
+        },
+      };
+      emit();
+      return false;
+    }
     draft.version = HABIT_SCHEMA_VERSION;
     draft.updatedAt = new Date().toISOString();
     draft.operation = successMessage
@@ -564,7 +576,7 @@ export const habitStore = {
       const ordered = [...draft.habits].sort((a, b) => a.order - b.order);
       const index = ordered.findIndex((habit) => habit.id === habitId);
       const target = direction === 'up' ? index - 1 : index + 1;
-      if (index < 0 || target < 0 || target >= ordered.length) return;
+      if (index < 0 || target < 0 || target >= ordered.length) return false;
       [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
       ordered.forEach((habit, order) => {
         const original = draft.habits.find((item) => item.id === habit.id);
@@ -616,7 +628,8 @@ export const habitStore = {
   removeValue(habitId, dateKey, entryId) {
     return transact((draft) => {
       assertHabit(draft, habitId);
-      const log = findOrCreateLog(draft, habitId, dateKey);
+      const log = draft.logs.find((item) => item.habitId === habitId && item.date === dateKey);
+      if (!log || !log.entries.some((entry) => entry.id === entryId)) return false;
       log.entries = log.entries.filter((entry) => entry.id !== entryId);
       log.updatedAt = new Date().toISOString();
       if (!log.entries.length && !log.explicitStatus) {
@@ -625,9 +638,31 @@ export const habitStore = {
     }, 'The progress entry was removed.');
   },
 
+  updateValue(habitId, dateKey, entryId, value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      setOperation('error', 'Enter a value greater than zero.');
+      return false;
+    }
+    return transact((draft) => {
+      const habit = assertHabit(draft, habitId);
+      const tracking = currentConfig(habit, dateKey).tracking;
+      if (tracking.type === 'binary')
+        throw new Error('This habit does not accept a numeric value.');
+      const log = draft.logs.find((item) => item.habitId === habitId && item.date === dateKey);
+      const entry = log?.entries.find((item) => item.id === entryId);
+      if (!entry) return false;
+      if (entry.value === numericValue) return false;
+      entry.value = numericValue;
+      entry.updatedAt = new Date().toISOString();
+      log.updatedAt = entry.updatedAt;
+    }, 'The progress entry was corrected.');
+  },
+
   clearDay(habitId, dateKey) {
     return transact((draft) => {
       assertHabit(draft, habitId);
+      if (!draft.logs.some((log) => log.habitId === habitId && log.date === dateKey)) return false;
       draft.logs = draft.logs.filter((log) => !(log.habitId === habitId && log.date === dateKey));
     }, 'The day was cleared.');
   },

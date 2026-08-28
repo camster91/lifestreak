@@ -1595,6 +1595,8 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit }) {
   const today = toLocalDate();
   const [selectedDate, setSelectedDate] = useState(today);
   const [note, setNote] = useState(logForDate(snapshot.logs, habit.id, today)?.note || '');
+  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
   const config = configurationForDate(habit, selectedDate);
   const log = logForDate(snapshot.logs, habit.id, selectedDate);
   const dayState = getDayState(habit, snapshot.logs, selectedDate, {
@@ -1637,12 +1639,53 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit }) {
           <ul className="habit-entry-list">
             {log.entries.map((entry) => (
               <li key={entry.id}>
-                <span>
-                  {entry.value} {entry.unit}
-                </span>
+                {editingEntryId === entry.id ? (
+                  <form
+                    className="habit-inline-actions"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (habitStore.updateValue(habit.id, selectedDate, entry.id, editingValue)) {
+                        setEditingEntryId(null);
+                      }
+                    }}
+                  >
+                    <label>
+                      <span className="habit-visually-hidden">Correct value in {entry.unit}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={editingValue}
+                        onChange={(event) => setEditingValue(event.target.value)}
+                      />
+                    </label>
+                    <span>{entry.unit}</span>
+                    <button type="submit">Save correction</button>
+                    <button type="button" onClick={() => setEditingEntryId(null)}>
+                      Cancel
+                    </button>
+                  </form>
+                ) : (
+                  <span>
+                    {entry.value} {entry.unit}
+                  </span>
+                )}
                 <button
                   type="button"
-                  onClick={() => habitStore.removeValue(habit.id, selectedDate, entry.id)}
+                  onClick={() => {
+                    setEditingEntryId(entry.id);
+                    setEditingValue(String(entry.value));
+                  }}
+                >
+                  Correct
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Remove ${entry.value} ${entry.unit} from this date?`)) {
+                      habitStore.removeValue(habit.id, selectedDate, entry.id);
+                    }
+                  }}
                 >
                   Remove
                 </button>
@@ -1673,8 +1716,10 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit }) {
             type="button"
             className="habit-button habit-button-secondary"
             onClick={() => {
-              habitStore.clearDay(habit.id, selectedDate);
-              setNote('');
+              if (window.confirm(`Clear all status, progress, and notes for ${selectedDate}?`)) {
+                habitStore.clearDay(habit.id, selectedDate);
+                setNote('');
+              }
             }}
           >
             Clear this date

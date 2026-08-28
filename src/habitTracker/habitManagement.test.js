@@ -37,4 +37,30 @@ describe('habit management', () => {
       false
     );
   });
+
+  it('corrects and removes source entries without creating phantom logs', () => {
+    const habitId = habitStore.createHabit({
+      ...input('Water'),
+      tracking: { type: 'volume', target: 8, unit: 'cups' },
+    });
+    habitStore.addValue(habitId, '2026-08-28', 2, 'cups');
+    const entryId = habitStore.getSnapshot().logs[0].entries[0].id;
+
+    expect(habitStore.updateValue(habitId, '2026-08-28', entryId, 3.5)).toBe(true);
+    expect(habitStore.getSnapshot().logs[0].entries[0].value).toBe(3.5);
+    expect(habitStore.updateValue(habitId, '2026-08-28', 'missing', 4)).toBe(false);
+    expect(habitStore.removeValue(habitId, '2026-08-27', 'missing')).toBe(false);
+    expect(habitStore.getSnapshot().logs).toHaveLength(1);
+  });
+
+  it('does not report success for no-op moves or empty-day clears', () => {
+    const habitId = habitStore.createHabit(input());
+    expect(habitStore.moveHabit(habitId, 'up')).toBe(false);
+    expect(habitStore.getSnapshot().operation).toMatchObject({
+      type: 'warning',
+      message: 'Nothing changed.',
+    });
+    expect(habitStore.clearDay(habitId, '2026-08-28')).toBe(false);
+    expect(habitStore.getSnapshot().logs).toEqual([]);
+  });
 });

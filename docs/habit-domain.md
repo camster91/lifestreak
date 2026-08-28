@@ -26,6 +26,7 @@ The canonical runtime and TypeScript contract lives in `src/habitTracker/domain.
 ## Schedule and streak language
 
 - Supported schedules are every day, selected weekdays, a target number per week, once per week within selected weekdays, every N days, selected month days, and a target number per month. An optional end date stops new expectations.
+- Normalization supplies defaults for omitted optional fields only. Creation and edits reject unsupported types, malformed dates, invalid day selections, fractional/out-of-range frequency targets, and invalid measurable targets/units before normalization, so the persisted routine cannot differ silently from what was submitted.
 - Morning, afternoon, evening, and anytime are optional presentation groups. Their persisted display order is user-reorderable and changes presentation only, never due-state or history.
 - Flexible weekly/monthly schedules expose the target, completions, remaining target, and remaining available dates from the same pure engine used by Today and stats. Future-dated logs never satisfy the current period.
 - `Current streak` counts consecutive completed scheduled periods ending at the latest decisive result. `Best streak` is the longest such run in the selected history.

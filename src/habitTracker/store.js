@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import {
   HABIT_SCHEMA_VERSION,
+  TRACKING_TYPES,
   TIME_GROUPS,
   configurationForDate,
   isValidLocalDate,
@@ -458,6 +459,78 @@ function normalizeHabitInput(input, id = createId('habit')) {
 
 function validateHabitInput(input) {
   if (!String(input.name || '').trim()) throw new Error('Habit name is required.');
+  if (input.startDate != null && !isValidLocalDate(input.startDate)) {
+    throw new Error('Choose a valid start date.');
+  }
+  if (input.timeOfDay != null && !TIME_GROUPS.includes(input.timeOfDay)) {
+    throw new Error('Choose a valid time of day.');
+  }
+  const rawSchedule = input.schedule;
+  const scheduleTypes = [
+    'daily',
+    'weekdays',
+    'timesPerWeek',
+    'weekly',
+    'interval',
+    'monthly',
+    'monthlyTarget',
+  ];
+  if (rawSchedule != null && !scheduleTypes.includes(rawSchedule.type)) {
+    throw new Error('Choose a supported schedule frequency.');
+  }
+  if (rawSchedule?.anchorDate != null && !isValidLocalDate(rawSchedule.anchorDate)) {
+    throw new Error('Choose a valid schedule anchor date.');
+  }
+  if (rawSchedule?.endDate != null && !isValidLocalDate(rawSchedule.endDate)) {
+    throw new Error('Choose a valid end date.');
+  }
+  const validInteger = (value, minimum, maximum) =>
+    Number.isInteger(Number(value)) && Number(value) >= minimum && Number(value) <= maximum;
+  if (
+    ['weekdays', 'weekly'].includes(rawSchedule?.type) &&
+    (!Array.isArray(rawSchedule.weekdays) ||
+      rawSchedule.weekdays.length === 0 ||
+      rawSchedule.weekdays.some((day) => !validInteger(day, 0, 6)))
+  ) {
+    throw new Error('Choose at least one valid weekday.');
+  }
+  if (rawSchedule?.type === 'timesPerWeek' && !validInteger(rawSchedule.timesPerWeek, 1, 7)) {
+    throw new Error('Times per week must be a whole number from 1 to 7.');
+  }
+  if (rawSchedule?.type === 'monthlyTarget' && !validInteger(rawSchedule.monthlyTarget, 1, 31)) {
+    throw new Error('Times per month must be a whole number from 1 to 31.');
+  }
+  if (rawSchedule?.type === 'interval' && !validInteger(rawSchedule.intervalDays, 1, 365)) {
+    throw new Error('The repeat interval must be a whole number from 1 to 365 days.');
+  }
+  if (
+    rawSchedule?.type === 'monthly' &&
+    (!Array.isArray(rawSchedule.monthlyDays) ||
+      rawSchedule.monthlyDays.length === 0 ||
+      rawSchedule.monthlyDays.some((day) => !validInteger(day, 1, 31)))
+  ) {
+    throw new Error('Choose at least one valid day of the month.');
+  }
+
+  const rawTracking = input.tracking;
+  if (rawTracking != null && !TRACKING_TYPES.includes(rawTracking.type)) {
+    throw new Error('Choose a supported tracking type.');
+  }
+  if (rawTracking?.type !== undefined && rawTracking.type !== 'binary') {
+    const target = Number(rawTracking.target);
+    if (!Number.isFinite(target) || target < 0 || (!rawTracking.anyAmountCounts && target <= 0)) {
+      throw new Error('A measurable habit needs a valid target greater than zero.');
+    }
+    if (!String(rawTracking.unit || '').trim()) {
+      throw new Error('A measurable habit needs a unit.');
+    }
+    if (rawTracking.stretchTarget != null && rawTracking.stretchTarget !== '') {
+      const stretch = Number(rawTracking.stretchTarget);
+      if (!Number.isFinite(stretch) || stretch < target) {
+        throw new Error('The stretch target cannot be lower than the minimum target.');
+      }
+    }
+  }
   const tracking = normalizeTracking(input.tracking);
   if (tracking.type !== 'binary' && !tracking.anyAmountCounts && tracking.target <= 0) {
     throw new Error('A measurable habit needs a target greater than zero.');

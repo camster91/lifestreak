@@ -91,4 +91,42 @@ describe('habit management', () => {
       entries: [{ value: 2, unit: 'cups' }],
     });
   });
+
+  it.each([
+    ['unsupported schedule', { schedule: { type: 'sometimes', anchorDate: '2026-08-28' } }],
+    [
+      'weekly target above seven',
+      { schedule: { type: 'timesPerWeek', timesPerWeek: 8, anchorDate: '2026-08-28' } },
+    ],
+    [
+      'fractional interval',
+      { schedule: { type: 'interval', intervalDays: 1.5, anchorDate: '2026-08-28' } },
+    ],
+    [
+      'impossible end date',
+      { schedule: { type: 'daily', anchorDate: '2026-08-28', endDate: '2026-02-30' } },
+    ],
+    ['unsupported tracking', { tracking: { type: 'mood', target: 1, unit: 'point' } }],
+    ['missing measurable unit', { tracking: { type: 'count', target: 5, unit: '' } }],
+    [
+      'stretch below minimum',
+      { tracking: { type: 'duration', target: 20, stretchTarget: 10, unit: 'min' } },
+    ],
+  ])('rejects %s instead of silently normalizing it', (_label, overrides) => {
+    expect(() => habitStore.createHabit({ ...input('Invalid fixture'), ...overrides })).toThrow();
+    expect(habitStore.getSnapshot().habits).toEqual([]);
+  });
+
+  it('rejects an invalid schedule edit without changing the habit or its history', () => {
+    const habitId = habitStore.createHabit(input('Stable routine'));
+    habitStore.setDayStatus(habitId, '2026-08-28', 'completed');
+    const before = structuredClone(habitStore.getSnapshot());
+
+    expect(() =>
+      habitStore.updateHabit(habitId, {
+        schedule: { type: 'monthlyTarget', monthlyTarget: 0, anchorDate: '2026-08-28' },
+      })
+    ).toThrow(/month/i);
+    expect(habitStore.getSnapshot()).toEqual(before);
+  });
 });

@@ -9,6 +9,7 @@ import {
   starterTemplates,
   toLocalDate,
 } from './engine';
+import { migrateHabitDatabase } from './domain';
 
 export const HABIT_STORAGE_KEY = 'lifestreak-habit-tracker-v1';
 export const HABIT_BACKUP_PREFIX = 'lifestreak-habit-backup-';
@@ -226,17 +227,20 @@ function loadState() {
         },
       };
     }
+    const validated = migrateHabitDatabase(parsed);
 
     const preferences =
-      parsed.preferences && typeof parsed.preferences === 'object' ? parsed.preferences : {};
+      validated.preferences && typeof validated.preferences === 'object'
+        ? validated.preferences
+        : {};
     const onboarding =
-      parsed.onboarding && typeof parsed.onboarding === 'object' ? parsed.onboarding : {};
-    const legacy = parsed.legacy && typeof parsed.legacy === 'object' ? parsed.legacy : {};
+      validated.onboarding && typeof validated.onboarding === 'object' ? validated.onboarding : {};
+    const legacy = validated.legacy && typeof validated.legacy === 'object' ? validated.legacy : {};
 
     return {
       version: HABIT_SCHEMA_VERSION,
-      habits: Array.isArray(parsed.habits) ? parsed.habits : [],
-      logs: Array.isArray(parsed.logs) ? parsed.logs : [],
+      habits: validated.habits,
+      logs: validated.logs,
       preferences: {
         weekStartsOn: [0, 1, 6].includes(Number(preferences.weekStartsOn))
           ? Number(preferences.weekStartsOn)
@@ -259,7 +263,8 @@ function loadState() {
           : [],
       },
       operation: null,
-      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : new Date().toISOString(),
+      updatedAt:
+        typeof validated.updatedAt === 'string' ? validated.updatedAt : new Date().toISOString(),
     };
   } catch (error) {
     return {
@@ -282,7 +287,11 @@ function serializable(value) {
 function persist(nextState) {
   const { storage, error } = localStorageAccess();
   if (!storage) throw new Error(storageMessage(error));
-  storage.setItem(HABIT_STORAGE_KEY, JSON.stringify(serializable(nextState)));
+  const serialized = JSON.stringify(serializable(nextState));
+  storage.setItem(HABIT_STORAGE_KEY, serialized);
+  if (storage.getItem(HABIT_STORAGE_KEY) !== serialized) {
+    throw new Error('The habit database write could not be verified.');
+  }
 }
 
 function emit() {

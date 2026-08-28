@@ -30,7 +30,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 4. **#61 and #62 — calendar-safe specialist history**
    Implemented on the revival branch: Bible history now uses full local dates with an explicit quarantine for ambiguous legacy day-of-year keys, and service totals validate local dates and bound both ends of each period. Keep the issues open until the branch is integrated and timezone/device verification is recorded.
 5. **#96 — unified versioned habit/log model**
-   Audit the recovered implementation against every acceptance criterion, especially atomic persistence, version migrations, corrupted data, and source-record reproducibility.
+   The source and calendar contract is documented in [habit-domain.md](habit-domain.md). The revival branch now has TypeScript domain types, runtime validation on load, idempotent v1 migration, and read-after-write verification; native restart and the complete schedule fixture matrix remain tied to #71, #96, and #98.
 6. **#57 and #59 — canonical identity, permissions, and privacy metadata**
    Repository contracts are maintained in [product-identity.md](product-identity.md) and [permissions-and-data-flows.md](permissions-and-data-flows.md). Package, Capacitor, Android, and iOS source values now align, and unused Calendar, Tracking, and Push declarations are removed; external store continuity and built-app disclosure evidence remain to verify.
 7. **#58 — fail-closed Android signing**

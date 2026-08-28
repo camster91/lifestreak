@@ -34,7 +34,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 6. **#57 and #59 — canonical identity, permissions, and privacy metadata**
    Repository contracts are maintained in [product-identity.md](product-identity.md) and [permissions-and-data-flows.md](permissions-and-data-flows.md). Package, Capacitor, Android, and iOS source values now align, and unused Calendar, Tracking, and Push declarations are removed; external store continuity and built-app disclosure evidence remain to verify.
 7. **#58 — fail-closed Android signing**
-   Verify missing-secret failure, protected signing, certificate identity, ownership, backup, and recovery.
+   The repository signing contract and protected workflow are documented in [android-signing.md](android-signing.md). Verify the external keystore fingerprint, backup recovery, signed AAB, and internal-track upgrade before closing.
 8. **#60 — required quality gates and immutable release artifacts**
    Repair CI so pull requests validate without publishing and releases consume tested immutable artifacts.
 

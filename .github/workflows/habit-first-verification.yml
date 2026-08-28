@@ -43,6 +43,9 @@ jobs:
       - name: Permission and capability check
         run: npm run permissions:check
 
+      - name: Android signing contract check
+        run: npm run signing:check
+
       - name: Lint
         run: npm run lint
 

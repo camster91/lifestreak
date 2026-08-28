@@ -9,12 +9,17 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 const isCapacitor = Capacitor.isNativePlatform();
 export const PRIVATE_REMINDER_TITLE = 'LifeStreak reminder';
 export const PRIVATE_REMINDER_BODY = 'A private LifeStreak reminder is ready.';
+export const HABIT_REMINDER_KIND = 'habit-reminder';
 
 // ── Permission helpers ─────────────────────────────────────────────
 
 export function isNotificationSupported() {
   if (isCapacitor) return true;
   return 'Notification' in window && 'serviceWorker' in navigator;
+}
+
+export function isNativeNotificationPlatform() {
+  return isCapacitor;
 }
 
 export function getNotificationPermission() {
@@ -193,6 +198,41 @@ export async function cancelAllNotifications() {
       console.warn('Capacitor cancelAll error:', e);
     }
   }
+}
+
+/**
+ * Replace only the native notifications owned by the independent habit tracker.
+ * Collections notifications use separate IDs and are intentionally untouched.
+ * Permission is checked but never requested here.
+ */
+export async function replaceNativeHabitNotifications(notifications) {
+  if (!isCapacitor) return { scheduled: 0, permission: 'unsupported' };
+
+  const pending = await LocalNotifications.getPending();
+  const owned = (pending.notifications || []).filter(
+    (notification) => notification.extra?.lifestreakKind === HABIT_REMINDER_KIND
+  );
+  if (owned.length) {
+    await LocalNotifications.cancel({
+      notifications: owned.map(({ id }) => ({ id })),
+    });
+  }
+
+  const permission = await checkNotificationPermission();
+  if (permission !== 'granted' || !notifications.length) {
+    return { scheduled: 0, permission };
+  }
+
+  await LocalNotifications.schedule({
+    notifications: notifications.map((notification) => ({
+      ...notification,
+      extra: {
+        ...notification.extra,
+        lifestreakKind: HABIT_REMINDER_KIND,
+      },
+    })),
+  });
+  return { scheduled: notifications.length, permission };
 }
 
 // ── Initialize all reminders from settings ────────────────────────

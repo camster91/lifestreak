@@ -27,6 +27,7 @@ import {
   validatePortableBackup,
 } from '../utils/portableBackup';
 import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics';
+import { reconcileHabitNotifications } from './habitReminders';
 import {
   checkNotificationPermission,
   PRIVATE_REMINDER_BODY,
@@ -117,6 +118,23 @@ function useOpenAppNotifications(snapshot) {
   }, [snapshot]);
 }
 
+function useNativeHabitNotifications(snapshot) {
+  const { habits, logs, preferences } = snapshot;
+  useEffect(() => {
+    const reconcile = () => {
+      reconcileHabitNotifications({ habits, logs, preferences }).catch((error) => {
+        console.warn('Habit reminder reconciliation failed:', error);
+      });
+    };
+    const reconcileOnReturn = () => {
+      if (document.visibilityState === 'visible') reconcile();
+    };
+    reconcile();
+    document.addEventListener('visibilitychange', reconcileOnReturn);
+    return () => document.removeEventListener('visibilitychange', reconcileOnReturn);
+  }, [habits, logs, preferences]);
+}
+
 export default function HabitTrackerApp({ onOpenCollections }) {
   const snapshot = useHabitState();
   const [view, setView] = useState('today');
@@ -127,6 +145,7 @@ export default function HabitTrackerApp({ onOpenCollections }) {
   const [showForm, setShowForm] = useState(false);
 
   useOpenAppNotifications(snapshot);
+  useNativeHabitNotifications(snapshot);
 
   const openCreate = (defaults = null) => {
     setEditingHabitId(null);
@@ -1169,9 +1188,19 @@ function SettingsView({ snapshot }) {
     const current = await checkNotificationPermission();
     const permission = current === 'prompt' ? await requestNotificationPermission() : current;
     setNotificationPermission(permission);
+    let schedulingFailed = false;
+    if (permission === 'granted') {
+      try {
+        await reconcileHabitNotifications(snapshot);
+      } catch {
+        schedulingFailed = true;
+      }
+    }
     setNotificationMessage(
       permission === 'granted'
-        ? 'Permission granted. You can send a private test reminder.'
+        ? schedulingFailed
+          ? 'Permission was granted, but reminders could not be scheduled. Check system settings and try again.'
+          : 'Permission granted. You can send a private test reminder.'
         : permission === 'denied'
           ? 'Permission is denied. LifeStreak will not ask again automatically; enable it in browser or system settings.'
           : permission === 'unsupported'

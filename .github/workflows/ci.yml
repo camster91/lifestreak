@@ -50,6 +50,9 @@ jobs:
       - name: Product identity check
         run: npm run identity:check
 
+      - name: Design-system contract check
+        run: npm run design-system:check
+
       - name: Permission and capability check
         run: npm run permissions:check
 

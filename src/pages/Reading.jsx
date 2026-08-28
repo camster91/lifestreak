@@ -62,7 +62,7 @@ function Reading() {
         title="Reading"
         subtitle="Track books, audio, video, and articles"
         icon={Library}
-        gradient="from-amber-500 via-orange-500 to-red-500"
+        gradient="from-primary via-warning to-secondary"
       />
 
       <main className="container mx-auto px-4 pt-4 space-y-4 max-w-2xl">
@@ -70,7 +70,7 @@ function Reading() {
         <div className="card bg-base-100 shadow-md">
           <div className="card-body p-4 space-y-3">
             <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Plus className="w-5 h-5 text-amber-500" /> Add to Shelf
+              <Plus className="w-5 h-5 text-warning" /> Add to Shelf
             </h3>
             <input
               type="text"
@@ -180,7 +180,7 @@ function Reading() {
                         aria-valuetext={`${item.completedUnits} of ${item.totalUnits} ${item.unitLabel || 'units'}, ${percent}%`}
                       >
                         <div
-                          className="bg-amber-500 h-2 rounded-full transition-all"
+                          className="bg-warning h-2 rounded-full transition-all"
                           style={{ width: `${percent}%` }}
                         />
                       </div>

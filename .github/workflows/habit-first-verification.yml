@@ -40,6 +40,9 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      - name: Design-system contract check
+        run: npm run design-system:check
+
       - name: Product identity check
         run: npm run identity:check
 

@@ -1,10 +1,13 @@
 /* global document, window */
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:net';
 import { chromium } from 'playwright';
 
-const port = 4175;
-const origin = `http://127.0.0.1:${port}`;
+let port;
+let origin;
+let server;
+let serverOutput = '';
 const viewports = [
   { name: 'small-phone', width: 320, height: 568 },
   { name: 'phone', width: 390, height: 844 },
@@ -12,27 +15,40 @@ const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
 ];
 
-const server = spawn(
-  process.execPath,
-  [
-    'node_modules/vite/bin/vite.js',
-    'preview',
-    '--host',
-    '127.0.0.1',
-    '--port',
-    String(port),
-    '--strictPort',
-  ],
-  { stdio: ['ignore', 'pipe', 'pipe'] }
-);
+async function availablePort() {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const address = probe.address();
+      const selected = typeof address === 'object' && address ? address.port : null;
+      probe.close((error) => (error || !selected ? reject(error) : resolve(selected)));
+    });
+  });
+}
 
-let serverOutput = '';
-server.stdout.on('data', (chunk) => {
-  serverOutput += chunk;
-});
-server.stderr.on('data', (chunk) => {
-  serverOutput += chunk;
-});
+function startPreview(selectedPort) {
+  const child = spawn(
+    process.execPath,
+    [
+      'node_modules/vite/bin/vite.js',
+      'preview',
+      '--host',
+      '127.0.0.1',
+      '--port',
+      String(selectedPort),
+      '--strictPort',
+    ],
+    { stdio: ['ignore', 'pipe', 'pipe'] }
+  );
+  child.stdout.on('data', (chunk) => {
+    serverOutput += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    serverOutput += chunk;
+  });
+  return child;
+}
 
 async function waitForServer() {
   for (let attempt = 0; attempt < 50; attempt += 1) {
@@ -109,6 +125,9 @@ async function inspectPage(page, viewportName, stateName) {
 async function main() {
   let browser;
   try {
+    port = await availablePort();
+    origin = `http://127.0.0.1:${port}`;
+    server = startPreview(port);
     await waitForServer();
     browser = await chromium.launch({ headless: true });
 
@@ -495,7 +514,7 @@ async function main() {
     console.log(`LifeStreak UI contract verified across ${viewports.length} responsive viewports.`);
   } finally {
     await browser?.close();
-    server.kill('SIGTERM');
+    server?.kill('SIGTERM');
   }
 }
 

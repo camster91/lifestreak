@@ -29,7 +29,7 @@ LifeStreak uses one semantic interaction contract across the habit-first app and
 | Overlay elevation | `--habit-shadow`        | `--ls-overlay-shadow`                      | Dialogs, recovery alerts, mode switch            |
 | Motion            | 140ms                   | `--ls-motion-fast`, `--ls-motion-standard` | Hover, press, and state transitions              |
 
-Token aliases intentionally preserve the existing indigo habit character and blue/green Collections character while assigning the same semantic roles. New components must use a role token or framework semantic class, not a one-off hex value for UI state.
+Token aliases intentionally preserve the existing indigo habit character and blue/green Collections character while assigning the same semantic roles. New components must use a role token or framework semantic class, not a one-off hex value for UI state. `npm run design-system:check` scans the source tree and fails CI when UI markup introduces a palette-specific Tailwind role utility or a historical `jw-*` theme alias. Palette declarations, user-selected habit colours, native shell branding, and purely decorative confetti remain explicit data rather than semantic state.
 
 ## Component and state contract
 
@@ -52,4 +52,4 @@ The current screen title and its main task establish the visual hierarchy. Creat
 
 ## Verification matrix
 
-The production UI contract runs at 320x568, 390x844, 768x1024, and 1440x900 with reduced motion enabled. It checks overflow, accessible control names, 44px targets, dialog focus/containment/restoration, privacy opt-in, reading progress, portable backup round-trip, and offline persistence. Before closing #78, add stable screenshots for every route in light and dark themes plus the required empty, selected, loading, success, warning, error, offline, dialog, and achievement states, and complete manual contrast and assistive-technology review.
+The production UI contract runs at 320x568, 390x844, 768x1024, and 1440x900 with reduced motion enabled. It checks overflow, accessible control names, 44px targets, dialog focus/containment/restoration, privacy opt-in, reading progress, portable backup round-trip, and offline persistence. The checker allocates an unused loopback port and verifies the LifeStreak document identity so another local preview cannot be mistaken for evidence. Before closing #78, add stable screenshots for every route in light and dark themes plus the required empty, selected, loading, success, warning, error, offline, dialog, and achievement states, and complete manual contrast and assistive-technology review.

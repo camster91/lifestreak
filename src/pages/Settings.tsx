@@ -340,7 +340,7 @@ function Settings() {
       <PageHeader
         title="Settings"
         subtitle="Customize your experience"
-        gradient="from-primary via-primary to-blue-700"
+        gradient="from-primary via-primary to-secondary"
         shadow
         noBlurs
       />

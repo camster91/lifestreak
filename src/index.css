@@ -52,9 +52,6 @@
 }
 
 @theme {
-  --color-jw-blue: #4a6fa4;
-  --color-jw-green: #71bc37;
-
   --animate-float: float 3s ease-in-out infinite;
   --animate-glow: glow 2s ease-in-out infinite alternate;
   --animate-slide-up: slideUp 0.5s ease-out;
@@ -218,10 +215,6 @@ html {
 @utility card-elevated {
   /* Elevated cards with press feedback */
   @apply shadow-lg hover:shadow-xl transition-all duration-200;
-}
-
-@utility btn-primary-custom {
-  @apply bg-jw-blue hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-sm;
 }
 
 @utility card-mobile {

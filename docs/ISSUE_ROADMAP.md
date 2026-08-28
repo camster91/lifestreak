@@ -12,8 +12,9 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 
 - `main` still contains the archived product documentation and legacy default experience.
 - The recovered `codex/lifestreak-habit-first` branch contains the independent-app implementation from closed PR #106.
-- The recovered branch passes clean install, lint, 143 tests, formatting, and production web build locally.
-- The branch remains behind `main` and has not passed the full migration, native, device, accessibility, privacy, or release evidence required by the issues below.
+- The recovered branch is reconciled with current `main` and passes clean install, formatting, typecheck, lint, 145 tests, production web build, Capacitor Android sync, and dependency audit locally.
+- A local Android debug build reaches a successful web build and Capacitor sync, then stops because the current Mac has no Java runtime. GitHub-hosted jobs currently fail before executing any steps, while the independent Ashbi Local CI check remains external to the repository.
+- The branch has not passed the full migration, native archive, device, accessibility, privacy, or release evidence required by the issues below.
 - Issues #95-#102 were reopened because PR #106 was closed without merge; source on a closed branch is not completion on the default branch.
 
 ## Execution order
@@ -96,4 +97,3 @@ An issue is complete only when:
 3. required browser, native, accessibility, privacy, migration, or release evidence is attached;
 4. documentation and user-facing promises match the shipped behavior; and
 5. incomplete external/manual gates are not represented as complete.
-

@@ -287,9 +287,16 @@ function OperationBanner({ operation, onDismiss }) {
             Retry
           </button>
         )}
-        <button type="button" onClick={onDismiss} aria-label="Dismiss message">
-          Dismiss
-        </button>
+        {operation.action === 'reload' && (
+          <button type="button" onClick={() => window.location.reload()}>
+            Retry after enabling storage
+          </button>
+        )}
+        {operation.dismissible !== false && (
+          <button type="button" onClick={onDismiss} aria-label="Dismiss message">
+            Dismiss
+          </button>
+        )}
       </div>
     </div>
   );

@@ -31,12 +31,19 @@ export default function StorageRecoveryBanner() {
 
   if (!failure) return null;
   const canRetry = failure.operation === 'write';
+  const storageAccessBlocked = failure.operation === 'read' || failure.operation === 'storage';
 
   return (
     <aside role="alert" aria-live="assertive" className="storage-recovery-banner">
-      <strong>LifeStreak could not safely save local data.</strong>
+      <strong>
+        {storageAccessBlocked
+          ? 'LifeStreak cannot access local data.'
+          : 'LifeStreak could not safely save local data.'}
+      </strong>
       <p>
-        Your in-app changes are still open. Free device space or enable site storage, then retry.
+        {storageAccessBlocked
+          ? 'Enable site storage or leave private browsing, then retry. LifeStreak will not treat inaccessible data as empty.'
+          : 'Your in-app changes are still open. Free device space or enable site storage, then retry.'}
       </p>
       <div className="storage-recovery-actions">
         {canRetry && (
@@ -49,9 +56,16 @@ export default function StorageRecoveryBanner() {
             Download recovery data
           </button>
         )}
-        <button type="button" onClick={() => setFailure(null)}>
-          Dismiss
-        </button>
+        {storageAccessBlocked && (
+          <button type="button" onClick={() => window.location.reload()}>
+            Retry after enabling storage
+          </button>
+        )}
+        {!storageAccessBlocked && (
+          <button type="button" onClick={() => setFailure(null)}>
+            Dismiss
+          </button>
+        )}
       </div>
     </aside>
   );

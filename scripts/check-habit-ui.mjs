@@ -888,6 +888,45 @@ async function main() {
     await inspectPage(storageFailurePage, 'phone', 'storage-failure-recovered');
     await storageFailureContext.close();
 
+    const blockedStorageContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    await blockedStorageContext.addInitScript(() => {
+      const availableStorage = window.localStorage;
+      window.__lifestreakStorageBlocked = window.name !== 'lifestreak-storage-recovered';
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        get() {
+          if (window.__lifestreakStorageBlocked) {
+            throw new DOMException('Blocked by browser privacy mode', 'SecurityError');
+          }
+          return availableStorage;
+        },
+      });
+    });
+    const blockedStoragePage = await blockedStorageContext.newPage();
+    await blockedStoragePage.goto(origin, { waitUntil: 'networkidle' });
+    await blockedStoragePage
+      .getByText(/Habit storage is unavailable.*leave private browsing, then retry/)
+      .waitFor();
+    assert(
+      (await blockedStoragePage.getByRole('button', { name: 'Dismiss message' }).count()) === 0,
+      'A startup storage-denial warning could be dismissed without recovery.'
+    );
+    await inspectPage(blockedStoragePage, 'phone', 'storage-access-blocked');
+    await blockedStoragePage.evaluate(() => {
+      window.name = 'lifestreak-storage-recovered';
+      window.__lifestreakStorageBlocked = false;
+    });
+    await blockedStoragePage.getByRole('button', { name: 'Retry after enabling storage' }).click();
+    await blockedStoragePage.getByRole('button', { name: 'Create my own' }).waitFor();
+    assert(
+      (await blockedStoragePage.getByText(/Habit storage is unavailable/).count()) === 0,
+      'Storage recovery reload retained the stale blocked state.'
+    );
+    await blockedStorageContext.close();
+
     const unitTransitionContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       serviceWorkers: 'block',

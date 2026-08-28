@@ -40,6 +40,10 @@ describe('habit storage failures', () => {
     expect(habitStore.getSnapshot().habits).toEqual([]);
     expect(habitStore.getSnapshot().operation?.type).toBe('error');
     expect(habitStore.getSnapshot().operation?.message).toMatch(/storage is unavailable/i);
+    expect(habitStore.getSnapshot().operation).toMatchObject({
+      action: 'reload',
+      dismissible: false,
+    });
   });
 
   it('does not publish a habit when persistence fails', async () => {

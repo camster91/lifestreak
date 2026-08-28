@@ -106,7 +106,13 @@ export function createSafeStorage(storeName) {
         }
         return value;
       } catch (error) {
-        rememberRecovery(storeName, name, '', 'read', error);
+        publishStorageStatus({
+          storeName,
+          operation: 'read',
+          status: 'error',
+          message: errorMessage(error),
+          recoveryAvailable: false,
+        });
         return null;
       }
     },

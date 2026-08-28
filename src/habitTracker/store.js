@@ -285,7 +285,9 @@ function loadState() {
       ...fallback,
       operation: {
         type: 'error',
-        message: `Habit storage is unavailable: ${storageMessage(accessError)}`,
+        message: `Habit storage is unavailable: ${storageMessage(accessError)} Enable site storage or leave private browsing, then retry.`,
+        action: 'reload',
+        dismissible: false,
         at: new Date().toISOString(),
       },
     };

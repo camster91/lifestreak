@@ -43,7 +43,6 @@ export default function App() {
 
   return (
     <>
-      <StorageRecoveryBanner />
       <OfflineIndicator />
       <HabitTrackerRoot onOpenCollections={openLegacyCollections} />
     </>

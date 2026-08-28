@@ -173,8 +173,25 @@ async function main() {
         await dialog.evaluate((element) => element.contains(document.activeElement)),
         `${viewport.name}: reverse Tab escaped the dialog.`
       );
+      await page.getByLabel(/Name/).fill('Unsaved browser fixture');
+      let discardPrompts = 0;
+      page.on('dialog', async (browserDialog) => {
+        assert(
+          browserDialog.message() === 'Discard the unsaved habit changes?',
+          `${viewport.name}: unsaved-change prompt used unexpected copy.`
+        );
+        discardPrompts += 1;
+        if (discardPrompts === 1) await browserDialog.dismiss();
+        else await browserDialog.accept();
+      });
+      await page.keyboard.press('Escape');
+      assert(await dialog.isVisible(), `${viewport.name}: rejected discard still closed the dialog.`);
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'detached' });
+      assert(
+        discardPrompts === 2,
+        `${viewport.name}: unsaved changes did not require rejection and confirmation.`
+      );
       await page
         .waitForFunction((element) => element?.matches(':focus'), await opener.elementHandle(), {
           timeout: 1000,

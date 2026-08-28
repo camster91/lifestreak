@@ -27,6 +27,7 @@ import {
   validatePortableBackup,
 } from '../utils/portableBackup';
 import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics';
+import { parseJsonWithoutDuplicateKeys } from '../utils/strictJson';
 import { reconcileHabitNotifications } from './habitReminders';
 import {
   checkNotificationPermission,
@@ -1225,7 +1226,7 @@ function SettingsView({ snapshot }) {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const parsed = JSON.parse(await file.text());
+      const parsed = parseJsonWithoutDuplicateKeys(await file.text());
       if (parsed?.product === 'LifeStreak' && parsed?.formatVersion !== undefined) {
         const validation = validatePortableBackup(parsed);
         if (!validation.ok) throw new Error(validation.reason);

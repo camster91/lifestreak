@@ -1,6 +1,17 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { classifyLegacyRecord, habitStore, LEGACY_BACKUP_PREFIX } from './store';
+import { hasDuplicateJsonObjectKeys } from '../utils/strictJson';
+
+const initialImportMultiyearFixture = readFileSync(
+  `${process.cwd()}/src/habitTracker/fixtures/legacy-progress-initial-import-multiyear.json`,
+  'utf8'
+);
+const duplicateKeyFixture = readFileSync(
+  `${process.cwd()}/src/habitTracker/fixtures/legacy-progress-duplicate-key.json`,
+  'utf8'
+);
 
 const serviceEnvelope = JSON.stringify({
   state: { entries: [], weeklyGoal: 4, monthlyGoal: 16 },
@@ -129,6 +140,26 @@ describe('legacy storage classification', () => {
       status: 'quarantined',
       reason: expect.stringMatching(/unsupported store version/i),
     });
+  });
+
+  it('detects duplicate object keys without confusing repeated array values or escaped strings', () => {
+    expect(hasDuplicateJsonObjectKeys('{"same":1,"same":2}')).toBe(true);
+    expect(hasDuplicateJsonObjectKeys('{"nested":{"same":1,"same":2}}')).toBe(true);
+    expect(hasDuplicateJsonObjectKeys('{"left":{"same":1},"right":{"same":2}}')).toBe(false);
+    expect(hasDuplicateJsonObjectKeys('{"values":["same","same"],"escaped\\"key":1}')).toBe(false);
+  });
+
+  it('quarantines a history-derived duplicate-key fixture before JSON can collapse it', () => {
+    expect(classifyLegacyRecord('jw-progress-storage', duplicateKeyFixture, [])).toMatchObject({
+      status: 'quarantined',
+      reason: expect.stringMatching(/duplicate object keys/i),
+    });
+    localStorage.setItem('ls-progress-storage', duplicateKeyFixture);
+    habitStore.scanLegacyData();
+
+    expect(habitStore.mapLegacyProgressToHabits(['daily-text'])).toBe(false);
+    expect(habitStore.getSnapshot().habits).toEqual([]);
+    expect(localStorage.getItem('ls-progress-storage')).toBe(duplicateKeyFixture);
   });
 
   it.each([
@@ -323,5 +354,23 @@ describe('legacy storage classification', () => {
       ])
     );
     expect(localStorage.getItem('ls-progress-storage')).toBe(raw);
+  });
+
+  it('maps only valid full dates from the initial-import multi-year compatibility fixture', () => {
+    habitStore.resetAllData();
+    localStorage.setItem('ls-progress-storage', initialImportMultiyearFixture);
+    habitStore.scanLegacyData();
+
+    expect(habitStore.mapLegacyProgressToHabits(['daily-text', 'bible-reading'])).toBe(true);
+    expect(localStorage.getItem('ls-progress-storage')).toBe(initialImportMultiyearFixture);
+    expect(
+      habitStore
+        .getSnapshot()
+        .logs.map(({ date }) => date)
+        .sort()
+    ).toEqual(['2024-02-29', '2025-02-28', '2025-03-01']);
+    expect(JSON.stringify(habitStore.getSnapshot())).not.toContain('2026-02-30');
+    expect(JSON.stringify(habitStore.getSnapshot())).not.toContain('malformed-date-preserved');
+    expect(JSON.stringify(habitStore.getSnapshot())).not.toContain('chaptersRead');
   });
 });

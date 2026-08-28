@@ -13,6 +13,7 @@ import {
   toLocalDate,
 } from './engine';
 import { migrateHabitDatabase } from './domain';
+import { hasDuplicateJsonObjectKeys } from '../utils/strictJson';
 
 export const HABIT_STORAGE_KEY = 'lifestreak-habit-tracker-v1';
 export const HABIT_BACKUP_PREFIX = 'lifestreak-habit-backup-';
@@ -184,6 +185,15 @@ export function classifyLegacyRecord(key, rawValue, availableKeys = [], successo
       return { key, successor, status: 'operational', reason: 'Valid install preference.' };
     }
     return { key, successor, status: 'quarantined', reason: 'The value is not valid JSON.' };
+  }
+
+  if (hasDuplicateJsonObjectKeys(rawValue)) {
+    return {
+      key,
+      successor,
+      status: 'quarantined',
+      reason: 'The stored JSON contains duplicate object keys and cannot be interpreted safely.',
+    };
   }
 
   if (isSpecialist) {
@@ -1260,6 +1270,11 @@ export const habitStore = {
     }
 
     try {
+      if (hasDuplicateJsonObjectKeys(sourceRaw)) {
+        throw new Error(
+          'The progress store contains duplicate object keys and cannot be mapped safely.'
+        );
+      }
       const parsed = JSON.parse(sourceRaw);
       const source = parsed?.state;
       if (!source || typeof source !== 'object' || Array.isArray(source)) {

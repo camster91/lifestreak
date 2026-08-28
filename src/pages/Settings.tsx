@@ -53,6 +53,7 @@ import {
   restorePortableBackup,
   validatePortableBackup,
 } from '../utils/portableBackup.js';
+import { parseJsonWithoutDuplicateKeys } from '../utils/strictJson.js';
 import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics.js';
 
 function Settings() {
@@ -248,7 +249,7 @@ function Settings() {
       }
       try {
         const text = await file.text();
-        const parsed = JSON.parse(text);
+        const parsed = parseJsonWithoutDuplicateKeys(text);
 
         if (parsed.product === 'LifeStreak' && parsed.formatVersion !== undefined) {
           const portable = validatePortableBackup(parsed);

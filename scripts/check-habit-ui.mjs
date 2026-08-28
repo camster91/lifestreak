@@ -765,6 +765,59 @@ async function main() {
     const backupDownload = await downloadPromise;
     const backupPath = await backupDownload.path();
     assert(backupPath, 'Portable backup download did not produce a readable file.');
+    const beforeInterruptedImport = await backupPage.evaluate(() => {
+      const keys = [
+        'lifestreak-habit-tracker-v1',
+        'ls-progress-storage',
+        'ls-progress-settings',
+        'ls-gamification-storage',
+        'ls-goals-storage',
+        'ls-memories-storage',
+        'ls-service-storage',
+        'ls-reading-storage',
+      ];
+      const habitDatabase = JSON.parse(localStorage.getItem('lifestreak-habit-tracker-v1'));
+      habitDatabase.preferences.weekStartsOn = 0;
+      localStorage.setItem('lifestreak-habit-tracker-v1', JSON.stringify(habitDatabase));
+      localStorage.setItem(
+        'ls-service-storage',
+        JSON.stringify({ state: { entries: [], weeklyGoal: 99, monthlyGoal: 199 }, version: 1 })
+      );
+      const originalSetItem = Storage.prototype.setItem;
+      window.__lifestreakImportFailureTriggered = false;
+      Storage.prototype.setItem = function setItemWithInterruptedImport(key, value) {
+        if (key === 'ls-service-storage' && !window.__lifestreakImportFailureTriggered) {
+          window.__lifestreakImportFailureTriggered = true;
+          throw new DOMException('Controlled interrupted portable import', 'QuotaExceededError');
+        }
+        return originalSetItem.call(this, key, value);
+      };
+      return Object.fromEntries(keys.map((key) => [key, localStorage.getItem(key)]));
+    });
+    await backupPage.getByLabel('Import LifeStreak JSON').setInputFiles(backupPath);
+    await backupPage
+      .getByRole('heading', { name: 'Replace with validated complete backup?' })
+      .waitFor();
+    await backupPage.getByRole('button', { name: 'Restore complete backup' }).click();
+    await backupPage.getByText(/Import failed and every original store was restored/).waitFor();
+    const afterInterruptedImport = await backupPage.evaluate(() => {
+      const keys = [
+        'lifestreak-habit-tracker-v1',
+        'ls-progress-storage',
+        'ls-progress-settings',
+        'ls-gamification-storage',
+        'ls-goals-storage',
+        'ls-memories-storage',
+        'ls-service-storage',
+        'ls-reading-storage',
+      ];
+      return Object.fromEntries(keys.map((key) => [key, localStorage.getItem(key)]));
+    });
+    assert(
+      JSON.stringify(afterInterruptedImport) === JSON.stringify(beforeInterruptedImport),
+      'Interrupted portable import did not restore every original store byte-for-byte.'
+    );
+    await backupPage.getByRole('button', { name: 'Cancel import' }).click();
     await backupPage.evaluate(() => {
       localStorage.removeItem('lifestreak-habit-tracker-v1');
       localStorage.removeItem('ls-service-storage');

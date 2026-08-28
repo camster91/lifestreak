@@ -26,6 +26,7 @@ import {
   restorePortableBackup,
   validatePortableBackup,
 } from '../utils/portableBackup';
+import { MAX_BACKUP_BYTES } from '../utils/backupValidation';
 import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics';
 import { parseJsonWithoutDuplicateKeys } from '../utils/strictJson';
 import { reconcileHabitNotifications } from './habitReminders';
@@ -1226,6 +1227,9 @@ function SettingsView({ snapshot }) {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
+      if (file.size > MAX_BACKUP_BYTES) {
+        throw new Error('Backup file is too large. The 5 MB limit protects this device.');
+      }
       const parsed = parseJsonWithoutDuplicateKeys(await file.text());
       if (parsed?.product === 'LifeStreak' && parsed?.formatVersion !== undefined) {
         const validation = validatePortableBackup(parsed);

@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MAX_BACKUP_BYTES } from '../utils/backupValidation';
 
 const notifications = vi.hoisted(() => ({
   check: vi.fn(),
@@ -33,6 +34,10 @@ describe('habit reminder settings', () => {
     notifications.show.mockReset();
     reminders.reconcile.mockReset();
     reminders.reconcile.mockResolvedValue({ scheduled: 0, permission: 'granted' });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('requests permission only after explicit enable and sends a generic test', async () => {
@@ -83,5 +88,41 @@ describe('habit reminder settings', () => {
     expect(notifications.request).not.toHaveBeenCalled();
     expect(screen.getByText(/will not prompt again/i)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Send private test reminder' })).toBeDisabled();
+  });
+
+  it('rejects oversized and duplicate-key imports before changing local data', async () => {
+    notifications.check.mockResolvedValue('unsupported');
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    const input = await screen.findByLabelText('Import LifeStreak JSON');
+    const before = window.localStorage.getItem('lifestreak-habit-tracker-v1');
+
+    fireEvent.change(input, {
+      target: {
+        files: [{ name: 'oversized.json', size: MAX_BACKUP_BYTES + 1, text: vi.fn() }],
+      },
+    });
+    await waitFor(() => expect(alert).toHaveBeenCalledWith(expect.stringMatching(/5 MB limit/i)));
+
+    fireEvent.change(input, {
+      target: {
+        files: [
+          {
+            name: 'duplicate.json',
+            size: 68,
+            text: vi
+              .fn()
+              .mockResolvedValue(
+                '{"product":"LifeStreak","formatVersion":1,"stores":{},"stores":{}}'
+              ),
+          },
+        ],
+      },
+    });
+    await waitFor(() =>
+      expect(alert).toHaveBeenCalledWith(expect.stringMatching(/duplicate object keys/i))
+    );
+    expect(window.localStorage.getItem('lifestreak-habit-tracker-v1')).toBe(before);
   });
 });

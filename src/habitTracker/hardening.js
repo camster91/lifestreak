@@ -79,6 +79,41 @@ function safeTimeOfDay(value) {
   return TIME_GROUPS.includes(value) ? value : 'anytime';
 }
 
+function sanitizeLegacyRecords(value, type) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 100).flatMap((candidate) => {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return [];
+    if (type === 'mapping') {
+      const mappingId = safeText(candidate.mappingId, 100);
+      const habitId = safeText(candidate.habitId, 200);
+      if (!mappingId || !ID_PATTERN.test(habitId)) return [];
+      return [
+        {
+          version: 1,
+          sourceKey: 'ls-progress-storage',
+          mappingId,
+          habitId,
+          completionCount: Math.max(0, Math.min(10_000, Number(candidate.completionCount) || 0)),
+          mappedAt: safeTimestamp(candidate.mappedAt),
+        },
+      ];
+    }
+    const key = safeText(candidate.key, 200);
+    if (!key) return [];
+    return [
+      {
+        key,
+        successor: safeText(candidate.successor, 200) || null,
+        status: safeText(candidate.status, 50),
+        reason: safeText(candidate.reason, 500),
+        backupKey: safeText(candidate.backupKey, 300) || undefined,
+        migratedAt: candidate.migratedAt ? safeTimestamp(candidate.migratedAt) : undefined,
+        cleanupAt: candidate.cleanupAt ? safeTimestamp(candidate.cleanupAt) : undefined,
+      },
+    ];
+  });
+}
+
 function safeReminderTime(value) {
   return TIME_PATTERN.test(String(value || '')) ? String(value) : null;
 }
@@ -376,6 +411,8 @@ export function sanitizeImportedState(payload) {
         : [],
       scannedAt: raw.legacy?.scannedAt ? safeTimestamp(raw.legacy.scannedAt) : null,
       quarantinedRecords: [],
+      migrationRecords: sanitizeLegacyRecords(raw.legacy?.migrationRecords, 'migration'),
+      habitMappings: sanitizeLegacyRecords(raw.legacy?.habitMappings, 'mapping'),
     },
     operation: null,
     updatedAt: safeTimestamp(raw.updatedAt),

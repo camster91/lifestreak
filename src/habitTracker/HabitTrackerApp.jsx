@@ -19,7 +19,7 @@ import {
   TIME_GROUPS,
   toLocalDate,
 } from './engine';
-import { habitStore, useHabitState } from './store';
+import { habitStore, LEGACY_PROGRESS_MAPPINGS, useHabitState } from './store';
 import {
   createPortableBackup,
   restorePortableBackup,
@@ -1098,6 +1098,7 @@ function SettingsView({ snapshot }) {
   const [backupMessage, setBackupMessage] = useState('');
   const [resetText, setResetText] = useState('');
   const [legacyCleanupText, setLegacyCleanupText] = useState({});
+  const [legacyMappingIds, setLegacyMappingIds] = useState([]);
 
   const requestNotifications = async () => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -1450,6 +1451,39 @@ function SettingsView({ snapshot }) {
                 </div>
               ))}
             </div>
+          )}
+          {snapshot.legacy.detectedKeys.includes('ls-progress-storage') && (
+            <fieldset className="habit-fieldset">
+              <legend>Map selected completions into habits</legend>
+              <p>
+                Only full-date completed checkmarks are copied. The original store, notes, links,
+                chapter details, meeting records, and numeric progress remain unchanged.
+              </p>
+              {LEGACY_PROGRESS_MAPPINGS.map((mapping) => (
+                <label key={mapping.id} className="habit-checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={legacyMappingIds.includes(mapping.id)}
+                    onChange={(event) =>
+                      setLegacyMappingIds((current) =>
+                        event.target.checked
+                          ? [...current, mapping.id]
+                          : current.filter((id) => id !== mapping.id)
+                      )
+                    }
+                  />
+                  <span>{mapping.name}</span>
+                </label>
+              ))}
+              <button
+                type="button"
+                className="habit-button habit-button-secondary"
+                disabled={!legacyMappingIds.length}
+                onClick={() => habitStore.mapLegacyProgressToHabits(legacyMappingIds)}
+              >
+                Map selected completion history
+              </button>
+            </fieldset>
           )}
         </section>
 

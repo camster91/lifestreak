@@ -35,6 +35,16 @@ export const CURRENT_SPECIALIST_STORAGE_KEYS = [
   'ls-reading-storage',
 ];
 
+export const LEGACY_PROGRESS_MAPPINGS = [
+  { id: 'daily-text', name: 'Daily Text', icon: '📖', timeOfDay: 'morning' },
+  { id: 'morning-prayer', name: 'Morning prayer', icon: '🙏', timeOfDay: 'morning' },
+  { id: 'afternoon-prayer', name: 'Afternoon prayer', icon: '🙏', timeOfDay: 'afternoon' },
+  { id: 'evening-prayer', name: 'Evening prayer', icon: '🙏', timeOfDay: 'evening' },
+  { id: 'bible-reading', name: 'Bible reading', icon: '📘', timeOfDay: 'anytime' },
+  { id: 'family-worship', name: 'Family worship', icon: '🏠', timeOfDay: 'anytime' },
+  { id: 'weekly-reading', name: 'Weekly reading', icon: '📚', timeOfDay: 'anytime' },
+];
+
 const SPECIALIST_STORE_CONTRACTS = {
   'ls-progress-storage': {
     requiredFields: ['dailyTexts', 'prayers', 'bibleReadings', 'weeklyReadings'],
@@ -124,6 +134,7 @@ function defaultState() {
       scannedAt: null,
       quarantinedRecords: [],
       migrationRecords: [],
+      habitMappings: [],
     },
     operation: null,
     updatedAt: new Date().toISOString(),
@@ -323,6 +334,9 @@ function loadState() {
         quarantinedRecords: [],
         migrationRecords: Array.isArray(legacy.migrationRecords)
           ? legacy.migrationRecords.slice(0, 100)
+          : [],
+        habitMappings: Array.isArray(legacy.habitMappings)
+          ? legacy.habitMappings.slice(0, 100)
           : [],
       },
       operation: null,
@@ -943,6 +957,9 @@ export const habitStore = {
 
       return transact(
         (draft) => {
+          draft.legacy.detectedKeys = [
+            ...new Set([...draft.legacy.detectedKeys, successor]),
+          ].sort();
           draft.legacy.migrationRecords = draft.legacy.migrationRecords.map((record) =>
             record.key === sourceKey
               ? {
@@ -1056,6 +1073,159 @@ export const habitStore = {
         // The retained recovery copy remains the fallback if source restoration is blocked.
       }
       setOperation('error', `Cleanup was not completed: ${storageMessage(cleanupError)}`);
+      return false;
+    }
+  },
+
+  mapLegacyProgressToHabits(selectedMappingIds) {
+    const selected = [
+      ...new Set(
+        (Array.isArray(selectedMappingIds) ? selectedMappingIds : []).filter((id) =>
+          LEGACY_PROGRESS_MAPPINGS.some((mapping) => mapping.id === id)
+        )
+      ),
+    ];
+    if (!selected.length) {
+      setOperation('warning', 'Choose at least one completion type to map.');
+      return false;
+    }
+    const { storage, error } = localStorageAccess();
+    if (!storage) {
+      setOperation('error', `Mapping could not start: ${storageMessage(error)}`);
+      return false;
+    }
+    const sourceRaw = storage.getItem('ls-progress-storage');
+    if (typeof sourceRaw !== 'string') {
+      setOperation('warning', 'No current progress store is available to map.');
+      return false;
+    }
+
+    try {
+      const parsed = JSON.parse(sourceRaw);
+      const source = parsed?.state;
+      if (!source || typeof source !== 'object' || Array.isArray(source)) {
+        throw new Error('The progress store has no valid state envelope.');
+      }
+      const datesFor = (mappingId) => {
+        let entries = [];
+        if (mappingId === 'daily-text') entries = Object.entries(source.dailyTexts || {});
+        if (mappingId === 'morning-prayer')
+          entries = Object.entries(source.prayers || {}).map(([date, value]) => [
+            date,
+            value?.morning,
+          ]);
+        if (mappingId === 'afternoon-prayer')
+          entries = Object.entries(source.prayers || {}).map(([date, value]) => [
+            date,
+            value?.afternoon,
+          ]);
+        if (mappingId === 'evening-prayer')
+          entries = Object.entries(source.prayers || {}).map(([date, value]) => [
+            date,
+            value?.evening,
+          ]);
+        if (mappingId === 'bible-reading') entries = Object.entries(source.bibleReadings || {});
+        if (mappingId === 'family-worship') entries = Object.entries(source.familyWorship || {});
+        if (mappingId === 'weekly-reading') entries = Object.entries(source.weeklyReadings || {});
+        return entries
+          .filter(([date, value]) => {
+            if (!isValidLocalDate(date)) return false;
+            if (mappingId.includes('prayer')) return value === true;
+            return value?.completed === true || value?.read === true;
+          })
+          .map(([date]) => date)
+          .sort();
+      };
+      const plans = selected.map((id) => {
+        const mapping = LEGACY_PROGRESS_MAPPINGS.find((item) => item.id === id);
+        const dates = datesFor(id);
+        if (dates.length > 5000)
+          throw new Error(`${mapping.name} exceeds the 5,000-record safety limit.`);
+        return { ...mapping, dates };
+      });
+      const totalLogs = plans.reduce((sum, plan) => sum + plan.dates.length, 0);
+      if (totalLogs > 10000)
+        throw new Error('The selected mappings exceed the 10,000-record safety limit.');
+
+      const mapped = transact(
+        (draft) => {
+          for (const plan of plans) {
+            const habitId = `habit-legacy-ls-progress-${plan.id}`;
+            const sourceTemplateId = `legacy:ls-progress-storage:${plan.id}`;
+            let habit = draft.habits.find((item) => item.id === habitId);
+            if (habit && habit.sourceTemplateId !== sourceTemplateId) {
+              throw new Error(`Stable ID collision for ${plan.name}.`);
+            }
+            if (!habit) {
+              const startDate = plan.dates[0] || toLocalDate();
+              habit = normalizeHabitInput(
+                {
+                  name: plan.name,
+                  description:
+                    'Selected completion history mapped from the preserved LifeStreak progress store.',
+                  category: 'Spiritual',
+                  icon: plan.icon,
+                  timeOfDay: plan.timeOfDay,
+                  startDate,
+                  schedule: { type: 'daily', anchorDate: startDate },
+                  tracking: { type: 'binary' },
+                  sourceTemplateId,
+                },
+                habitId
+              );
+              habit.order = draft.habits.length;
+              draft.habits.push(habit);
+            }
+            for (const date of plan.dates) {
+              const logId = `log-legacy-ls-progress-${plan.id}-${date}`;
+              const byId = draft.logs.find((log) => log.id === logId);
+              const byDate = draft.logs.find((log) => log.habitId === habitId && log.date === date);
+              if (
+                (byId && (byId.habitId !== habitId || byId.date !== date)) ||
+                (byDate && byDate.id !== logId)
+              ) {
+                throw new Error(`Stable log collision for ${plan.name} on ${date}.`);
+              }
+              if (!byId) {
+                const now = new Date().toISOString();
+                draft.logs.push({
+                  id: logId,
+                  habitId,
+                  date,
+                  explicitStatus: 'completed',
+                  entries: [],
+                  note: '',
+                  createdAt: now,
+                  updatedAt: now,
+                });
+              }
+            }
+          }
+          draft.legacy.habitMappings = (draft.legacy.habitMappings || []).filter(
+            (record) => !selected.includes(record.mappingId)
+          );
+          const mappedAt = new Date().toISOString();
+          draft.legacy.habitMappings.push(
+            ...plans.map((plan) => ({
+              version: 1,
+              sourceKey: 'ls-progress-storage',
+              mappingId: plan.id,
+              habitId: `habit-legacy-ls-progress-${plan.id}`,
+              completionCount: plan.dates.length,
+              mappedAt,
+            }))
+          );
+          draft.onboarding.completed = true;
+        },
+        `${plans.length} selected completion type${plans.length === 1 ? '' : 's'} mapped without changing the source store.`,
+        { undoable: false }
+      );
+      if (mapped && storage.getItem('ls-progress-storage') !== sourceRaw) {
+        throw new Error('The preserved source changed during mapping.');
+      }
+      return mapped;
+    } catch (mappingError) {
+      setOperation('error', `Mapping was not completed: ${storageMessage(mappingError)}`);
       return false;
     }
   },

@@ -261,4 +261,63 @@ describe('legacy storage classification', () => {
       )
     ).toBe(true);
   });
+
+  it('maps only explicitly selected, full-date completions and leaves rich source data byte-exact', () => {
+    habitStore.resetAllData();
+    const raw = JSON.stringify({
+      state: {
+        dailyTexts: {
+          '2024-02-29': { read: true, progress: 100, timestamp: 'private-timestamp' },
+          '2024-03-01': { read: false, progress: 20 },
+        },
+        prayers: {
+          '2024-02-29': { morning: true, afternoon: false, evening: true },
+        },
+        bibleReadings: {
+          '2024-03-02': { read: true, progress: 100, chaptersRead: [1, 2] },
+          59: { read: true, progress: 100, chaptersRead: [3] },
+        },
+        familyWorship: {
+          '2024-03-03': {
+            completed: true,
+            notes: 'private note',
+            studyLinks: [{ title: 'private link', url: 'https://example.test/' }],
+          },
+        },
+        weeklyReadings: {},
+        meetings: { '2024-03-04-midweek': { prepared: true } },
+      },
+      version: 2,
+    });
+    localStorage.setItem('ls-progress-storage', raw);
+    habitStore.scanLegacyData();
+
+    expect(habitStore.mapLegacyProgressToHabits([])).toBe(false);
+    expect(habitStore.mapLegacyProgressToHabits(['daily-text', 'bible-reading'])).toBe(true);
+    expect(localStorage.getItem('ls-progress-storage')).toBe(raw);
+
+    let snapshot = habitStore.getSnapshot();
+    expect(snapshot.habits.map((habit) => habit.name)).toEqual(['Daily Text', 'Bible reading']);
+    expect(
+      snapshot.logs.map(({ date, explicitStatus, note }) => ({ date, explicitStatus, note }))
+    ).toEqual([
+      { date: '2024-02-29', explicitStatus: 'completed', note: '' },
+      { date: '2024-03-02', explicitStatus: 'completed', note: '' },
+    ]);
+    expect(JSON.stringify(snapshot)).not.toContain('private note');
+    expect(JSON.stringify(snapshot)).not.toContain('private link');
+    expect(JSON.stringify(snapshot)).not.toContain('private-timestamp');
+
+    expect(habitStore.mapLegacyProgressToHabits(['daily-text', 'bible-reading'])).toBe(true);
+    snapshot = habitStore.getSnapshot();
+    expect(snapshot.habits).toHaveLength(2);
+    expect(snapshot.logs).toHaveLength(2);
+    expect(snapshot.legacy.habitMappings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ mappingId: 'daily-text', completionCount: 1 }),
+        expect.objectContaining({ mappingId: 'bible-reading', completionCount: 1 }),
+      ])
+    );
+    expect(localStorage.getItem('ls-progress-storage')).toBe(raw);
+  });
 });

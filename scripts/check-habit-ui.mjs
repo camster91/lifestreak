@@ -502,6 +502,26 @@ async function main() {
     await migrationPage.getByRole('button', { name: 'Scan for preserved stores' }).click();
     await migrationPage.getByText(/jw-progress-storage.*migration-candidate/).waitFor();
     await migrationPage.getByRole('button', { name: 'Preserve and migrate' }).click();
+    await migrationPage.getByLabel('Daily Text').check();
+    await migrationPage.getByRole('button', { name: 'Map selected completion history' }).click();
+    const mappedState = await migrationPage.evaluate(() => ({
+      source: localStorage.getItem('jw-progress-storage'),
+      successor: localStorage.getItem('ls-progress-storage'),
+      habitDatabase: JSON.parse(localStorage.getItem('lifestreak-habit-tracker-v1')),
+    }));
+    assert(
+      mappedState.source === mappedState.successor,
+      'Selected habit mapping changed the preserved progress source.'
+    );
+    assert(
+      mappedState.habitDatabase.habits.some(
+        (habit) => habit.sourceTemplateId === 'legacy:ls-progress-storage:daily-text'
+      ) &&
+        mappedState.habitDatabase.logs.some(
+          (log) => log.date === '2024-02-29' && log.explicitStatus === 'completed'
+        ),
+      'Selected full-date completion was not mapped into an ordinary habit and log.'
+    );
     const cleanupInput = migrationPage.getByLabel(
       'Type REMOVE jw-progress-storage to remove only the historical source'
     );

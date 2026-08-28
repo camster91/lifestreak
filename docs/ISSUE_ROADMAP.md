@@ -22,7 +22,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 ### P0 — establish a safe independent product
 
 1. **#69 and #95 — product contract and independent-app integration**
-   [product-control.md](product-control.md) now records the initial customer, core job, launch wedge, privacy/platform constraints, explicit deferrals, pricing hypothesis, decision metrics, access, and risk register. The independent-app identity is implemented on the draft branch. Keep both tracks open until the matrix is cross-checked against every route/store promise, owner-approved where required, integrated to `main`, and tested with real pilot users.
+   [product-control.md](product-control.md) records the initial customer, core job, launch wedge, privacy/platform constraints, explicit deferrals, pricing hypothesis, decision metrics, access, and risk register. [product-scope-matrix.md](product-scope-matrix.md) cross-checks every primary/Collections route, network feature, platform target, and repository/store promise. Keep both tracks open until the source matrix is owner-approved, verified against built artifacts and live store records, integrated to `main`, and tested with real pilot users.
 2. **#101 — legacy-data preservation and migration contract**
    The current and historical key inventory is maintained in [storage-migration-inventory.md](storage-migration-inventory.md). Implement and verify its non-destructive migration sequence after the persistence/date correctness work in #56, #61, and #62.
 3. **#56 — durable service and reading persistence**

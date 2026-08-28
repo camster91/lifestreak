@@ -1,6 +1,6 @@
 # LifeStreak product control
 
-Last reconciled: 2026-08-28. This is the durable product charter, evidence register, and market position. [ISSUE_ROADMAP.md](ISSUE_ROADMAP.md) remains the authoritative implementation backlog; issue and PR states on GitHub remain authoritative for external status.
+Last reconciled: 2026-08-28. This is the durable product charter, evidence register, and market position. [ISSUE_ROADMAP.md](ISSUE_ROADMAP.md) remains the authoritative implementation backlog, and [product-scope-matrix.md](product-scope-matrix.md) maps this charter to routes, capabilities, platforms, and release promises. Issue and PR states on GitHub remain authoritative for external status.
 
 ## Product charter
 

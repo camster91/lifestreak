@@ -45,7 +45,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 10. **#70 and #97 — onboarding and habit management**
     The recovered branch partially implements both. Finish progressive disclosure, template customization, restored-user behavior, failure recovery, accessibility, and device verification.
 11. **#71 and #98 — schedule, due-state, streak, and calendar contract**
-    The revival branch now adds weekly-window and monthly-target schedules, optional end dates, period opportunity summaries, future-log exclusion, live schedule previews, accessible calendar names, and specific streak-break explanations. Complete flexible-month statistics, time-group ordering, and the full timezone/device walkthrough matrix remain.
+    The revival branch now adds weekly-window and monthly-target schedules/statistics, optional end dates, period opportunity summaries, future-log exclusion, live schedule previews, user-reorderable time groups, accessible calendar names, specific streak-break explanations, and a UTC−12/UTC+14/DST automated matrix. Real browser/native interaction walkthroughs remain.
 12. **#74, #75, #99, and #100 — truthful daily operations**
     Verify loading/error/retry/undo, lifecycle changes, Today, binary and quantitative tracking, corrections, and duplicate-action safety from one source model.
 13. **#72 and #73 — accessibility and responsive baseline**

@@ -30,6 +30,7 @@ The canonical runtime and TypeScript contract lives in `src/habitTracker/domain.
 - Intentional skips are neutral: they neither increase nor break a streak and are excluded from the expected denominator. Paused, archived, future, and unscheduled dates are also neutral.
 - A partial, failed, or missed scheduled period breaks the current streak. Insights state the exact date and reason for the latest break.
 - Backdated corrections immediately recompute streaks and completion rates from source logs. Prospective schedule revisions preserve earlier expectations.
+- The automated timezone matrix runs the same leap-day, DST-transition, year-boundary, local-date, and completion fixture under UTC−12, UTC+14, America/Toronto, and Europe/Berlin.
 
 ## Persistence and recovery
 

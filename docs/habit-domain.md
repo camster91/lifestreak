@@ -19,6 +19,7 @@ The canonical runtime and TypeScript contract lives in `src/habitTracker/domain.
 - Date arithmetic constructs local noon values to avoid DST-midnight gaps and always serializes back to `yyyy-MM-dd`.
 - A configuration revision takes effect on its `effectiveDate`; it does not rewrite earlier schedule or target expectations.
 - Lifecycle events are also effective-dated, preserving historical active/paused/archived expectations.
+- User-facing configuration mutations may take effect today or later but cannot be backdated. Lifecycle mutations currently take effect today only; future lifecycle scheduling is refused because the persisted current state would otherwise change before its event date.
 - At most one log may exist for a habit/date pair. Corrections update that stable log; quantitative additions retain stable entry IDs.
 - New logs cannot be created for malformed or future dates, before a habit starts, or while its lifecycle is paused/archived. Existing historical records can still be corrected or cleared, and an active user may deliberately record an off-schedule result, which remains explicitly labelled off-schedule.
 - Quantitative entries use the unit from the effective dated tracking configuration; a caller cannot attach a conflicting unit and silently change historical meaning.

@@ -656,6 +656,13 @@ export const habitStore = {
   },
 
   updateHabit(habitId, changes, effectiveDate = toLocalDate()) {
+    if (!isValidLocalDate(effectiveDate)) throw new Error('Choose a valid change date.');
+    const changesHistoricalConfiguration = ['schedule', 'tracking', 'timeOfDay'].some((key) =>
+      Object.prototype.hasOwnProperty.call(changes, key)
+    );
+    if (changesHistoricalConfiguration && effectiveDate < toLocalDate()) {
+      throw new Error('Schedule, tracking, and time changes can take effect today or later.');
+    }
     validateHabitInput({
       ...changes,
       name: changes.name || state.habits.find((habit) => habit.id === habitId)?.name,
@@ -672,6 +679,10 @@ export const habitStore = {
 
   setLifecycle(habitId, lifecycleState, effectiveDate = toLocalDate()) {
     if (!['active', 'paused', 'archived'].includes(lifecycleState)) return false;
+    if (!isValidLocalDate(effectiveDate) || effectiveDate !== toLocalDate()) {
+      setOperation('error', 'Pause, archive, and restore changes take effect today.');
+      return false;
+    }
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
       habit.lifecycleState = lifecycleState;

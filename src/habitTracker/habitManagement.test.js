@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { habitStore } from './store';
+import { addDays, toLocalDate } from './engine';
 
 const input = (name = 'Walk') => ({
   name,
@@ -128,5 +129,38 @@ describe('habit management', () => {
       })
     ).toThrow(/month/i);
     expect(habitStore.getSnapshot()).toEqual(before);
+  });
+
+  it('prevents backdated configuration and non-current lifecycle changes', () => {
+    const today = toLocalDate();
+    const yesterday = addDays(today, -1);
+    const tomorrow = addDays(today, 1);
+    const habitId = habitStore.createHabit({
+      ...input('Prospective routine'),
+      startDate: today,
+      schedule: { type: 'daily', anchorDate: today },
+    });
+    const before = structuredClone(habitStore.getSnapshot());
+
+    expect(() =>
+      habitStore.updateHabit(
+        habitId,
+        { schedule: { type: 'timesPerWeek', timesPerWeek: 2, anchorDate: today } },
+        yesterday
+      )
+    ).toThrow(/today or later/i);
+    expect(habitStore.getSnapshot()).toEqual(before);
+    expect(habitStore.setLifecycle(habitId, 'paused', yesterday)).toBe(false);
+    expect(habitStore.setLifecycle(habitId, 'paused', tomorrow)).toBe(false);
+    expect(habitStore.currentLifecycle(habitId, today)).toBe('active');
+
+    expect(
+      habitStore.updateHabit(
+        habitId,
+        { schedule: { type: 'timesPerWeek', timesPerWeek: 2, anchorDate: today } },
+        tomorrow
+      )
+    ).toBe(true);
+    expect(habitStore.getSnapshot().habits[0].revisions).toHaveLength(1);
   });
 });

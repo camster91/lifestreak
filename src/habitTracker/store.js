@@ -35,6 +35,37 @@ export const CURRENT_SPECIALIST_STORAGE_KEYS = [
   'ls-reading-storage',
 ];
 
+const SPECIALIST_STORE_CONTRACTS = {
+  'ls-progress-storage': {
+    requiredFields: ['dailyTexts', 'prayers', 'bibleReadings', 'weeklyReadings'],
+    supportedVersions: [0, 1, 2],
+  },
+  'ls-progress-settings': {
+    requiredFields: ['notifications', 'bibleReadingSchedule', 'theme'],
+    supportedVersions: [0, 1],
+  },
+  'ls-gamification-storage': {
+    requiredFields: ['points', 'currentStreak'],
+    supportedVersions: [0, 1],
+  },
+  'ls-goals-storage': {
+    requiredFields: ['goals', 'projects'],
+    supportedVersions: [1, 2],
+  },
+  'ls-memories-storage': {
+    requiredFields: ['reflections'],
+    supportedVersions: [0, 1],
+  },
+  'ls-service-storage': {
+    requiredFields: ['entries', 'weeklyGoal', 'monthlyGoal'],
+    supportedVersions: [0, 1],
+  },
+  'ls-reading-storage': {
+    requiredFields: ['items'],
+    supportedVersions: [0, 1],
+  },
+};
+
 const AUXILIARY_STORAGE_KEYS = ['ls-error-logs', 'dailyReminderTime', 'installPromptDismissed'];
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/;
 
@@ -160,16 +191,19 @@ export function classifyLegacyRecord(key, rawValue, availableKeys = [], successo
       };
     }
     const canonicalKey = successor || key;
-    const requiredShape = {
-      'ls-progress-storage': ['dailyTexts', 'prayers', 'bibleReadings', 'weeklyReadings'],
-      'ls-progress-settings': ['notifications', 'bibleReadingSchedule', 'theme'],
-      'ls-gamification-storage': ['points', 'currentStreak'],
-      'ls-goals-storage': ['goals', 'projects'],
-      'ls-memories-storage': ['reflections'],
-      'ls-service-storage': ['entries', 'weeklyGoal', 'monthlyGoal'],
-      'ls-reading-storage': ['items'],
-    }[canonicalKey];
-    if (requiredShape && !requiredShape.every((field) => field in parsed.state)) {
+    const contract = SPECIALIST_STORE_CONTRACTS[canonicalKey];
+    if (
+      !Number.isInteger(parsed.version) ||
+      !contract?.supportedVersions.includes(parsed.version)
+    ) {
+      return {
+        key,
+        successor,
+        status: 'quarantined',
+        reason: `The ${canonicalKey} payload uses an unsupported store version.`,
+      };
+    }
+    if (!contract.requiredFields.every((field) => field in parsed.state)) {
       return {
         key,
         successor,
@@ -888,7 +922,9 @@ export const habitStore = {
         return false;
       }
 
-      const backupKey = `${LEGACY_BACKUP_PREFIX}${new Date().toISOString().replace(/[:.]/g, '-')}`;
+      const backupKey = `${LEGACY_BACKUP_PREFIX}${sourceKey}-${new Date()
+        .toISOString()
+        .replace(/[:.]/g, '-')}`;
       const backup = JSON.stringify({
         migrationVersion: 1,
         sourceKey,

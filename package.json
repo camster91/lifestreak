@@ -15,6 +15,7 @@
     "start": "npm run dev:full",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
+    "identity:check": "node scripts/check-identity.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css}\"",

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start JW Progress Tracker development environment
+# Start LifeStreak development environment
 # Usage: ./start-dev.sh [--background] [--log-file <file>]
 
 set -e
@@ -29,7 +29,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "JW Progress Tracker - Development Environment"
+echo "LifeStreak - Development Environment"
 echo "Project root: $PROJECT_ROOT"
 
 # Check for existing processes on common ports

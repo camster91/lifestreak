@@ -44,6 +44,9 @@ jobs:
             echo "No typecheck script found, skipping."
           fi
 
+      - name: Product identity check
+        run: npm run identity:check
+
       - name: Lint (if configured)
         run: |
           if grep -q '"lint"' package.json; then

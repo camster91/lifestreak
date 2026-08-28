@@ -34,6 +34,7 @@ The habit-first transition is under review in pull request #106 on `codex/lifest
 The pull request must remain unmerged until automated checks can run and representative device, accessibility, import/export, upgrade, and legacy-data QA are complete.
 
 The prioritized, reconciled backlog is maintained in [docs/ISSUE_ROADMAP.md](docs/ISSUE_ROADMAP.md).
+Canonical product, bundle, version, origin, and release identity values are maintained in [docs/product-identity.md](docs/product-identity.md).
 
 ## Licence
 

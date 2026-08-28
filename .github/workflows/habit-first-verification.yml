@@ -37,6 +37,9 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      - name: Product identity check
+        run: npm run identity:check
+
       - name: Lint
         run: npm run lint
 

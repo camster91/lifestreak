@@ -28,7 +28,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 3. **#56 — durable service and reading persistence**
    Prove reload/restart behavior, schema validation, migration, corruption recovery, and failed-write UX.
 4. **#61 and #62 — calendar-safe specialist history**
-   Correct full-date Bible-reading history and service totals before migration fixtures are considered trustworthy.
+   Implemented on the revival branch: Bible history now uses full local dates with an explicit quarantine for ambiguous legacy day-of-year keys, and service totals validate local dates and bound both ends of each period. Keep the issues open until the branch is integrated and timezone/device verification is recorded.
 5. **#96 — unified versioned habit/log model**
    Audit the recovered implementation against every acceptance criterion, especially atomic persistence, version migrations, corrupted data, and source-record reproducibility.
 6. **#57 and #59 — canonical identity, permissions, and privacy metadata**

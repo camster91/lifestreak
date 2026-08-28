@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { format, startOfWeek, startOfMonth, isSameWeek, isSameMonth } from 'date-fns';
+import { format, startOfWeek, startOfMonth } from 'date-fns';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
 interface ServiceEntry {
@@ -24,6 +24,46 @@ interface ServiceState {
   setMonthlyGoal: (hours: number) => void;
 }
 
+const LOCAL_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+export function isValidLocalDateKey(value: string): boolean {
+  const match = LOCAL_DATE_PATTERN.exec(value);
+  if (!match) return false;
+  const [, year, month, day] = match;
+  const candidate = new Date(Number(year), Number(month) - 1, Number(day));
+  return (
+    candidate.getFullYear() === Number(year) &&
+    candidate.getMonth() === Number(month) - 1 &&
+    candidate.getDate() === Number(day)
+  );
+}
+
+export function totalEntriesInLocalPeriod(
+  entries: ServiceEntry[],
+  periodStart: string,
+  periodEnd: string
+): number {
+  return entries
+    .filter(
+      (entry) =>
+        isValidLocalDateKey(entry.date) &&
+        entry.date >= periodStart &&
+        entry.date <= periodEnd &&
+        Number.isFinite(entry.hours)
+    )
+    .reduce((sum, entry) => sum + entry.hours, 0);
+}
+
+export function getServicePeriodTotals(entries: ServiceEntry[], now = new Date()) {
+  const today = format(now, 'yyyy-MM-dd');
+  const weekStart = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
+  return {
+    weekly: totalEntriesInLocalPeriod(entries, weekStart, today),
+    monthly: totalEntriesInLocalPeriod(entries, monthStart, today),
+  };
+}
+
 const useServiceStore = create<ServiceState>()(
   persist(
     (set, get) => ({
@@ -39,18 +79,10 @@ const useServiceStore = create<ServiceState>()(
           entries: state.entries.filter((e) => e.id !== id),
         })),
       getWeeklyTotal: () => {
-        const now = new Date();
-        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-        return get()
-          .entries.filter((e) => new Date(e.date) >= weekStart)
-          .reduce((sum, e) => sum + e.hours, 0);
+        return getServicePeriodTotals(get().entries).weekly;
       },
       getMonthlyTotal: () => {
-        const now = new Date();
-        const monthStart = startOfMonth(now);
-        return get()
-          .entries.filter((e) => new Date(e.date) >= monthStart)
-          .reduce((sum, e) => sum + e.hours, 0);
+        return getServicePeriodTotals(get().entries).monthly;
       },
       getTotalHours: () => {
         return get().entries.reduce((sum, e) => sum + e.hours, 0);

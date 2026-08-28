@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { format, getDayOfYear, startOfWeek } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
 interface DailyTextData {
@@ -91,16 +91,12 @@ interface ProgressActions {
   getDailyTextStreak: () => number;
   getBibleReadingStreak: () => number;
   getCompletionRate: (category: string, days: number) => number;
-  toggleBibleChapter: (dayOfYear: string, chapterIndex: number) => void;
-  getBibleChapterProgress: (dayOfYear: string) => Record<number, boolean>;
-  updateBibleReadingProgress: (
-    dayOfYear: string,
-    progress: number,
-    chaptersRead?: number[]
-  ) => void;
-  markBibleReadingComplete: (dayOfYear: string) => void;
-  isBibleReadingComplete: (dayOfYear: string) => boolean;
-  getBibleReadingProgress: (dayOfYear: string) => number;
+  toggleBibleChapter: (dateKey: string, chapterIndex: number) => void;
+  getBibleChapterProgress: (dateKey: string) => Record<number, boolean>;
+  updateBibleReadingProgress: (dateKey: string, progress: number, chaptersRead?: number[]) => void;
+  markBibleReadingComplete: (dateKey: string) => void;
+  isBibleReadingComplete: (dateKey: string) => boolean;
+  getBibleReadingProgress: (dateKey: string) => number;
   getWeeklyReadingProgress: (weekKey: string) => WeeklyReadingData;
   toggleWeeklyChapter: (weekKey: string, chapterIndex: number) => void;
   isWeeklyReadingComplete: (weekKey: string, totalChapters: number) => boolean;
@@ -125,6 +121,28 @@ export const MAX_DAILY_PROGRESS_ENTRIES = 400;
 export const MAX_WEEKLY_PROGRESS_ENTRIES = 110;
 export const MAX_BIBLE_DAY_ENTRIES = 400;
 export const MAX_MEETING_ENTRIES = 220;
+export const LEGACY_BIBLE_DAY_PREFIX = 'legacy-day-of-year:';
+
+export const getLocalDateKey = (date = new Date()): string => format(date, 'yyyy-MM-dd');
+
+function quarantineYearlessBibleKeys<T>(record: Record<string, T> = {}): Record<string, T> {
+  return Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [
+      /^\d{1,3}$/.test(key) ? `${LEGACY_BIBLE_DAY_PREFIX}${key}` : key,
+      value,
+    ])
+  );
+}
+
+export function migrateProgressPersistence(persisted: unknown, version: number): unknown {
+  if (!persisted || typeof persisted !== 'object' || version >= 2) return persisted;
+  const state = persisted as Partial<ProgressState>;
+  return {
+    ...state,
+    bibleReadings: quarantineYearlessBibleKeys(state.bibleReadings),
+    bibleChapters: quarantineYearlessBibleKeys(state.bibleChapters),
+  };
+}
 
 export function pruneRecordBySortedKeys<T>(
   record: Record<string, T>,
@@ -388,8 +406,8 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
         for (let i = 0; i < 365; i++) {
           const date = new Date(today);
           date.setDate(date.getDate() - i);
-          const dayOfYear = String(getDayOfYear(date));
-          const data = state.bibleReadings[dayOfYear];
+          const dateKey = getLocalDateKey(date);
+          const data = state.bibleReadings[dateKey];
           if (data?.read || data?.progress === 100) {
             streak++;
           } else {
@@ -411,8 +429,8 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
             const data = state.dailyTexts[dateStr];
             if (data?.readScripture || data?.read) completed++;
           } else if (category === 'bibleReading') {
-            const dayOfYear = String(getDayOfYear(date));
-            const data = state.bibleReadings[dayOfYear];
+            const dateKey = getLocalDateKey(date);
+            const data = state.bibleReadings[dateKey];
             if (data?.read || data?.progress === 100) completed++;
           }
         }
@@ -673,6 +691,8 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
     }),
     {
       name: 'ls-progress-storage',
+      version: 2,
+      migrate: migrateProgressPersistence,
       storage: createJSONStorage(() => createSafeStorage('ls-progress-storage')),
       partialize: (state) => {
         const pruned = pruneProgressMaps(state);

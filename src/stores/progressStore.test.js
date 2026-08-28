@@ -10,12 +10,7 @@ vi.mock('date-fns', () => ({
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   },
-  getDayOfYear: (date) => {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
-  },
+  startOfWeek: (date) => date,
 }));
 
 // Import after mocking
@@ -140,6 +135,39 @@ describe('progressStore', () => {
 
       expect(useProgressStore.getState().getBibleReadingProgress(dayOfYear)).toBe(75);
     });
+
+    it('keeps the same calendar day in different years separate', () => {
+      act(() => {
+        const store = useProgressStore.getState();
+        store.markBibleReadingComplete('2025-01-20');
+        store.updateBibleReadingProgress('2026-01-20', 50, []);
+      });
+
+      const state = useProgressStore.getState();
+      expect(state.bibleReadings['2025-01-20'].progress).toBe(100);
+      expect(state.bibleReadings['2026-01-20'].progress).toBe(50);
+    });
+
+    it('calculates a streak across December and January', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 0, 2, 12));
+      act(() => {
+        const store = useProgressStore.getState();
+        store.markBibleReadingComplete('2025-12-31');
+        store.markBibleReadingComplete('2026-01-01');
+        store.markBibleReadingComplete('2026-01-02');
+      });
+
+      expect(useProgressStore.getState().getBibleReadingStreak()).toBe(3);
+      expect(useProgressStore.getState().getCompletionRate('bibleReading', 3)).toBe(100);
+      vi.useRealTimers();
+    });
+
+    it('keeps leap day as its own local calendar key', async () => {
+      const { getLocalDateKey } = await import('./progressStore.ts');
+      expect(getLocalDateKey(new Date(2024, 1, 29, 23, 30))).toBe('2024-02-29');
+      expect(getLocalDateKey(new Date(2024, 2, 1, 0, 30))).toBe('2024-03-01');
+    });
   });
 
   describe('Meeting Preparation Progress', () => {
@@ -215,5 +243,24 @@ describe('pruneRecordBySortedKeys / pruneProgressMaps', () => {
     }
     const pruned = pruneRecordBySortedKeys(iso, MAX_DAILY_PROGRESS_ENTRIES);
     expect(Object.keys(pruned).length).toBe(MAX_DAILY_PROGRESS_ENTRIES);
+  });
+});
+
+describe('progress persistence migration', () => {
+  it('preserves yearless Bible history in an explicit quarantine namespace', async () => {
+    const { migrateProgressPersistence, LEGACY_BIBLE_DAY_PREFIX } =
+      await import('./progressStore.ts');
+    const reading = { progress: 100, read: true };
+    const migrated = migrateProgressPersistence(
+      {
+        bibleReadings: { 60: reading, '2024-02-29': reading },
+        bibleChapters: { 60: { 1: true } },
+      },
+      0
+    );
+
+    expect(migrated.bibleReadings[`${LEGACY_BIBLE_DAY_PREFIX}60`]).toEqual(reading);
+    expect(migrated.bibleReadings['2024-02-29']).toEqual(reading);
+    expect(migrated.bibleChapters[`${LEGACY_BIBLE_DAY_PREFIX}60`]).toEqual({ 1: true });
   });
 });

@@ -970,13 +970,14 @@ function InsightsView({ snapshot, onEdit }) {
                   : 'At least three expected periods are required in both ranges'
               }
             />
-            {quantitative && (
+            {quantitative?.segments.map((segment) => (
               <Metric
-                label={`Logged ${quantitative.unit}`}
-                value={`${quantitative.value}`}
-                detail={`${quantitative.loggedDays} logged day${quantitative.loggedDays === 1 ? '' : 's'}; current daily target ${quantitative.target} ${quantitative.unit}`}
+                key={`${segment.fromDate}:${segment.trackingType}:${segment.unit}:${segment.target}`}
+                label={`Logged ${segment.unit}`}
+                value={`${segment.value}`}
+                detail={`${segment.loggedDays} logged day${segment.loggedDays === 1 ? '' : 's'}; target ${segment.target} ${segment.unit} from ${segment.fromDate} through ${segment.endDate}`}
               />
-            )}
+            ))}
           </div>
           <p role="status">{explainStreak(stats)}</p>
           <section className="habit-calendar-panel" aria-labelledby="history-calendar-heading">

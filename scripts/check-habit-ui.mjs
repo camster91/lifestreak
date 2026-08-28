@@ -361,6 +361,104 @@ async function main() {
     );
     await backupContext.close();
 
+    const unitTransitionContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    await unitTransitionContext.addInitScript(() => {
+      const localDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      const now = new Date();
+      const today = localDate(now);
+      const priorDate = new Date(now);
+      priorDate.setDate(priorDate.getDate() - 1);
+      const prior = localDate(priorDate);
+      const timestamp = now.toISOString();
+      localStorage.setItem(
+        'lifestreak-habit-tracker-v1',
+        JSON.stringify({
+          version: 1,
+          habits: [
+            {
+              id: 'habit-unit-transition',
+              name: 'Mixed unit history',
+              description: '',
+              category: 'Health',
+              icon: '✓',
+              colour: '#4f46e5',
+              timeOfDay: 'anytime',
+              startDate: prior,
+              schedule: { type: 'daily', anchorDate: prior },
+              tracking: { type: 'duration', target: 20, unit: 'min' },
+              reminderTime: null,
+              lifecycleState: 'active',
+              lifecycleHistory: [],
+              revisions: [
+                {
+                  id: 'revision-distance',
+                  effectiveDate: today,
+                  schedule: { type: 'daily', anchorDate: prior },
+                  tracking: { type: 'distance', target: 5, unit: 'km' },
+                  timeOfDay: 'anytime',
+                  createdAt: timestamp,
+                },
+              ],
+              sourceTemplateId: null,
+              order: 0,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+          ],
+          logs: [
+            {
+              id: 'log-minutes',
+              habitId: 'habit-unit-transition',
+              date: prior,
+              explicitStatus: null,
+              entries: [{ id: 'entry-minutes', value: 30, unit: 'min', createdAt: timestamp }],
+              note: '',
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+            {
+              id: 'log-distance',
+              habitId: 'habit-unit-transition',
+              date: today,
+              explicitStatus: null,
+              entries: [{ id: 'entry-distance', value: 6, unit: 'km', createdAt: timestamp }],
+              note: '',
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+          ],
+          preferences: { weekStartsOn: 1 },
+          onboarding: { completed: true, dismissedAt: null },
+          legacy: { detectedKeys: [], scannedAt: null, migrationRecords: [] },
+          updatedAt: timestamp,
+        })
+      );
+    });
+    const unitTransitionPage = await unitTransitionContext.newPage();
+    await unitTransitionPage.goto(origin, { waitUntil: 'networkidle' });
+    await unitTransitionPage.getByRole('button', { name: 'Insights', exact: true }).click();
+    const minuteMetric = unitTransitionPage.locator('article').filter({ hasText: 'Logged min' });
+    const distanceMetric = unitTransitionPage.locator('article').filter({ hasText: 'Logged km' });
+    await minuteMetric.getByText('30', { exact: true }).waitFor();
+    await distanceMetric.getByText('6', { exact: true }).waitFor();
+    assert(
+      (await minuteMetric.textContent()).includes('target 20 min'),
+      'Historical minute values were shown under the newer distance target.'
+    );
+    assert(
+      (await distanceMetric.textContent()).includes('target 5 km'),
+      'Current distance values were shown under the historical duration target.'
+    );
+    await unitTransitionContext.close();
+
     const offlineContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
     });

@@ -648,26 +648,47 @@ export function summarizeQuantitativePeriod(
   { endDate = toLocalDate(), days = 28, today = toLocalDate() } = {}
 ) {
   const fromDate = addDays(endDate, -(Math.max(1, Number(days) || 28) - 1));
-  const tracking = configurationForDate(habit, endDate).tracking;
-  if (tracking.type === 'binary') return null;
-  const results = (logs || [])
-    .filter(
-      (log) =>
-        log.habitId === habit.id &&
-        log.date >= fromDate &&
-        log.date <= endDate &&
-        log.date <= today &&
-        lifecycleAt(habit, log.date) === 'active'
-    )
-    .map((log) => dailyResult(habit, log, log.date));
-  return {
-    value: results.reduce((total, result) => total + result.value, 0),
-    loggedDays: results.filter((result) => result.value > 0).length,
-    target: tracking.target,
-    unit: tracking.unit,
-    fromDate,
-    endDate,
-  };
+  const segments = [];
+  for (const dateKey of eachDate(fromDate, endDate)) {
+    const tracking = configurationForDate(habit, dateKey).tracking;
+    const signature = JSON.stringify(tracking);
+    const current = segments[segments.length - 1];
+    if (current?.signature === signature) {
+      current.endDate = dateKey;
+    } else {
+      segments.push({ fromDate: dateKey, endDate: dateKey, tracking, signature });
+    }
+  }
+
+  const quantitativeSegments = segments
+    .filter(({ tracking }) => tracking.type !== 'binary')
+    .map(({ tracking, fromDate: segmentStart, endDate: segmentEnd }) => {
+      const results = (logs || [])
+        .filter(
+          (log) =>
+            log.habitId === habit.id &&
+            log.date >= segmentStart &&
+            log.date <= segmentEnd &&
+            log.date <= today &&
+            lifecycleAt(habit, log.date) === 'active'
+        )
+        .map((log) => dailyResult(habit, log, log.date));
+      return {
+        value: results.reduce((total, result) => total + result.value, 0),
+        loggedDays: results.filter((result) => result.value > 0).length,
+        target: tracking.target,
+        unit: tracking.unit,
+        trackingType: tracking.type,
+        fromDate: segmentStart,
+        endDate: segmentEnd,
+      };
+    });
+
+  if (!quantitativeSegments.length) return null;
+  if (quantitativeSegments.length === 1) {
+    return { ...quantitativeSegments[0], segments: quantitativeSegments, fromDate, endDate };
+  }
+  return { segments: quantitativeSegments, fromDate, endDate };
 }
 
 export function buildWeeklyReview(habits, logs, options = {}) {

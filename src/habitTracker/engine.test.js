@@ -279,6 +279,53 @@ describe('completion and insight rules', () => {
       { endDate: '2026-08-17', today: '2026-08-17', days: 2 }
     );
     expect(summary).toMatchObject({ value: 35, loggedDays: 2, target: 20, unit: 'min' });
+    expect(summary.segments).toHaveLength(1);
+  });
+
+  it('keeps incompatible units and historical targets in separate quantitative summaries', () => {
+    const changing = habit({
+      tracking: { type: 'duration', target: 20, unit: 'min' },
+      revisions: [
+        {
+          id: 'revision-distance',
+          effectiveDate: '2026-08-16',
+          tracking: { type: 'distance', target: 5, unit: 'km' },
+          schedule: { type: 'daily', anchorDate: '2026-01-01' },
+          timeOfDay: 'anytime',
+        },
+      ],
+    });
+    const summary = summarizeQuantitativePeriod(
+      changing,
+      [
+        log('2026-08-15', null, [{ id: 'minutes', value: 30, unit: 'min' }]),
+        log('2026-08-16', null, [{ id: 'distance-one', value: 2, unit: 'km' }]),
+        log('2026-08-17', null, [{ id: 'distance-two', value: 4, unit: 'km' }]),
+      ],
+      { endDate: '2026-08-17', today: '2026-08-17', days: 3 }
+    );
+
+    expect(summary).not.toHaveProperty('value');
+    expect(summary.segments).toEqual([
+      {
+        value: 30,
+        loggedDays: 1,
+        target: 20,
+        unit: 'min',
+        trackingType: 'duration',
+        fromDate: '2026-08-15',
+        endDate: '2026-08-15',
+      },
+      {
+        value: 6,
+        loggedDays: 2,
+        target: 5,
+        unit: 'km',
+        trackingType: 'distance',
+        fromDate: '2026-08-16',
+        endDate: '2026-08-17',
+      },
+    ]);
   });
 
   it('tracks quantitative partial progress separately from completion', () => {

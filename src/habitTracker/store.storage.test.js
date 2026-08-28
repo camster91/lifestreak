@@ -92,7 +92,23 @@ describe('habit storage failures', () => {
   it('preserves but refuses to load a structurally invalid v1 database', async () => {
     const corrupt = JSON.stringify({
       version: 1,
-      habits: [{ id: 'habit-1', name: 'Incomplete' }],
+      habits: [
+        {
+          id: 'habit-1',
+          name: 'Corrupt schedule fixture',
+          description: '',
+          category: 'Health',
+          timeOfDay: 'afternoon',
+          startDate: '2026-08-17',
+          schedule: { type: 'daily', anchorDate: '2026-02-30' },
+          tracking: { type: 'binary', target: 1, unit: 'completion' },
+          lifecycleState: 'active',
+          lifecycleHistory: [],
+          revisions: [],
+          createdAt: '2026-08-17T12:00:00.000Z',
+          updatedAt: '2026-08-17T12:00:00.000Z',
+        },
+      ],
       logs: [],
       preferences: {},
       onboarding: {},

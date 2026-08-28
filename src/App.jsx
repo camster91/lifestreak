@@ -33,25 +33,7 @@ export default function App() {
     return (
       <>
         <StorageRecoveryBanner />
-        <button
-          type="button"
-          onClick={returnToHabits}
-          style={{
-            position: 'fixed',
-            zIndex: 10000,
-            top: 'max(12px, env(safe-area-inset-top))',
-            right: '12px',
-            minHeight: '44px',
-            padding: '10px 14px',
-            border: '2px solid currentColor',
-            borderRadius: '12px',
-            color: '#172033',
-            background: '#ffffff',
-            fontWeight: 800,
-            boxShadow: '0 10px 30px rgba(0,0,0,.2)',
-            cursor: 'pointer',
-          }}
-        >
+        <button type="button" onClick={returnToHabits} className="app-mode-switch">
           Back to habits
         </button>
         <LegacyApp />

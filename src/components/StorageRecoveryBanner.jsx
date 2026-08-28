@@ -33,30 +33,12 @@ export default function StorageRecoveryBanner() {
   const canRetry = failure.operation === 'write';
 
   return (
-    <aside
-      role="alert"
-      aria-live="assertive"
-      style={{
-        position: 'fixed',
-        zIndex: 11000,
-        left: '12px',
-        right: '12px',
-        top: 'max(12px, env(safe-area-inset-top))',
-        maxWidth: '720px',
-        margin: '0 auto',
-        padding: '14px',
-        border: '2px solid #b42318',
-        borderRadius: '12px',
-        color: '#7a271a',
-        background: '#fffbfa',
-        boxShadow: '0 10px 30px rgba(0,0,0,.2)',
-      }}
-    >
+    <aside role="alert" aria-live="assertive" className="storage-recovery-banner">
       <strong>LifeStreak could not safely save local data.</strong>
-      <p style={{ margin: '6px 0' }}>
+      <p>
         Your in-app changes are still open. Free device space or enable site storage, then retry.
       </p>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div className="storage-recovery-actions">
         {canRetry && (
           <button type="button" onClick={() => retryStorageWrite(failure.storeName)}>
             Retry save

@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { chromium } from 'playwright';
+import AxeBuilder from '@axe-core/playwright';
 
 let port;
 let origin;
@@ -120,6 +121,22 @@ async function inspectPage(page, viewportName, stateName) {
   assert(
     !result.undersized.length,
     `${viewportName}/${stateName}: controls smaller than 44 CSS px: ${result.undersized.join(', ')}`
+  );
+
+  const axeResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  const blockingViolations = axeResults.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  );
+  assert(
+    !blockingViolations.length,
+    `${viewportName}/${stateName}: serious accessibility violations: ${blockingViolations
+      .map(
+        ({ id, nodes }) =>
+          `${id} (${nodes.map(({ target }) => target.join(' ')).slice(0, 3).join(', ')})`
+      )
+      .join('; ')}`
   );
 }
 

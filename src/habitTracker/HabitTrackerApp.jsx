@@ -3,6 +3,7 @@ import {
   addDays,
   buildWeeklyReview,
   calculateHabitStats,
+  compareHabitPeriods,
   configurationForDate,
   describeSchedule,
   eachDate,
@@ -13,6 +14,7 @@ import {
   parseLocalDate,
   starterTemplates,
   statusLabel,
+  summarizeQuantitativePeriod,
   TIME_GROUPS,
   toLocalDate,
 } from './engine';
@@ -180,7 +182,7 @@ export default function HabitTrackerApp({ onOpenCollections }) {
             onHistory={setHistoryHabitId}
           />
         )}
-        {view === 'insights' && <InsightsView snapshot={snapshot} />}
+        {view === 'insights' && <InsightsView snapshot={snapshot} onEdit={openEdit} />}
         {view === 'settings' && <SettingsView snapshot={snapshot} />}
       </main>
 
@@ -794,27 +796,69 @@ function DeleteHabitButton({ habit }) {
   );
 }
 
-function InsightsView({ snapshot }) {
+function InsightsView({ snapshot, onEdit }) {
   const today = toLocalDate();
   const active = snapshot.habits.filter((habit) => lifecycleAt(habit, today) === 'active');
+  const categories = Array.from(new Set(snapshot.habits.map((habit) => habit.category))).sort();
+  const [category, setCategory] = useState('all');
+  const [rangeDays, setRangeDays] = useState(84);
+  const [dismissedReviewIds, setDismissedReviewIds] = useState([]);
+  const filteredHabits =
+    category === 'all'
+      ? snapshot.habits
+      : snapshot.habits.filter((habit) => habit.category === category);
+  const filteredActive =
+    category === 'all' ? active : active.filter((habit) => habit.category === category);
   const [selectedId, setSelectedId] = useState(active[0]?.id || '');
-  const resolvedSelectedId = snapshot.habits.some((habit) => habit.id === selectedId)
+  const resolvedSelectedId = filteredHabits.some((habit) => habit.id === selectedId)
     ? selectedId
-    : active[0]?.id || snapshot.habits[0]?.id || '';
-  const selected = snapshot.habits.find((habit) => habit.id === resolvedSelectedId) || null;
+    : filteredHabits[0]?.id || '';
+  const selected = filteredHabits.find((habit) => habit.id === resolvedSelectedId) || null;
   const stats = selected
     ? calculateHabitStats(selected, snapshot.logs, {
-        days: 84,
+        days: rangeDays,
         today,
         endDate: today,
         weekStartsOn: snapshot.preferences.weekStartsOn,
       })
     : null;
-  const review = buildWeeklyReview(snapshot.habits, snapshot.logs, {
+  const trend = selected
+    ? compareHabitPeriods(selected, snapshot.logs, {
+        days: rangeDays,
+        today,
+        endDate: today,
+        weekStartsOn: snapshot.preferences.weekStartsOn,
+      })
+    : null;
+  const quantitative = selected
+    ? summarizeQuantitativePeriod(selected, snapshot.logs, {
+        days: rangeDays,
+        today,
+        endDate: today,
+      })
+    : null;
+  const filteredStats = filteredActive.map((habit) =>
+    calculateHabitStats(habit, snapshot.logs, {
+      days: rangeDays,
+      today,
+      endDate: today,
+      weekStartsOn: snapshot.preferences.weekStartsOn,
+    })
+  );
+  const overallExpected = filteredStats.reduce((total, row) => total + row.expected, 0);
+  const overallCompleted = filteredStats.reduce((total, row) => total + row.completed, 0);
+  const overallRate = overallExpected
+    ? Math.round((overallCompleted / overallExpected) * 100)
+    : null;
+  const review = buildWeeklyReview(filteredActive, snapshot.logs, {
     endDate: today,
     today,
     weekStartsOn: snapshot.preferences.weekStartsOn,
   });
+  const visibleReview = (rows) =>
+    rows.filter(({ habit }) => !dismissedReviewIds.includes(habit.id));
+  const dismissReview = (habitId) =>
+    setDismissedReviewIds((current) => [...new Set([...current, habitId])]);
 
   if (!snapshot.habits.length) {
     return (
@@ -835,20 +879,59 @@ function InsightsView({ snapshot }) {
             dates stay neutral.
           </p>
         </div>
-        <label className="habit-field compact-field">
-          <span>Habit</span>
-          <select
-            value={resolvedSelectedId}
-            onChange={(event) => setSelectedId(event.target.value)}
-          >
-            {snapshot.habits.map((habit) => (
-              <option key={habit.id} value={habit.id}>
-                {habit.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div>
+          <label className="habit-field compact-field">
+            <span>Date range</span>
+            <select
+              value={rangeDays}
+              onChange={(event) => setRangeDays(Number(event.target.value))}
+            >
+              <option value="28">Last 28 days</option>
+              <option value="84">Last 84 days</option>
+              <option value="365">Last 365 days</option>
+            </select>
+          </label>
+          <label className="habit-field compact-field">
+            <span>Category</span>
+            <select value={category} onChange={(event) => setCategory(event.target.value)}>
+              <option value="all">All categories</option>
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="habit-field compact-field">
+            <span>Habit</span>
+            <select
+              value={resolvedSelectedId}
+              disabled={!filteredHabits.length}
+              onChange={(event) => setSelectedId(event.target.value)}
+            >
+              {filteredHabits.map((habit) => (
+                <option key={habit.id} value={habit.id}>
+                  {habit.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
+
+      <div className="habit-metric-grid" aria-label="Overall filtered insight summary">
+        <Metric
+          label="Overall completion rate"
+          value={overallRate == null ? 'Not enough data' : `${overallRate}%`}
+          detail={`${overallCompleted} of ${overallExpected} expected periods across ${filteredActive.length} active habit${filteredActive.length === 1 ? '' : 's'}`}
+        />
+      </div>
+
+      {!filteredHabits.length && (
+        <p className="habit-supporting-copy" role="status">
+          No active habits match this category. Choose another category to view insights.
+        </p>
+      )}
 
       {selected && stats && (
         <>
@@ -872,6 +955,26 @@ function InsightsView({ snapshot }) {
               value={`${stats.expected}`}
               detail={`${stats.completed} completed`}
             />
+            <Metric
+              label="Compared with prior equal period"
+              value={
+                trend?.status !== 'ready'
+                  ? 'Not enough data'
+                  : `${trend.delta > 0 ? '+' : ''}${trend.delta} points`
+              }
+              detail={
+                trend?.status === 'ready'
+                  ? `${trend.current.completionRate}% now; ${trend.previous.completionRate}% before`
+                  : 'At least three expected periods are required in both ranges'
+              }
+            />
+            {quantitative && (
+              <Metric
+                label={`Logged ${quantitative.unit}`}
+                value={`${quantitative.value}`}
+                detail={`${quantitative.loggedDays} logged day${quantitative.loggedDays === 1 ? '' : 's'}; current daily target ${quantitative.target} ${quantitative.unit}`}
+              />
+            )}
           </div>
           <p role="status">{explainStreak(stats)}</p>
           <section className="habit-calendar-panel" aria-labelledby="history-calendar-heading">
@@ -884,7 +987,7 @@ function InsightsView({ snapshot }) {
               role="list"
               aria-label={`Recent history for ${selected.name}`}
             >
-              {eachDate(addDays(today, -27), today).map((dateKey) => {
+              {eachDate(addDays(today, -(Math.min(rangeDays, 28) - 1)), today).map((dateKey) => {
                 const dayState = getDayState(selected, snapshot.logs, dateKey, {
                   today,
                   weekStartsOn: snapshot.preferences.weekStartsOn,
@@ -912,25 +1015,31 @@ function InsightsView({ snapshot }) {
           <h3 id="weekly-review-heading">Weekly review</h3>
         </div>
         <div className="habit-review-grid">
-          <ReviewColumn
+          <ReviewActionColumn
             title="Going well"
             empty="No habit has enough strong evidence yet."
-            rows={review.strong.map(
-              ({ habit, stats: rowStats }) => `${habit.name} — ${rowStats.completionRate}%`
-            )}
+            rows={visibleReview(review.strong)}
+            format={({ habit, stats: rowStats }) => `${habit.name} — ${rowStats.completionRate}%`}
+            onEdit={onEdit}
+            onDismiss={dismissReview}
           />
-          <ReviewColumn
+          <ReviewActionColumn
             title="Consider adjusting"
             empty="No routine currently needs an obvious schedule or target adjustment."
-            rows={review.adjust.map(
-              ({ habit, stats: rowStats }) =>
-                `${habit.name} — ${rowStats.completionRate}% over expected periods`
-            )}
+            rows={visibleReview(review.adjust)}
+            format={({ habit, stats: rowStats }) =>
+              `${habit.name} — ${rowStats.completionRate}% over expected periods`
+            }
+            onEdit={onEdit}
+            onDismiss={dismissReview}
           />
-          <ReviewColumn
+          <ReviewActionColumn
             title="Not enough data"
             empty="Every habit has enough recent scheduled data."
-            rows={review.insufficient.map(({ habit }) => habit.name)}
+            rows={visibleReview(review.insufficient)}
+            format={({ habit }) => habit.name}
+            onEdit={onEdit}
+            onDismiss={dismissReview}
           />
         </div>
         <p className="habit-supporting-copy">
@@ -952,14 +1061,24 @@ function Metric({ label, value, detail }) {
   );
 }
 
-function ReviewColumn({ title, rows, empty }) {
+function ReviewActionColumn({ title, rows, empty, format, onEdit, onDismiss }) {
   return (
     <article>
       <h4>{title}</h4>
       {rows.length ? (
-        <ul>
+        <ul className="habit-review-actions-list">
           {rows.map((row) => (
-            <li key={row}>{row}</li>
+            <li key={row.habit.id}>
+              <span>{format(row)}</span>
+              <div className="habit-inline-actions">
+                <button type="button" onClick={() => onEdit(row.habit.id)}>
+                  Edit habit
+                </button>
+                <button type="button" onClick={() => onDismiss(row.habit.id)}>
+                  Dismiss suggestion
+                </button>
+              </div>
+            </li>
           ))}
         </ul>
       ) : (

@@ -574,6 +574,68 @@ export function calculateHabitStats(
   };
 }
 
+export function compareHabitPeriods(
+  habit,
+  logs,
+  { endDate = toLocalDate(), days = 28, weekStartsOn = 1, today = toLocalDate() } = {}
+) {
+  const boundedDays = Math.max(1, Number(days) || 28);
+  const current = calculateHabitStats(habit, logs, {
+    endDate,
+    days: boundedDays,
+    weekStartsOn,
+    today,
+  });
+  const previous = calculateHabitStats(habit, logs, {
+    endDate: addDays(current.fromDate, -1),
+    days: boundedDays,
+    weekStartsOn,
+    today,
+  });
+  if (
+    current.expected < 3 ||
+    previous.expected < 3 ||
+    current.completionRate == null ||
+    previous.completionRate == null
+  ) {
+    return { status: 'insufficient', current, previous, delta: null };
+  }
+  return {
+    status: 'ready',
+    current,
+    previous,
+    delta: current.completionRate - previous.completionRate,
+  };
+}
+
+export function summarizeQuantitativePeriod(
+  habit,
+  logs,
+  { endDate = toLocalDate(), days = 28, today = toLocalDate() } = {}
+) {
+  const fromDate = addDays(endDate, -(Math.max(1, Number(days) || 28) - 1));
+  const tracking = configurationForDate(habit, endDate).tracking;
+  if (tracking.type === 'binary') return null;
+  const results = (logs || [])
+    .filter(
+      (log) =>
+        log.habitId === habit.id &&
+        log.date >= fromDate &&
+        log.date <= endDate &&
+        log.date <= today &&
+        lifecycleAt(habit, log.date) === 'active'
+    )
+    .map((log) => dailyResult(habit, log, log.date));
+  return {
+    value: results.reduce((total, result) => total + result.value, 0),
+    loggedDays: results.filter((result) => result.value > 0).length,
+    target: tracking.target,
+    unit: tracking.unit,
+    fromDate,
+    endDate,
+  };
+}
+
 export function buildWeeklyReview(habits, logs, options = {}) {
   const active = (habits || []).filter(
     (habit) => lifecycleAt(habit, options.endDate || toLocalDate()) === 'active'

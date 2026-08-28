@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addDays,
   calculateHabitStats,
+  compareHabitPeriods,
   configurationForDate,
   explainStreak,
   getDayState,
@@ -9,6 +10,7 @@ import {
   isScheduledOnDate,
   parseLocalDate,
   startOfWeek,
+  summarizeQuantitativePeriod,
 } from './engine';
 
 function habit(overrides = {}) {
@@ -177,6 +179,45 @@ describe('historical configuration', () => {
 });
 
 describe('completion and insight rules', () => {
+  it('compares equal schedule-aware periods without fabricating sparse trends', () => {
+    const logs = [
+      log('2026-08-10'),
+      log('2026-08-11'),
+      log('2026-08-12'),
+      log('2026-08-16'),
+      log('2026-08-17'),
+    ];
+    const comparison = compareHabitPeriods(habit(), logs, {
+      endDate: '2026-08-17',
+      today: '2026-08-17',
+      days: 4,
+    });
+    expect(comparison).toMatchObject({ status: 'ready', delta: -25 });
+
+    const sparse = compareHabitPeriods(habit(), [log('2026-08-17')], {
+      endDate: '2026-08-17',
+      today: '2026-08-17',
+      days: 2,
+    });
+    expect(sparse).toMatchObject({ status: 'insufficient', delta: null });
+  });
+
+  it('summarizes quantitative source entries without converting them to checkmarks', () => {
+    const measurable = habit({ tracking: { type: 'duration', target: 20, unit: 'min' } });
+    const summary = summarizeQuantitativePeriod(
+      measurable,
+      [
+        log('2026-08-16', null, [{ id: 'one', value: 12, unit: 'min' }]),
+        log('2026-08-17', null, [
+          { id: 'two', value: 8, unit: 'min' },
+          { id: 'three', value: 15, unit: 'min' },
+        ]),
+      ],
+      { endDate: '2026-08-17', today: '2026-08-17', days: 2 }
+    );
+    expect(summary).toMatchObject({ value: 35, loggedDays: 2, target: 20, unit: 'min' });
+  });
+
   it('tracks quantitative partial progress separately from completion', () => {
     const measurable = habit({ tracking: { type: 'duration', target: 20, unit: 'min' } });
     const partial = getDayState(

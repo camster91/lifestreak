@@ -273,6 +273,21 @@ async function main() {
         JSON.stringify({ state: { entries: [] }, version: 1 })
       );
     });
+    await backupPage.getByRole('button', { name: 'Insights', exact: true }).click();
+    await backupPage.getByRole('combobox', { name: 'Date range' }).selectOption('28');
+    assert(
+      (await backupPage.getByRole('combobox', { name: 'Habit' }).inputValue()) !== '',
+      'Insights did not retain a selected habit after filtering.'
+    );
+    await backupPage.getByRole('button', { name: 'Edit habit' }).click();
+    const insightEditDialog = backupPage.getByRole('dialog', { name: 'Edit Portable fixture' });
+    await insightEditDialog.waitFor();
+    await backupPage.getByRole('button', { name: 'Close dialog' }).click();
+    await backupPage.getByRole('button', { name: 'Dismiss suggestion' }).click();
+    assert(
+      (await backupPage.getByRole('button', { name: 'Dismiss suggestion' }).count()) === 0,
+      'Weekly review suggestion was not dismissible.'
+    );
     await backupPage.getByRole('button', { name: 'Settings', exact: true }).click();
     const downloadPromise = backupPage.waitForEvent('download');
     await backupPage.getByRole('button', { name: 'Export complete LifeStreak backup' }).click();

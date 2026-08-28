@@ -72,4 +72,23 @@ describe('starter suggestion onboarding', () => {
       ]);
     });
   });
+
+  it('offers a future effective date when editing tracked history', async () => {
+    habitStore.createHabit({
+      name: 'Measured routine',
+      startDate: '2026-08-28',
+      schedule: { type: 'daily', anchorDate: '2026-08-28' },
+      tracking: { type: 'duration', target: 20, unit: 'min' },
+    });
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Habits' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Edit Measured routine' });
+    const effectiveDateLabel = screen.getByText('Changes take effect');
+    const effectiveDate = effectiveDateLabel.closest('label').querySelector('input[type="date"]');
+    expect(dialog).toContainElement(effectiveDate);
+    expect(effectiveDate.getAttribute('min')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(effectiveDate.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(screen.getByText(/future date when today already has progress/i)).toBeVisible();
+  });
 });

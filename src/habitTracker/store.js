@@ -670,6 +670,21 @@ export const habitStore = {
     });
     return transact((draft) => {
       const habit = assertHabit(draft, habitId);
+      if (Object.prototype.hasOwnProperty.call(changes, 'tracking')) {
+        const previousTracking = currentConfig(habit, effectiveDate).tracking;
+        const nextTracking = normalizeTracking(changes.tracking);
+        const existingLog = draft.logs.find(
+          (log) => log.habitId === habitId && log.date === effectiveDate
+        );
+        if (
+          existingLog?.entries.length &&
+          JSON.stringify(previousTracking) !== JSON.stringify(nextTracking)
+        ) {
+          throw new Error(
+            'Tracking cannot change on a date that already has progress. Clear that day or make the change effective on a future date.'
+          );
+        }
+      }
       let changed = upsertRevision(habit, changes, effectiveDate);
       ['name', 'description', 'category', 'icon', 'colour', 'reminderTime'].forEach((key) => {
         if (Object.prototype.hasOwnProperty.call(changes, key) && habit[key] !== changes[key]) {

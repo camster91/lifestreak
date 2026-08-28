@@ -122,6 +122,30 @@ describe('habit management', () => {
     });
   });
 
+  it('does not reinterpret existing progress under a new target or unit', () => {
+    const today = toLocalDate();
+    const habitId = habitStore.createHabit({
+      ...input('Distance'),
+      startDate: today,
+      schedule: { type: 'daily', anchorDate: today },
+      tracking: { type: 'distance', target: 5, unit: 'km' },
+    });
+    expect(habitStore.addValue(habitId, today, 2)).toBe(true);
+    const before = structuredClone(habitStore.getSnapshot());
+
+    expect(
+      habitStore.updateHabit(habitId, {
+        tracking: { type: 'distance', target: 10, unit: 'miles' },
+      })
+    ).toBe(false);
+    expect(habitStore.getSnapshot().habits).toEqual(before.habits);
+    expect(habitStore.getSnapshot().logs).toEqual(before.logs);
+    expect(habitStore.getSnapshot().operation).toMatchObject({
+      type: 'error',
+      message: expect.stringMatching(/clear that day|future date/i),
+    });
+  });
+
   it.each([
     ['unsupported schedule', { schedule: { type: 'sometimes', anchorDate: '2026-08-28' } }],
     [

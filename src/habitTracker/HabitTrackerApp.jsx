@@ -1581,6 +1581,7 @@ function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
     unit: current?.tracking.unit || 'rep',
     anyAmountCounts: current?.tracking.anyAmountCounts || false,
     reminderTime: seed?.reminderTime || '',
+    effectiveDate: today,
   }));
   const [error, setError] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(Boolean(habit || initial));
@@ -1629,7 +1630,7 @@ function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
     };
     try {
       const result = habit
-        ? habitStore.updateHabit(habit.id, input, today)
+        ? habitStore.updateHabit(habit.id, input, form.effectiveDate)
         : habitStore.createHabit(input);
       if (result) onSaved(habit?.id || result);
       else setError('The habit was not saved. Review the message above and try again.');
@@ -1920,10 +1921,21 @@ function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
         </details>
 
         {habit && (
-          <p className="habit-supporting-copy">
-            Schedule, target, unit, and time-of-day changes take effect today. Earlier logs continue
-            to use the configuration active on their date.
-          </p>
+          <div className="habit-form-section">
+            <label className="habit-field">
+              <span>Changes take effect</span>
+              <input
+                type="date"
+                min={today}
+                value={form.effectiveDate}
+                onChange={(event) => set('effectiveDate', event.target.value)}
+              />
+              <small>
+                Choose a future date when today already has progress. Earlier logs keep the target
+                and unit active when they were recorded.
+              </small>
+            </label>
+          </div>
         )}
         <div className="habit-dialog-actions">
           <button type="button" className="habit-button habit-button-secondary" onClick={onClose}>

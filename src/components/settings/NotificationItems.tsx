@@ -49,6 +49,7 @@ export function NotificationItem({
             type="time"
             className="input input-sm input-bordered w-28 text-center font-medium"
             value={time}
+            aria-label={`${label} reminder time`}
             onChange={(e) => onTimeChange(e.target.value)}
           />
         )}
@@ -56,6 +57,7 @@ export function NotificationItem({
           type="checkbox"
           className="toggle toggle-primary"
           checked={enabled}
+          aria-label={`${enabled ? 'Disable' : 'Enable'} ${label} reminder`}
           onChange={onToggle}
         />
       </div>
@@ -112,6 +114,7 @@ export function WeeklyNotificationItem({
               type="time"
               className="input input-sm input-bordered w-28 text-center font-medium"
               value={time}
+              aria-label={`${label} reminder time`}
               onChange={(e) => onTimeChange(e.target.value)}
             />
           )}
@@ -119,6 +122,7 @@ export function WeeklyNotificationItem({
             type="checkbox"
             className="toggle toggle-primary"
             checked={enabled}
+            aria-label={`${enabled ? 'Disable' : 'Enable'} ${label} reminder`}
             onChange={onToggle}
           />
         </div>
@@ -133,6 +137,9 @@ export function WeeklyNotificationItem({
                 {DAYS_OF_WEEK.map((day) => (
                   <button
                     key={day.value}
+                    type="button"
+                    aria-pressed={(meetingDays || []).includes(day.value)}
+                    aria-label={`${day.fullLabel} meeting preparation reminder`}
                     onClick={() => {
                       const currentDays = meetingDays || [];
                       const newDays = currentDays.includes(day.value)
@@ -158,6 +165,9 @@ export function WeeklyNotificationItem({
                 {DAYS_OF_WEEK.map((day) => (
                   <button
                     key={day.value}
+                    type="button"
+                    aria-pressed={dayOfWeek === day.value}
+                    aria-label={`${day.fullLabel} ${label} reminder`}
                     onClick={() => onDayChange && onDayChange(day.value)}
                     className={`btn btn-sm min-w-[44px] ${
                       dayOfWeek === day.value ? 'btn-primary' : 'btn-ghost bg-base-200'

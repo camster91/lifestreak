@@ -29,10 +29,14 @@ declare module '../utils/storageErrorHandler.js' {
 }
 
 declare module '../utils/notifications.js' {
+  type LifeStreakNotificationPermission =
+    NotificationPermission | 'prompt' | 'unsupported' | 'error';
   export function isNotificationSupported(): boolean;
-  export function getNotificationPermission(): NotificationPermission;
-  export function requestNotificationPermission(): Promise<NotificationPermission>;
-  export function initializeReminders(): void;
+  export function getNotificationPermission(): LifeStreakNotificationPermission;
+  export function requestNotificationPermission(): Promise<LifeStreakNotificationPermission>;
+  export function initializeReminders(settings: unknown): Promise<Array<{ cancel: () => void }>>;
+  export function cancelAllNotifications(): Promise<void>;
+  export function showNotification(title: string, options?: NotificationOptions): Promise<boolean>;
 }
 
 declare module '../components/Toast.jsx' {

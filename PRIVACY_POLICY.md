@@ -8,17 +8,26 @@
 
 ## Summary
 
-LifeStreak is a private, local-first habit and routine tracker. LifeStreak does not require an account and does not send the developer your habit names, schedules, completion history, quantitative values, notes, service records, reading records, goals, or settings.
+LifeStreak is a private, local-first habit and routine tracker. LifeStreak does not require an account and does not send the developer your habit names, schedules, completion history, quantitative values, notes, service records, reading records, goals, or settings. Optional actions that contact a destination you choose are described below.
 
 ## Data collection
 
-LifeStreak does **not** collect, transmit, sell, or share personal information for advertising or analytics. Specifically:
+LifeStreak does **not** collect, sell, or share personal information with the developer for advertising or analytics. Specifically:
 
 - No account is required.
 - No advertising is included.
 - No behavioural analytics or cross-app tracking is included.
 - No crash reports are intentionally sent to the developer by LifeStreak.
 - No habit, spiritual, service, reading, health, or planning data is uploaded by default.
+
+## Optional network actions
+
+LifeStreak uses the network to load/update the web app and only for these additional user-directed actions:
+
+- Opening an allowlisted external resource sends ordinary browser request metadata to that website. LifeStreak does not attach the local database.
+- Collections settings can optionally enable a local or Ollama Cloud connection test. This feature is disabled by default. Before the test can run, LifeStreak identifies the validated destination and requires confirmation that it will send the selected model name, the fixed text `Say "OK" in one word.`, and any session-only API key as an authorization header. It does not include habits, notes, service, reading, goal, or memory records.
+
+The Ollama destination is a provider selected by the user, not Ashbi Design. Its privacy terms apply to information deliberately sent there. Disabling the provider clears the session credential. API keys are not written to local storage, backups, migrations, logs, or build-time client variables.
 
 ## Local data storage
 
@@ -59,8 +68,8 @@ Uninstalling the installed app or clearing its local browser/app storage may per
 
 LifeStreak may request the following optional permission:
 
-| Permission | Purpose |
-|---|---|
+| Permission          | Purpose                                     |
+| ------------------- | ------------------------------------------- |
 | Local notifications | Reminders for habits and scheduled routines |
 
 LifeStreak should not request notification permission automatically during startup.

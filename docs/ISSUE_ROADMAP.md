@@ -51,7 +51,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 13. **#72 and #73 — accessibility and responsive baseline**
     The revival branch replaces the concrete #41 interactions with named semantic buttons and adds a headless Chromium gate across 320px phone, phone, tablet, and desktop viewports. It checks primary empty routes and the creation dialog for horizontal overflow, accessible control names, 44px targets, reduced motion, focus containment, Escape close, and focus restoration. VoiceOver/TalkBack, 200% zoom, forced-colour, populated/long-content states, landscape, virtual keyboard, screenshot approval, and native device checks remain.
 14. **#63 and #76 — privacy-aligned optional AI, push, and reminders**
-    Decide what ships, remove misleading capability claims, and verify private notification behavior and recovery.
+    Remote push is excluded. Optional Ollama remains disabled by default and its only reachable connection test now requires an inline destination/payload/credential confirmation; API keys are session-only, cleared on opt-out, and cannot come from build-time client secrets. Reminder rescheduling checks permission without prompting, only explicit Enable can request permission, default lock-screen content is generic, disable cancels schedules, and Collections offers labeled per-item controls plus a private test. Native denial/settings, timezone/DST, habit-reminder integration, traffic capture, and device verification remain.
 15. **#66 and #67 — web/PWA/native end-to-end and rollback tests**
     Cover fresh install, upgrade, offline launch, service-worker migration, native shells, deployment, and rollback.
 16. **#65 — reproducible native archive pipelines**

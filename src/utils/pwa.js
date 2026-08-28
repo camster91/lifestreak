@@ -1,6 +1,7 @@
 /**
  * PWA Utilities
- * Handles service worker registration, push notifications, and install prompts
+ * Handles service worker registration, local notification helpers, and install prompts.
+ * LifeStreak does not register for remote push notifications.
  */
 
 // Check if running in a browser that supports PWA features

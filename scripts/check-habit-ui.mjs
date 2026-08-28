@@ -141,6 +141,59 @@ async function main() {
       await context.close();
     }
 
+    const privacyContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    const privacyPage = await privacyContext.newPage();
+    const aiRequests = [];
+    await privacyPage.route('https://ollama.com/api/chat', async (route) => {
+      aiRequests.push({
+        body: route.request().postDataJSON(),
+        authorization: await route.request().headerValue('authorization'),
+      });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"message":{"content":"OK"}}',
+      });
+    });
+    await privacyPage.goto(`${origin}/settings?legacy=1`, { waitUntil: 'networkidle' });
+    const provider = privacyPage.getByRole('combobox', { name: 'AI provider' });
+    await provider.waitFor();
+    assert((await provider.inputValue()) === 'none', 'Remote AI was not disabled by default.');
+    assert(!aiRequests.length, 'Collections settings sent an AI request before opt-in.');
+
+    await provider.selectOption('ollama');
+    const testConnection = privacyPage.getByRole('button', { name: 'Test Connection' });
+    assert(await testConnection.isDisabled(), 'AI connection test was enabled before consent.');
+    await privacyPage
+      .getByRole('textbox', { name: 'API Key', exact: true })
+      .fill('session-test-key');
+    await privacyPage
+      .getByRole('checkbox', { name: /I understand that Test Connection sends/ })
+      .check();
+    await testConnection.click();
+    await privacyPage.waitForResponse('https://ollama.com/api/chat');
+    assert(
+      aiRequests.length === 1,
+      'Explicit AI connection test did not send exactly one request.'
+    );
+    assert(
+      aiRequests[0].body.messages[0].content === 'Say "OK" in one word.',
+      'AI test payload drifted from its disclosure.'
+    );
+    assert(
+      aiRequests[0].authorization === 'Bearer session-test-key',
+      'Session AI credential was not sent only as the disclosed authorization header.'
+    );
+    await provider.selectOption('none');
+    assert(
+      (await privacyPage.evaluate(() => sessionStorage.getItem('ls-ai-api-key-session'))) === null,
+      'Disabling remote AI did not clear its session credential.'
+    );
+    await privacyContext.close();
+
     console.log(`LifeStreak UI contract verified across ${viewports.length} responsive viewports.`);
   } finally {
     await browser?.close();

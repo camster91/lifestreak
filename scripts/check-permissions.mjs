@@ -7,6 +7,7 @@ const infoPlist = read('ios/App/App/Info.plist');
 const androidManifest = read('android/app/src/main/AndroidManifest.xml');
 const packageJson = JSON.parse(read('package.json'));
 const capacitor = JSON.parse(read('capacitor.config.json'));
+const ollamaClient = read('src/utils/ollama.js');
 
 for (const forbidden of [
   'NSCalendarsUsageDescription',
@@ -24,6 +25,9 @@ if (packageJson.dependencies?.['@capacitor/push-notifications']) {
 }
 if (capacitor.plugins?.PushNotifications) {
   failures.push('capacitor.config.json configures remote Push Notifications');
+}
+if (ollamaClient.includes('VITE_OLLAMA_API_KEY')) {
+  failures.push('Ollama client accepts a build-time credential that would ship in public assets');
 }
 
 const declaredAndroidPermissions = [

@@ -38,6 +38,8 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
   initializeReminders,
+  cancelAllNotifications,
+  showNotification,
 } from '../utils/notifications.js';
 import {
   NotificationItem,
@@ -70,6 +72,7 @@ function Settings() {
   const [aiTestStatus, setAiTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>(
     'idle'
   );
+  const [aiTransmissionConfirmed, setAiTransmissionConfirmed] = useState(false);
 
   const [notificationPermission, setNotificationPermission] = useState(() =>
     getNotificationPermission()
@@ -98,9 +101,19 @@ function Settings() {
     }
   };
 
-  const handleDisableNotifications = () => {
+  const handleDisableNotifications = async () => {
     setNotificationsEnabled(false);
+    await cancelAllNotifications();
     toast.info('Notifications disabled');
+  };
+
+  const handleTestNotification = async () => {
+    const shown = await showNotification('LifeStreak reminder', {
+      body: 'A private LifeStreak reminder is ready.',
+      tag: 'lifestreak-settings-test',
+    });
+    if (shown) toast.success('Test reminder sent');
+    else toast.error('Test reminder could not be shown. Check system notification settings.');
   };
 
   const handleToggleNotification = (key: string) => {
@@ -135,6 +148,10 @@ function Settings() {
   };
 
   const handleTestAi = async () => {
+    if (!aiTransmissionConfirmed || ai.provider !== 'ollama') {
+      toast.error('Review and confirm the connection-test data flow first');
+      return;
+    }
     setAiTestStatus('testing');
     try {
       const baseUrl = ai.ollamaBaseUrl || 'https://ollama.com';
@@ -333,12 +350,18 @@ function Settings() {
             {!notificationSupported ? (
               <div className="alert alert-warning">Notifications not supported.</div>
             ) : notificationPermission === 'denied' ? (
-              <div className="alert alert-error">Notifications blocked.</div>
+              <div className="alert alert-error" role="status">
+                Notifications are blocked in system settings. LifeStreak will not ask again; enable
+                them from the browser or device settings if you change your mind.
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
                   <div>
                     <p className="font-medium">Enable Reminders</p>
+                    <p className="text-xs text-base-content/60">
+                      Permission is requested only after Enable. Lock-screen text stays generic.
+                    </p>
                   </div>
                   {notificationsEnabled ? (
                     <button onClick={handleDisableNotifications} className="btn btn-sm btn-outline">
@@ -352,6 +375,13 @@ function Settings() {
                 </div>
                 {notificationsEnabled && (
                   <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleTestNotification}
+                      className="btn btn-sm btn-outline w-full"
+                    >
+                      Send private test reminder
+                    </button>
                     <NotificationItem
                       icon={BookOpen}
                       label="Daily Text"
@@ -418,7 +448,13 @@ function Settings() {
                   aria-label="AI provider"
                   className="select select-sm select-bordered"
                   value={ai.provider}
-                  onChange={(e) => setAiSettings({ provider: e.target.value as 'ollama' | 'none' })}
+                  onChange={(e) => {
+                    const provider = e.target.value as 'ollama' | 'none';
+                    setAiTransmissionConfirmed(false);
+                    setAiSettings(
+                      provider === 'none' ? { provider, ollamaApiKey: '' } : { provider }
+                    );
+                  }}
                 >
                   <option value="none">Disabled</option>
                   <option value="ollama">Ollama Cloud / Local</option>
@@ -438,7 +474,10 @@ function Settings() {
                       type="text"
                       className="input input-bordered input-sm w-full"
                       value={ai.ollamaBaseUrl}
-                      onChange={(e) => setAiSettings({ ollamaBaseUrl: e.target.value })}
+                      onChange={(e) => {
+                        setAiTransmissionConfirmed(false);
+                        setAiSettings({ ollamaBaseUrl: e.target.value });
+                      }}
                       onBlur={() => {
                         const check = validateOllamaBaseUrl(ai.ollamaBaseUrl);
                         if (ai.ollamaBaseUrl && !check.ok) {
@@ -492,7 +531,10 @@ function Settings() {
                       type="text"
                       className="input input-bordered input-sm w-full"
                       value={ai.ollamaModel}
-                      onChange={(e) => setAiSettings({ ollamaModel: e.target.value })}
+                      onChange={(e) => {
+                        setAiTransmissionConfirmed(false);
+                        setAiSettings({ ollamaModel: e.target.value });
+                      }}
                       placeholder="llama3.2, mistral-small3.1, deepseek-r1, etc."
                     />
                     <p className="text-xs text-base-content/50">
@@ -500,9 +542,24 @@ function Settings() {
                       deepseek-r1
                     </p>
                   </div>
+                  <label className="flex items-start gap-3 rounded-xl border border-base-300 p-3 text-sm">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-sm mt-0.5"
+                      checked={aiTransmissionConfirmed}
+                      onChange={(event) => setAiTransmissionConfirmed(event.target.checked)}
+                    />
+                    <span>
+                      I understand that Test Connection sends the selected model name and the fixed
+                      text “Say OK in one word” to the validated Base URL. If entered, the API key
+                      is sent as an authorization header. No habit, note, service, reading, goal, or
+                      memory data is included.
+                    </span>
+                  </label>
                   <button
+                    type="button"
                     onClick={handleTestAi}
-                    disabled={aiTestStatus === 'testing'}
+                    disabled={aiTestStatus === 'testing' || !aiTransmissionConfirmed}
                     className="btn btn-outline btn-sm w-full gap-2"
                   >
                     {aiTestStatus === 'testing' && <Loader2 className="w-4 h-4 animate-spin" />}

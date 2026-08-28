@@ -24,7 +24,7 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 1. **#69 and #95 — product contract and independent-app integration**
    Reconcile terminology, navigation, platform scope, privacy promises, AI/push scope, and the recovered habit-first implementation. These are overlapping decision and implementation tracks and should be completed together.
 2. **#101 — legacy-data preservation and migration contract**
-   Inventory every storage key and record shape before changing the default experience. This depends on the persistence/date correctness work in #56, #61, and #62.
+   The current and historical key inventory is maintained in [storage-migration-inventory.md](storage-migration-inventory.md). Implement and verify its non-destructive migration sequence after the persistence/date correctness work in #56, #61, and #62.
 3. **#56 — durable service and reading persistence**
    Prove reload/restart behavior, schema validation, migration, corruption recovery, and failed-write UX.
 4. **#61 and #62 — calendar-safe specialist history**

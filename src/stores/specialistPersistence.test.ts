@@ -1,9 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import useGamificationStore from './gamificationStore';
+import useGoalsStore from './goalsStore';
+import useMemoriesStore from './memoriesStore';
+import useProgressStore from './progressStore';
 import useReadingStore from './readingStore';
 import useServiceStore from './serviceStore';
+import useSettingsStore from './settingsStore';
 
 const READING_KEY = 'ls-reading-storage';
 const SERVICE_KEY = 'ls-service-storage';
+
+function expectJsonWrite(key: string) {
+  const serialized = lastPersistedValue(key);
+  expect(serialized).not.toBe('[object Object]');
+  expect(() => JSON.parse(serialized)).not.toThrow();
+  expect(JSON.parse(serialized)).toHaveProperty('state');
+}
 
 beforeEach(() => {
   useReadingStore.setState({ items: [] });
@@ -19,6 +31,28 @@ function lastPersistedValue(key: string) {
 }
 
 describe('specialist store persistence', () => {
+  it('uses JSON persistence for every Zustand specialist store', () => {
+    vi.clearAllMocks();
+    useProgressStore.getState().markDailyTextRead('2026-08-28');
+    expectJsonWrite('ls-progress-storage');
+
+    vi.clearAllMocks();
+    useSettingsStore.getState().setTheme('dark');
+    expectJsonWrite('ls-progress-settings');
+
+    vi.clearAllMocks();
+    useGamificationStore.getState().addPoints(5);
+    expectJsonWrite('ls-gamification-storage');
+
+    vi.clearAllMocks();
+    useGoalsStore.getState().addGoal({ title: 'Review the roadmap' });
+    expectJsonWrite('ls-goals-storage');
+
+    vi.clearAllMocks();
+    useMemoriesStore.getState().saveReflection('2026-08-28', 'A private note');
+    expectJsonWrite('ls-memories-storage');
+  });
+
   it('writes reading state as versioned JSON and restores it', async () => {
     useReadingStore.getState().addItem({
       title: 'Local-first systems',

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { format, differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
@@ -658,7 +658,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
     }),
     {
       name: 'ls-gamification-storage',
-      storage: createSafeStorage('ls-gamification-storage') as any,
+      storage: createJSONStorage(() => createSafeStorage('ls-gamification-storage')),
       version: 1,
       migrate: (persistedState, version) => {
         if (version === undefined || version === 0) {

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { format, getDayOfYear, startOfWeek } from 'date-fns';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
@@ -673,7 +673,7 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
     }),
     {
       name: 'ls-progress-storage',
-      storage: createSafeStorage('ls-progress-storage') as any,
+      storage: createJSONStorage(() => createSafeStorage('ls-progress-storage')),
       partialize: (state) => {
         const pruned = pruneProgressMaps(state);
         return {

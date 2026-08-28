@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
 interface NotificationSetting {
@@ -205,7 +205,7 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
     {
       name: 'ls-progress-settings',
       version: 1,
-      storage: createSafeStorage('ls-progress-settings') as any,
+      storage: createJSONStorage(() => createSafeStorage('ls-progress-settings')),
       // Never persist API keys to localStorage (exports, Android backups, XSS blast radius)
       partialize: (state) => ({
         notifications: state.notifications,

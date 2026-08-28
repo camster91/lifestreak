@@ -1583,6 +1583,7 @@ function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
     reminderTime: seed?.reminderTime || '',
   }));
   const [error, setError] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(Boolean(habit || initial));
 
   const set = (key, value) => setForm((currentForm) => ({ ...currentForm, [key]: value }));
   const toggleWeekday = (day) =>
@@ -1665,245 +1666,258 @@ function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
               onChange={(event) => set('name', event.target.value)}
             />
           </label>
-          <label className="habit-field full">
-            <span>Description</span>
-            <textarea
-              rows="3"
-              maxLength="500"
-              value={form.description}
-              onChange={(event) => set('description', event.target.value)}
-            />
-          </label>
-          <label className="habit-field">
-            <span>Category</span>
-            <input
-              maxLength="50"
-              value={form.category}
-              onChange={(event) => set('category', event.target.value)}
-            />
-          </label>
-          <label className="habit-field">
-            <span>Icon</span>
-            <input
-              value={form.icon}
-              maxLength="8"
-              onChange={(event) => set('icon', event.target.value)}
-              aria-describedby="habit-icon-help"
-            />
-            <small id="habit-icon-help">Choose a short symbol or emoji.</small>
-          </label>
-          <label className="habit-field">
-            <span>Colour</span>
-            <input
-              type="color"
-              value={form.colour}
-              onChange={(event) => set('colour', event.target.value)}
-            />
-          </label>
-          <label className="habit-field">
-            <span>Time of day</span>
-            <select
-              value={form.timeOfDay}
-              onChange={(event) => set('timeOfDay', event.target.value)}
-            >
-              {TIME_GROUPS.map((group) => (
-                <option key={group} value={group}>
-                  {GROUP_LABELS[group]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="habit-field">
-            <span>Start date</span>
-            <input
-              type="date"
-              value={form.startDate}
-              onChange={(event) => set('startDate', event.target.value)}
-            />
-          </label>
         </div>
 
-        <fieldset className="habit-form-section">
-          <legend>Schedule</legend>
-          <label className="habit-field">
-            <span>Frequency</span>
-            <select
-              value={form.scheduleType}
-              onChange={(event) => set('scheduleType', event.target.value)}
-            >
-              <option value="daily">Every day</option>
-              <option value="weekdays">Selected weekdays</option>
-              <option value="timesPerWeek">Times per week</option>
-              <option value="weekly">Once per week in a weekday window</option>
-              <option value="interval">Every N days</option>
-              <option value="monthly">Selected days of month</option>
-              <option value="monthlyTarget">Times per month</option>
-            </select>
-          </label>
-          {['weekdays', 'weekly'].includes(form.scheduleType) && (
-            <div className="habit-weekday-picker" role="group" aria-label="Scheduled weekdays">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((name, day) => (
-                <label key={name}>
-                  <input
-                    type="checkbox"
-                    checked={form.weekdays.includes(day)}
-                    onChange={() => toggleWeekday(day)}
-                  />
-                  <span>{name}</span>
-                </label>
-              ))}
-            </div>
-          )}
-          {form.scheduleType === 'timesPerWeek' && (
-            <label className="habit-field">
-              <span>Times per week</span>
-              <input
-                type="number"
-                min="1"
-                max="7"
-                value={form.timesPerWeek}
-                onChange={(event) => set('timesPerWeek', event.target.value)}
+        <details
+          className="habit-advanced-options"
+          open={showAdvanced}
+          onToggle={(event) => setShowAdvanced(event.currentTarget.open)}
+        >
+          <summary>Advanced options</summary>
+          <p className="habit-supporting-copy">
+            Optional description, category, appearance, schedule, tracking target, and reminder.
+          </p>
+          <div className="habit-form-grid">
+            <label className="habit-field full">
+              <span>Description</span>
+              <textarea
+                rows="3"
+                maxLength="500"
+                value={form.description}
+                onChange={(event) => set('description', event.target.value)}
               />
             </label>
-          )}
-          {form.scheduleType === 'monthlyTarget' && (
             <label className="habit-field">
-              <span>Times per month</span>
+              <span>Category</span>
               <input
-                type="number"
-                min="1"
-                max="31"
-                value={form.monthlyTarget}
-                onChange={(event) => set('monthlyTarget', event.target.value)}
+                maxLength="50"
+                value={form.category}
+                onChange={(event) => set('category', event.target.value)}
               />
             </label>
-          )}
-          {form.scheduleType === 'interval' && (
             <label className="habit-field">
-              <span>Repeat every</span>
-              <span className="habit-input-suffix">
+              <span>Icon</span>
+              <input
+                value={form.icon}
+                maxLength="8"
+                onChange={(event) => set('icon', event.target.value)}
+                aria-describedby="habit-icon-help"
+              />
+              <small id="habit-icon-help">Choose a short symbol or emoji.</small>
+            </label>
+            <label className="habit-field">
+              <span>Colour</span>
+              <input
+                type="color"
+                value={form.colour}
+                onChange={(event) => set('colour', event.target.value)}
+              />
+            </label>
+            <label className="habit-field">
+              <span>Time of day</span>
+              <select
+                value={form.timeOfDay}
+                onChange={(event) => set('timeOfDay', event.target.value)}
+              >
+                {TIME_GROUPS.map((group) => (
+                  <option key={group} value={group}>
+                    {GROUP_LABELS[group]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="habit-field">
+              <span>Start date</span>
+              <input
+                type="date"
+                value={form.startDate}
+                onChange={(event) => set('startDate', event.target.value)}
+              />
+            </label>
+          </div>
+
+          <fieldset className="habit-form-section">
+            <legend>Schedule</legend>
+            <label className="habit-field">
+              <span>Frequency</span>
+              <select
+                value={form.scheduleType}
+                onChange={(event) => set('scheduleType', event.target.value)}
+              >
+                <option value="daily">Every day</option>
+                <option value="weekdays">Selected weekdays</option>
+                <option value="timesPerWeek">Times per week</option>
+                <option value="weekly">Once per week in a weekday window</option>
+                <option value="interval">Every N days</option>
+                <option value="monthly">Selected days of month</option>
+                <option value="monthlyTarget">Times per month</option>
+              </select>
+            </label>
+            {['weekdays', 'weekly'].includes(form.scheduleType) && (
+              <div className="habit-weekday-picker" role="group" aria-label="Scheduled weekdays">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((name, day) => (
+                  <label key={name}>
+                    <input
+                      type="checkbox"
+                      checked={form.weekdays.includes(day)}
+                      onChange={() => toggleWeekday(day)}
+                    />
+                    <span>{name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {form.scheduleType === 'timesPerWeek' && (
+              <label className="habit-field">
+                <span>Times per week</span>
                 <input
                   type="number"
                   min="1"
-                  max="365"
-                  value={form.intervalDays}
-                  onChange={(event) => set('intervalDays', event.target.value)}
+                  max="7"
+                  value={form.timesPerWeek}
+                  onChange={(event) => set('timesPerWeek', event.target.value)}
                 />
-                <span>days</span>
-              </span>
-            </label>
-          )}
-          {form.scheduleType === 'monthly' && (
+              </label>
+            )}
+            {form.scheduleType === 'monthlyTarget' && (
+              <label className="habit-field">
+                <span>Times per month</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={form.monthlyTarget}
+                  onChange={(event) => set('monthlyTarget', event.target.value)}
+                />
+              </label>
+            )}
+            {form.scheduleType === 'interval' && (
+              <label className="habit-field">
+                <span>Repeat every</span>
+                <span className="habit-input-suffix">
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={form.intervalDays}
+                    onChange={(event) => set('intervalDays', event.target.value)}
+                  />
+                  <span>days</span>
+                </span>
+              </label>
+            )}
+            {form.scheduleType === 'monthly' && (
+              <label className="habit-field">
+                <span>Days of month</span>
+                <input
+                  value={form.monthlyDays}
+                  onChange={(event) => set('monthlyDays', event.target.value)}
+                  placeholder="1, 15, 28"
+                />
+                <small>Comma-separated values from 1 to 31.</small>
+              </label>
+            )}
             <label className="habit-field">
-              <span>Days of month</span>
+              <span>End date (optional)</span>
               <input
-                value={form.monthlyDays}
-                onChange={(event) => set('monthlyDays', event.target.value)}
-                placeholder="1, 15, 28"
+                type="date"
+                min={form.startDate}
+                value={form.endDate}
+                onChange={(event) => set('endDate', event.target.value)}
               />
-              <small>Comma-separated values from 1 to 31.</small>
             </label>
-          )}
-          <label className="habit-field">
-            <span>End date (optional)</span>
-            <input
-              type="date"
-              min={form.startDate}
-              value={form.endDate}
-              onChange={(event) => set('endDate', event.target.value)}
-            />
-          </label>
-          <p role="status">
-            Preview:{' '}
-            {describeSchedule({
-              type: form.scheduleType,
-              weekdays: form.weekdays,
-              timesPerWeek: Number(form.timesPerWeek),
-              monthlyTarget: Number(form.monthlyTarget),
-              intervalDays: Number(form.intervalDays),
-              monthlyDays: String(form.monthlyDays)
-                .split(',')
-                .map((value) => Number(value.trim()))
-                .filter(Boolean),
-              anchorDate: form.startDate,
-              endDate: form.endDate || null,
-            })}
-            {form.endDate ? ` through ${formatDate(form.endDate)}` : ''}
-          </p>
-        </fieldset>
+            <p role="status">
+              Preview:{' '}
+              {describeSchedule({
+                type: form.scheduleType,
+                weekdays: form.weekdays,
+                timesPerWeek: Number(form.timesPerWeek),
+                monthlyTarget: Number(form.monthlyTarget),
+                intervalDays: Number(form.intervalDays),
+                monthlyDays: String(form.monthlyDays)
+                  .split(',')
+                  .map((value) => Number(value.trim()))
+                  .filter(Boolean),
+                anchorDate: form.startDate,
+                endDate: form.endDate || null,
+              })}
+              {form.endDate ? ` through ${formatDate(form.endDate)}` : ''}
+            </p>
+          </fieldset>
 
-        <fieldset className="habit-form-section">
-          <legend>Tracking</legend>
-          <label className="habit-field">
-            <span>Tracking type</span>
-            <select
-              value={form.trackingType}
-              onChange={(event) => set('trackingType', event.target.value)}
-            >
-              {Object.entries(TRACKING_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {form.trackingType !== 'binary' && (
-            <div className="habit-form-grid">
-              <label className="habit-field">
-                <span>Minimum target</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={form.target}
-                  onChange={(event) => set('target', event.target.value)}
-                />
-              </label>
-              <label className="habit-field">
-                <span>Unit</span>
-                <input
-                  maxLength="20"
-                  value={form.unit}
-                  onChange={(event) => set('unit', event.target.value)}
-                />
-              </label>
-              <label className="habit-field">
-                <span>Optional stretch target</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={form.stretchTarget}
-                  onChange={(event) => set('stretchTarget', event.target.value)}
-                />
-              </label>
-              <label className="habit-check-row">
-                <input
-                  type="checkbox"
-                  checked={form.anyAmountCounts}
-                  onChange={(event) => set('anyAmountCounts', event.target.checked)}
-                />
-                <span>Any amount counts as complete</span>
-              </label>
-            </div>
-          )}
-        </fieldset>
+          <fieldset className="habit-form-section">
+            <legend>Tracking</legend>
+            <label className="habit-field">
+              <span>Tracking type</span>
+              <select
+                value={form.trackingType}
+                onChange={(event) => set('trackingType', event.target.value)}
+              >
+                {Object.entries(TRACKING_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {form.trackingType !== 'binary' && (
+              <div className="habit-form-grid">
+                <label className="habit-field">
+                  <span>Minimum target</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={form.target}
+                    onChange={(event) => set('target', event.target.value)}
+                  />
+                </label>
+                <label className="habit-field">
+                  <span>Unit</span>
+                  <input
+                    maxLength="20"
+                    value={form.unit}
+                    onChange={(event) => set('unit', event.target.value)}
+                  />
+                </label>
+                <label className="habit-field">
+                  <span>Optional stretch target</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={form.stretchTarget}
+                    onChange={(event) => set('stretchTarget', event.target.value)}
+                  />
+                </label>
+                <label className="habit-check-row">
+                  <input
+                    type="checkbox"
+                    checked={form.anyAmountCounts}
+                    onChange={(event) => set('anyAmountCounts', event.target.checked)}
+                  />
+                  <span>Any amount counts as complete</span>
+                </label>
+              </div>
+            )}
+          </fieldset>
 
-        <fieldset className="habit-form-section">
-          <legend>Reminder</legend>
-          <label className="habit-field">
-            <span>Preferred time</span>
-            <input
-              type="time"
-              value={form.reminderTime}
-              onChange={(event) => set('reminderTime', event.target.value)}
-            />
-            <small>
-              Permission is requested only from Settings. Browser reminders run while LifeStreak is
-              open.
-            </small>
-          </label>
-        </fieldset>
+          <fieldset className="habit-form-section">
+            <legend>Reminder</legend>
+            <label className="habit-field">
+              <span>Preferred time</span>
+              <input
+                type="time"
+                value={form.reminderTime}
+                onChange={(event) => set('reminderTime', event.target.value)}
+              />
+              <small>
+                Permission is requested only from Settings. Browser reminders run while LifeStreak
+                is open.
+              </small>
+            </label>
+          </fieldset>
+        </details>
 
         {habit && (
           <p className="habit-supporting-copy">

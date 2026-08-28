@@ -50,6 +50,26 @@ describe('starter suggestion onboarding', () => {
 
     expect(screen.getByRole('dialog', { name: 'Create a habit' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Morning Bible reading')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('5')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('5')).toBeVisible();
+    expect(screen.getByText('Advanced options').closest('details')).toHaveAttribute('open');
+  });
+
+  it('keeps a blank habit name-first while advanced controls remain optional', async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add habit' }));
+
+    const advanced = screen.getByText('Advanced options').closest('details');
+    expect(advanced).not.toHaveAttribute('open');
+    expect(screen.getByLabelText(/^Name/)).toBeVisible();
+    expect(screen.getByLabelText('Frequency')).not.toBeVisible();
+
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Simple routine' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create habit' }));
+
+    await waitFor(() => {
+      expect(habitStore.getSnapshot().habits).toEqual([
+        expect.objectContaining({ name: 'Simple routine', category: 'Personal' }),
+      ]);
+    });
   });
 });

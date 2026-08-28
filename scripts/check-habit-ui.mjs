@@ -152,6 +152,21 @@ async function main() {
         `${viewport.name}: dialog did not receive predictable initial focus.`
       );
       await inspectPage(page, viewport.name, 'create-dialog');
+      const advancedOptions = dialog.locator('details.habit-advanced-options');
+      assert(
+        (await advancedOptions.getAttribute('open')) === null,
+        `${viewport.name}: blank habit exposed advanced options by default.`
+      );
+      assert(
+        !(await page.getByLabel('Frequency').isVisible()),
+        `${viewport.name}: hidden advanced schedule controls remained visible.`
+      );
+      await advancedOptions.locator('summary').click();
+      assert(
+        await page.getByLabel('Frequency').isVisible(),
+        `${viewport.name}: advanced options could not be expanded.`
+      );
+      await inspectPage(page, viewport.name, 'create-dialog-advanced');
 
       await page.keyboard.press('Shift+Tab');
       assert(

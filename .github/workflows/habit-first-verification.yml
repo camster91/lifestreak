@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 concurrency:
   group: habit-first-verification-${{ github.event.pull_request.number || github.ref }}
@@ -32,44 +31,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Format check
+        run: npm run format:check
+
+      - name: Type check
+        run: npm run typecheck
+
       - name: Lint
-        id: lint
-        continue-on-error: true
         run: npm run lint
 
       - name: Test
-        id: test
-        continue-on-error: true
         run: npm test -- --run
 
       - name: Build
-        id: build
-        continue-on-error: true
         run: npm run build
-
-      - name: Publish verification summary
-        env:
-          GH_TOKEN: ${{ github.token }}
-          LINT_OUTCOME: ${{ steps.lint.outcome }}
-          TEST_OUTCOME: ${{ steps.test.outcome }}
-          BUILD_OUTCOME: ${{ steps.build.outcome }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          {
-            echo "## Habit-first verification"
-            echo
-            echo "| Gate | Result |"
-            echo "|---|---|"
-            echo "| Lint | ${LINT_OUTCOME} |"
-            echo "| Tests | ${TEST_OUTCOME} |"
-            echo "| Build | ${BUILD_OUTCOME} |"
-            echo
-            echo "Run: ${RUN_URL}"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$LINT_OUTCOME" = "success" ] && [ "$TEST_OUTCOME" = "success" ] && [ "$BUILD_OUTCOME" = "success" ]; then
-            gh issue comment 95 --body "Automated habit-first verification passed on the current pull-request head: lint, tests, and production build all succeeded. Run: ${RUN_URL}. Representative device, responsive, accessibility, and legacy-data QA remain required before merge."
-          else
-            gh issue comment 95 --body "Automated habit-first verification found a failure on the current pull-request head. Lint: ${LINT_OUTCOME}; tests: ${TEST_OUTCOME}; build: ${BUILD_OUTCOME}. The pull request remains draft. Run: ${RUN_URL}."
-            exit 1
-          fi

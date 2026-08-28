@@ -27,6 +27,13 @@ import {
   validatePortableBackup,
 } from '../utils/portableBackup';
 import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics';
+import {
+  checkNotificationPermission,
+  PRIVATE_REMINDER_BODY,
+  PRIVATE_REMINDER_TITLE,
+  requestNotificationPermission,
+  showNotification,
+} from '../utils/notifications';
 import './styles.css';
 
 const GROUP_LABELS = {
@@ -1140,6 +1147,7 @@ function ReviewActionColumn({ title, rows, empty, format, onEdit, onDismiss }) {
 
 function SettingsView({ snapshot }) {
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationPermission, setNotificationPermission] = useState('unknown');
   const [importMode, setImportMode] = useState('replace');
   const [pendingPortableImport, setPendingPortableImport] = useState(null);
   const [backupMessage, setBackupMessage] = useState('');
@@ -1147,16 +1155,40 @@ function SettingsView({ snapshot }) {
   const [legacyCleanupText, setLegacyCleanupText] = useState({});
   const [legacyMappingIds, setLegacyMappingIds] = useState([]);
 
+  useEffect(() => {
+    let active = true;
+    checkNotificationPermission().then((permission) => {
+      if (active) setNotificationPermission(permission);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const requestNotifications = async () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      setNotificationMessage('Notifications are not supported in this browser.');
-      return;
-    }
-    const permission = await window.Notification.requestPermission();
+    const current = await checkNotificationPermission();
+    const permission = current === 'prompt' ? await requestNotificationPermission() : current;
+    setNotificationPermission(permission);
     setNotificationMessage(
       permission === 'granted'
-        ? 'Permission granted. Reminders can appear while LifeStreak is open.'
-        : `Permission is ${permission}. LifeStreak will not ask automatically.`
+        ? 'Permission granted. You can send a private test reminder.'
+        : permission === 'denied'
+          ? 'Permission is denied. LifeStreak will not ask again automatically; enable it in browser or system settings.'
+          : permission === 'unsupported'
+            ? 'Notifications are not supported on this device.'
+            : 'Notification permission could not be changed. Try again from browser or system settings.'
+    );
+  };
+
+  const testNotification = async () => {
+    const shown = await showNotification(PRIVATE_REMINDER_TITLE, {
+      body: PRIVATE_REMINDER_BODY,
+      tag: 'lifestreak-private-test',
+    });
+    setNotificationMessage(
+      shown
+        ? 'A private test reminder was sent.'
+        : 'The test reminder could not be sent. Check browser or system notification settings.'
     );
   };
 
@@ -1266,7 +1298,7 @@ function SettingsView({ snapshot }) {
           <h3 id="notification-settings-heading">Reminder privacy</h3>
           <p>
             LifeStreak never requests notification permission during startup or background
-            rescheduling.
+            rescheduling. Enable it here only if timely, private prompts would help.
           </p>
           <label className="habit-check-row">
             <input
@@ -1281,10 +1313,25 @@ function SettingsView({ snapshot }) {
           <button
             type="button"
             className="habit-button habit-button-secondary"
+            disabled={['denied', 'unsupported'].includes(notificationPermission)}
             onClick={requestNotifications}
           >
-            Request notification permission
+            Enable reminders
           </button>
+          <button
+            type="button"
+            className="habit-button habit-button-secondary"
+            disabled={notificationPermission !== 'granted'}
+            onClick={testNotification}
+          >
+            Send private test reminder
+          </button>
+          {notificationPermission === 'denied' && !notificationMessage && (
+            <p role="status">
+              Permission is denied. LifeStreak will not prompt again; use browser or system settings
+              to enable reminders.
+            </p>
+          )}
           {notificationMessage && <p role="status">{notificationMessage}</p>}
           <small>
             Browser reminders operate while LifeStreak is open. Native background scheduling remains

@@ -1020,6 +1020,70 @@ async function main() {
     await inspectPage(specialistFailurePage, 'phone', 'specialist-storage-recovered');
     await specialistFailureContext.close();
 
+    const capacityContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    const capacityPage = await capacityContext.newPage();
+    await capacityPage.goto(`${origin}/service?legacy=1`, { waitUntil: 'networkidle' });
+    const capacitySetup = await capacityPage.evaluate(() => {
+      const serviceKey = 'ls-service-storage';
+      const fillerPrefix = 'lifestreak-capacity-fixture-';
+      const before = localStorage.getItem(serviceKey);
+      let nextKey = 0;
+      let quotaFailures = 0;
+      for (const chunkSize of [262144, 65536, 16384, 4096, 1024, 256, 64, 16]) {
+        while (nextKey < 512) {
+          try {
+            localStorage.setItem(`${fillerPrefix}${nextKey}`, 'x'.repeat(chunkSize));
+            nextKey += 1;
+          } catch (error) {
+            if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+              quotaFailures += 1;
+              break;
+            }
+            throw error;
+          }
+        }
+      }
+      return { before, fillerPrefix, quotaFailures };
+    });
+    assert(
+      capacitySetup.quotaFailures > 0,
+      'The real Chromium localStorage quota was not reached.'
+    );
+    await capacityPage.getByLabel('Service hours').fill('2.5');
+    await capacityPage.getByLabel('Service notes (optional)').fill('Real capacity retry fixture');
+    await capacityPage.getByRole('button', { name: 'Add Entry' }).click();
+    await capacityPage.getByText('LifeStreak could not safely save local data.').waitFor();
+    assert(
+      (await capacityPage.evaluate(() => localStorage.getItem('ls-service-storage'))) ===
+        capacitySetup.before,
+      'Actual quota exhaustion changed the service database.'
+    );
+    await capacityPage.evaluate((fillerPrefix) => {
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith(fillerPrefix))
+        .forEach((key) => localStorage.removeItem(key));
+    }, capacitySetup.fillerPrefix);
+    await capacityPage.getByRole('button', { name: 'Retry save' }).click();
+    await capacityPage.getByText('LifeStreak could not safely save local data.').waitFor({
+      state: 'detached',
+    });
+    await capacityPage.reload({ waitUntil: 'networkidle' });
+    await capacityPage.getByText('Real capacity retry fixture').waitFor();
+    const recoveredCapacityEntries = await capacityPage.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem('ls-service-storage')).state.entries.filter(
+          ({ notes }) => notes === 'Real capacity retry fixture'
+        ).length
+    );
+    assert(
+      recoveredCapacityEntries === 1,
+      'Actual-capacity Retry did not persist exactly one service entry.'
+    );
+    await capacityContext.close();
+
     const unitTransitionContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       serviceWorkers: 'block',

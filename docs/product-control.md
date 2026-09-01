@@ -1,6 +1,6 @@
 # LifeStreak product control
 
-Last reconciled: 2026-08-28. This is the durable product charter, evidence register, and market position. [ISSUE_ROADMAP.md](ISSUE_ROADMAP.md) remains the authoritative implementation backlog, and [product-scope-matrix.md](product-scope-matrix.md) maps this charter to routes, capabilities, platforms, and release promises. Issue and PR states on GitHub remain authoritative for external status.
+Last reconciled: 2026-09-01. This is the durable product charter, evidence register, and market position. [ISSUE_ROADMAP.md](ISSUE_ROADMAP.md) remains the authoritative implementation backlog, and [product-scope-matrix.md](product-scope-matrix.md) maps this charter to routes, capabilities, platforms, and release promises. Issue and PR states on GitHub remain authoritative for external status.
 
 ## Product charter
 
@@ -20,11 +20,11 @@ Last reconciled: 2026-08-28. This is the durable product charter, evidence regis
 
 ### Verified facts
 
-- The active implementation is branch `codex/lifestreak-habit-first`, draft PR #106, not merged or deployed. GitHub reports it mergeable but hosted GitHub/third-party checks are failing or queued before useful execution.
-- The repository has 37 open issues. The reconciled roadmap groups foundations, daily workflow, trust/release, P2 product maturity, and umbrella tracking rather than treating all issues as independent priorities.
-- Local branch gates currently pass: typecheck, lint, format, production build, dependency audit, product identity, native permission/signing contracts, 27 test files / 212 tests, and a Chromium production-browser matrix at 320, 390, 768, and 1440 CSS pixels.
-- The branch implements versioned habits/logs, flexible schedules, quantitative entries, lifecycle history, onboarding, Today/Habits/Insights/Settings, optional Collections, portable backup/recovery, private reminders, offline PWA behavior, native build/release definitions, sanitized diagnostics, and immutable supply-chain checks.
-- `https://lifestreak.ashbi.ca/` serves HTTP 200 with security headers, but it is the stale specialist deployment. On 2026-08-28 its `/version.json` request returned the HTML fallback rather than build identity, and its HTML still disabled user zoom. It is not evidence for the revival branch.
+- PR #106 and release-hardening PRs #119, #123, and #124 are merged. The independent app is on `main` and released at `https://lifestreak.ashbi.ca/` as revision `b7d4420c83fd6b43db2db6081f25195fac53b5c0`.
+- The repository has 32 open issues after closing released defects #41/#68 and superseded umbrella trackers #81-#83. Every open issue has one evidence status: actionable, verification pending, or external blocked.
+- The release source passed 31 files / 281 tests, formatting, typecheck, lint, production build, dependency audit, identity, permission/signing, supply-chain, responsive/accessibility Chromium, Android debug, unsigned iOS, exact-source image build, and published-image high/critical scanning.
+- `main` implements versioned habits/logs, flexible schedules, quantitative entries, lifecycle history, onboarding, Today/Habits/Insights/Settings, optional Collections, portable backup/recovery, private reminders, offline PWA behavior, native build/release definitions, sanitized diagnostics, and immutable supply-chain checks.
+- Production serves HTTP 200, exact release identity, the PWA manifest/service worker, and required security headers. The prior healthy `68f0270` container and timestamped Traefik route backup remain the immediate rollback path.
 - There is no implemented account, billing, cloud-sync, customer analytics, consented pilot measurement, or verified app-store release.
 
 ### Reasonable inferences
@@ -44,17 +44,17 @@ Last reconciled: 2026-08-28. This is the durable product charter, evidence regis
 
 ## Access register
 
-| Capability                      | Current evidence                                               | Authority / approval                                             | Risk or blocker                                           | Owner            |
-| ------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------- | ---------------- |
-| Local repository and tests      | Full read/write; branch commits pushed                         | Routine implementation authorized                                | Preserve unrelated work                                   | Codex / Cameron  |
-| GitHub repo, issues, PR         | Authenticated `camster91`; issue comments and branch push work | Backlog/PR maintenance in goal scope                             | Hosted checks currently fail/queue externally             | Cameron / GitHub |
-| Public production               | Read-only HTTP inspection works                                | Explicit approval required before deploy/route change            | Production is stale; deployment credentials not exercised | Cameron          |
-| Ashbi VPS / Docker daemon       | Deployment docs exist; local Docker daemon absent              | Explicit production approval and credentials required            | Cannot verify local image build or deploy                 | Cameron          |
-| Apple/Google stores and signing | Workflows/runbooks exist                                       | Protected credentials and release approval required              | No signed-device/store evidence                           | Cameron          |
-| Customer research / pilot       | No participants or consented evidence available                | Recruitment/contact approval required                            | Position and retention remain hypotheses                  | Cameron          |
-| Analytics                       | No behavioral telemetry by design                              | New collection requires privacy/product approval                 | Metrics require consented pilot or local export           | Cameron          |
-| Billing / Stripe                | Not implemented                                                | Pricing and billing change require explicit approval             | No willingness-to-pay or unit-economics validation        | Cameron          |
-| Support/security channel        | Sanitized diagnostics/runbook exist                            | Root `SECURITY.md` requires owner approval under policy workflow | No public support SLA or approved disclosure policy       | Cameron          |
+| Capability                      | Current evidence                                                      | Authority / approval                                              | Risk or blocker                                         | Owner            |
+| ------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- | ---------------- |
+| Local repository and tests      | Full read/write; branch commits pushed                                | Routine implementation authorized                                 | Preserve unrelated work                                 | Codex / Cameron  |
+| GitHub repo, issues, PR         | Authenticated `camster91`; issue comments and branch push work        | Backlog/PR maintenance in goal scope                              | Hosted checks currently fail/queue externally           | Cameron / GitHub |
+| Public production               | Revision `b7d4420` released; manual smoke run `33499203670` passed    | Explicit approval required before each future deploy/route change | No real-user reliability baseline                       | Cameron          |
+| Ashbi VPS / Docker daemon       | Exact source image healthy; prior container and route backup retained | Explicit production approval required for future mutations        | Registry package remains private to unauthenticated VPS | Cameron          |
+| Apple/Google stores and signing | Workflows/runbooks exist                                              | Protected credentials and release approval required               | No signed-device/store evidence                         | Cameron          |
+| Customer research / pilot       | No participants or consented evidence available                       | Recruitment/contact approval required                             | Position and retention remain hypotheses                | Cameron          |
+| Analytics                       | No behavioral telemetry by design                                     | New collection requires privacy/product approval                  | Metrics require consented pilot or local export         | Cameron          |
+| Billing / Stripe                | Not implemented                                                       | Pricing and billing change require explicit approval              | No willingness-to-pay or unit-economics validation      | Cameron          |
+| Support/security channel        | Sanitized diagnostics/runbook exist                                   | Root `SECURITY.md` requires owner approval under policy workflow  | No public support SLA or approved disclosure policy     | Cameron          |
 
 ## Market evidence (researched 2026-08-28)
 
@@ -119,21 +119,21 @@ No behavioral telemetry is currently collected. Pilot metrics require informed c
 
 ## Risk register
 
-| Risk                                | Severity                | Evidence / consequence                                       | Mitigation and owner                                                                       |
-| ----------------------------------- | ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| Revival branch not released         | Critical launch blocker | Production is stale and fails version identity               | Complete gates, approval, staged deploy/rollback; Cameron                                  |
-| Hosted CI/action restriction        | High                    | PR checks fail/queue without executing useful jobs           | Resolve account runner restriction or rely on approved local runner, then rerun; Cameron   |
-| No real-customer evidence           | High product risk       | Position, retention, and pricing are hypotheses              | Recruit consented 5–10 person pilot after release candidate; Cameron approval              |
-| Native/device evidence missing      | High release risk       | Notifications, upgrades, accessibility may fail on device    | Signed internal builds and physical-device matrix; Cameron                                 |
-| Local-only data loss/device loss    | High trust risk         | Portable backup is manual; no sync                           | Make backup first-class, rehearse recovery, research encrypted sync only after core launch |
-| Dual habit/Collections UI confusion | Medium-high             | Preserved specialist product competes with primary hierarchy | Keep Collections optional, audit navigation/copy, measure pilot confusion                  |
-| Crowded low-price market            | High commercial risk    | Free/open-source and polished low-cost competitors exist     | Win focused job; defer billing; validate switch/retention before acquisition spend         |
-| Security disclosure policy absent   | Medium-high             | Runbook exists but no approved root policy                   | Owner approves scoped `SECURITY.md` draft                                                  |
-| No approved legal/store claims      | High release risk       | Privacy/store docs are implementation drafts                 | Human/legal/store review before publication                                                |
+| Risk                                | Severity             | Evidence / consequence                                       | Mitigation and owner                                                                       |
+| ----------------------------------- | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Native/store release unverified     | High release risk    | Web/PWA is released; signed store continuity is unproven     | Protected signed builds, internal tracks, and physical-device upgrades; Cameron            |
+| Hosted CI/action restriction        | High                 | PR checks fail/queue without executing useful jobs           | Resolve account runner restriction or rely on approved local runner, then rerun; Cameron   |
+| No real-customer evidence           | High product risk    | Position, retention, and pricing are hypotheses              | Recruit consented 5–10 person pilot after release candidate; Cameron approval              |
+| Native/device evidence missing      | High release risk    | Notifications, upgrades, accessibility may fail on device    | Signed internal builds and physical-device matrix; Cameron                                 |
+| Local-only data loss/device loss    | High trust risk      | Portable backup is manual; no sync                           | Make backup first-class, rehearse recovery, research encrypted sync only after core launch |
+| Dual habit/Collections UI confusion | Medium-high          | Preserved specialist product competes with primary hierarchy | Keep Collections optional, audit navigation/copy, measure pilot confusion                  |
+| Crowded low-price market            | High commercial risk | Free/open-source and polished low-cost competitors exist     | Win focused job; defer billing; validate switch/retention before acquisition spend         |
+| Security disclosure policy absent   | Medium-high          | Runbook exists but no approved root policy                   | Owner approves scoped `SECURITY.md` draft                                                  |
+| No approved legal/store claims      | High release risk    | Privacy/store docs are implementation drafts                 | Human/legal/store review before publication                                                |
 
 ## Launch standard and status
 
-Status: **in progress**, not released, not customer-validated, not launch-ready.
+Status: **web/PWA released**, not store-released, not customer-validated, and not launch-ready.
 
 Release-candidate approval requires: merged/current source; green hosted or independently trusted full web/native/security/supply-chain checks; responsive and WCAG manual evidence; real-device notification/offline/update/upgrade/recovery evidence; production version/digest and rollback monitoring; approved privacy/support/security/store materials; zero known critical/high launch risk; and a production-like pilot plan. Market-leading and product-market-fit claims require subsequent real customer and business evidence.
 
@@ -143,3 +143,5 @@ Release-candidate approval requires: merged/current source; green hosted or inde
 - 2026-08-28: implemented and verified habit-first domain, daily workflow, migration preservation, truthful operations, accessibility/responsive browser contract, privacy opt-ins, PWA recovery, native provenance, reading truthfulness, atomic portable backup, semantic design tokens, deeper insights, sanitized diagnostics/incident response, and immutable supply-chain enforcement across commits referenced in issue comments.
 - 2026-08-28: live production inspection proved the public deployment is stale and `/version.json` is not serving release identity; no deployment action taken.
 - 2026-08-28: current market/pricing research established a crowded category and a focused low-friction/private/truthful hypothesis; no customer validation or pricing approval claimed.
+- 2026-09-01: merged PR #106 and release-hardening PRs #119/#123/#124; released exact revision `b7d4420` with a healthy rollback target, clean published-image scan, and passing public production smoke.
+- 2026-09-01: replaced the stale integration-pending backlog state, closed released defects #41/#68, and closed superseded aggregate trackers #81-#83; 32 individually scoped issues remain.

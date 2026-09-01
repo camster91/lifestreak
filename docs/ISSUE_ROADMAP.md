@@ -1,6 +1,6 @@
 # LifeStreak issue roadmap
 
-Last reconciled: 2026-08-28
+Last reconciled: 2026-09-01
 
 This is the authoritative ordering for LifeStreak work. GitHub issues contain the detailed acceptance criteria; this file records disposition, dependencies, and execution order. [product-control.md](product-control.md) is the durable product charter and evidence register. `TODO.md`, `APP_STORE_TODO.md`, and older feature plans are supporting or historical checklists and must not override this roadmap.
 
@@ -10,12 +10,11 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 
 ## Current integration state
 
-- `main` still contains the archived product documentation and legacy default experience.
-- The active `codex/lifestreak-habit-first` branch contains the independent-app implementation in open draft PR #106; it is not merged or deployed.
-- The branch is reconciled with current `main` and passes formatting, typecheck, lint, 31 files / 281 tests, production web build, the responsive Chromium matrix, dependency audit, product-identity, native-contract, and supply-chain checks locally.
-- A local Android debug build previously stopped because the Mac had no Java runtime. The current local Docker image gate cannot run because no Docker daemon is available. GitHub-hosted and third-party checks currently fail before useful execution, except the Dependabot configuration check.
-- The branch has not passed the full migration, native archive, device, accessibility, privacy, or release evidence required by the issues below.
-- Issues #95-#102 remain open because source on a draft branch is not completion on the default branch and required external/manual evidence is incomplete.
+- The independent habit-first app is integrated on `main` and web/PWA revision `b7d4420c83fd6b43db2db6081f25195fac53b5c0` is released at `https://lifestreak.ashbi.ca/`.
+- Exact release evidence includes 31 files / 281 tests, the responsive/accessibility Chromium matrix, Android debug, unsigned iOS, immutable source/image identity, zero high/critical published-image findings, a healthy candidate, retained rollback, and passing public smoke run `33499203670`.
+- The repository has 32 open issues after closing released defects #41/#68 and superseded umbrella trackers #81-#83. Open items remain because their own manual, native, store, pilot, or operational acceptance evidence is incomplete.
+- Ashbi Local CI currently runs Node 22.23/npm 10.9 instead of the repository's exact Node 22.22/npm 11.17 contract; trusted GitHub-hosted gates pass, but the external runner mismatch remains actionable under #60/#64.
+- Production release does not prove signed App Store/Play continuity, physical-device upgrades/reminders/accessibility, real-customer retention, or willingness to pay.
 
 ## GitHub triage metadata
 
@@ -24,10 +23,14 @@ The live GitHub issue list mirrors this roadmap with the following repository la
 - `priority:P0` — independent-product safety, data preservation, identity, permissions, signing, and integration gates that block release.
 - `priority:P1` — core habit workflows, accessibility, reliability, supported tooling, and release readiness.
 - `priority:P2` — post-foundation trust, reminders, design polish, insights, observability, and supply-chain completion.
-- `status:integration-pending` — work exists or is progressing on draft PR #106, but the acceptance criteria are not yet proven on the default branch. This label must be removed when an issue is closed or when its disposition changes.
+- `status:actionable` — unmet acceptance work can proceed without a new external owner action.
+- `status:verification-pending` — implementation is integrated, but required acceptance evidence remains.
+- `status:external-blocked` — completion requires owner credentials, physical devices, store access, policy approval, or customer access.
+- `status:released` — the issue's acceptance criteria are verified and its relevant behavior is released.
+- `status:superseded` — the issue was replaced by this roadmap or individually scoped work.
 - `roadmap:umbrella` — historical aggregate issues #81-#83, retained only until this reconciled roadmap is integrated and linked from them.
 
-Every open actionable issue has exactly one priority label plus its ordinary `bug`, `enhancement`, or `documentation` type. The three umbrella issues intentionally have no priority label. Closed audit issue #40 is marked `duplicate`; closed resolved audit issue #42 remains typed `bug`; open audit issue #41 retains `audit` alongside its current P1 bug disposition. Titles retain their historical prefixes, but labels and this file are authoritative for current sorting.
+Every open issue has exactly one priority and one evidence-status label plus its ordinary `bug`, `enhancement`, or `documentation` type. Closed audit issue #40 is marked `duplicate`; released issues #41/#68 carry `status:released`; aggregate issues #81-#83 carry `status:superseded`. Titles retain their historical prefixes, but labels and this file are authoritative for current sorting.
 
 ## Execution order
 
@@ -71,8 +74,8 @@ Every open actionable issue has exactly one priority label plus its ordinary `bu
 
 ### P2 — polish, trust, and operations
 
-17. **#68 — truthful specialist reading data**
-    The fixed 60% dashboard placeholder is removed. New reading records persist their own unit; preserved legacy records without a known unit say `units` instead of borrowing the current form selection. Detail and dashboard use one bounded per-item percentage contract, while the dashboard labels its equal-item average so unlike chapters/minutes are not added together. Empty/completed-only states have no fabricated percentage, quarantined data is disclosed as unknown, and both views expose named progressbar values. Unit and production-browser fixtures prove the 50%/90% details agree with the 70% dashboard average. Keep open until the branch is integrated and responsive/screen-reader Collections verification is recorded.
+17. **#68 — truthful specialist reading data — released and closed**
+    The fixed 60% dashboard placeholder is removed. New reading records persist their own unit; preserved legacy records without a known unit say `units` instead of borrowing the current form selection. Detail and dashboard use one bounded per-item percentage contract, while the dashboard labels its equal-item average so unlike chapters/minutes are not added together. Empty/completed-only states have no fabricated percentage, quarantined data is disclosed as unknown, and both views expose named progressbar values. Unit and production-browser fixtures prove the 50%/90% details agree with the 70% dashboard average. Integrated, browser-verified, released, and closed on 2026-09-01.
 18. **#77 — portable export/import/reset/recovery**
     A single versioned portable format now covers the habit database plus every recognized specialist store, publishes per-store schema versions, rejects malformed/newer data before mutation, redacts session credentials, and refuses to silently skip corrupt stores. Both interfaces export the complete format, enforce the same 5 MB input boundary, and parse imports through the same duplicate-key guard before schema validation, preventing oversized or ambiguous JSON from reaching mutation. Import creates and verifies a byte-exact recovery snapshot, replaces present and absent stores deterministically, verifies each mutation, and rolls every store back on failure. Legacy specialist and habit-only backups remain explicit paths. Habit reset copy states exactly what it preserves, and the former Collections “Clear All Data” action is truthfully scoped to spiritual progress with every unaffected store named. Unit coverage proves redaction, version/size/duplicate-key rejection, full round-trip replacement, recovery creation, and byte-exact failed-write rollback. The production Chromium gate now downloads a mixed habit/specialist backup, changes the live originals, injects a one-time `QuotaExceededError` late in the real multi-store restore, proves all eight original store slots return byte-for-byte, and then proves the same validated file succeeds after recovery; its existing empty-store replacement journey remains covered. Capacity-driven quota/private-mode execution, historical-data device upgrades, and manual assistive-technology review remain before closure.
 19. **#78 — design system and complete interaction-state inventory**
@@ -86,14 +89,12 @@ Every open actionable issue has exactly one priority label plus its ordinary `bu
 
 ## Tracking and umbrella issues
 
-- **#81** is the previous combined backlog index. Keep it only as a historical pointer and close it once this roadmap is merged and linked from the issue.
-- **#82** is the previous shipping plan. Its release gates are incorporated above and in `APP_STORE_TODO.md`; close it as superseded after reconciliation is merged.
-- **#83** is the previous UX roadmap. Its actionable work remains in #69-#80 and #95-#102; close it as superseded after reconciliation is merged.
+- **#81-#83** were closed as superseded on 2026-09-01. Their incomplete work remains in the individually prioritized issues and `APP_STORE_TODO.md`.
 
 ## Duplicate, stale, and resolved audit issues
 
 - **#40** — closed as an exact duplicate of #41.
-- **#41** — wording references React Native, which this repository does not use, but the underlying inaccessible click-target defect was confirmed in `ProjectsTab` and `AchievementPopup`. Keep open until the corrected semantic buttons are integrated and verified.
+- **#41** — wording references React Native, which this repository does not use, but the underlying inaccessible click-target defect was valid. Corrected semantic buttons are integrated, browser-verified, released, and the issue was closed on 2026-09-01.
 - **#42** — closed as already resolved by commit `249c0da` / PR #50; the stale cross-product CORS origin is absent from current source.
 
 ## Dependency pull requests
@@ -103,7 +104,7 @@ Every open actionable issue has exactly one priority label plus its ordinary `bu
 - **#107** — closed as superseded by the independently verified Capacitor local-notifications 8.3.1 update in `5cfc4fe`; web gates and both native syncs pass.
 - **#108** — closed as an unsupported TypeScript 7 major under the pinned TypeScript 6 contract. Dependabot now ignores this major pending deliberate review.
 
-PR #106 is now the only open pull request. Future dependency updates must remain within [the supported toolchain contract](toolchain.md) and pass clean install, lint, tests, web build, native sync/build as applicable, security review, and release-workflow behavior.
+PRs #110, #112-#118, #120, and #121 are Dependabot updates under review. Docker PR #117 is an unsupported Node 26 major and is rejected under the exact Node 22 contract; Dependabot now ignores Docker Node majors. Compatible updates must pass clean install, lint, tests, web build, native sync/build as applicable, security review, and release-workflow behavior before merge.
 
 ## Completion rules
 

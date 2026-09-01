@@ -34,6 +34,6 @@ EXPOSE 80
 
 # Give Docker and the VPS operator a meaningful application-level health signal.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q -O - http://127.0.0.1/ | grep -q '<title>LifeStreak</title>' || exit 1
+  CMD wget -q -O - http://127.0.0.1/ | grep -q '<title>LifeStreak' || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

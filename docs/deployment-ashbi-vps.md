@@ -28,7 +28,22 @@ its own release verification passes.
 The redirect was abandoned when LifeStreak was restored as its own product. Do
 not retry it under the current product contract.
 
-### 2026-09-01 LifeStreak release
+### 2026-09-01 LifeStreak c631375 release
+
+Commit `c6313758a10efc2495580db0c91630baa3582aaa` is deployed and serving
+`https://lifestreak.ashbi.ca`. The active container is
+`lifestreak-c6313758a10efc2495580db0c91630baa3582aaa`, using immutable local
+image digest `sha256:300235d8b36751546d717a1ff2b0455dd29b795b8bb42288a885b57021485a8d`.
+Traefik routes to `127.0.0.1:18100`; the pre-cutover route backup is
+`/opt/traefik/dynamic/lifestreak.yml.20260901T115848Z-b7d4420.bak`.
+
+The previous `b7d4420c83fd6b43db2db6081f25195fac53b5c0` container remains healthy
+on `127.0.0.1:18099` as the immediate rollback target. GitHub Actions run
+`33504384378` passed exact-source verification, multi-architecture publication,
+and the published-image high/critical scan. Direct candidate/public checks and
+production smoke run `33505245704` passed.
+
+### 2026-09-01 LifeStreak b7d4420 release
 
 Commit `b7d4420c83fd6b43db2db6081f25195fac53b5c0` is deployed and serving
 `https://lifestreak.ashbi.ca`. The active container is

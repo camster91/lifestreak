@@ -887,6 +887,83 @@ async function main() {
         localStorage.getItem('lifestreak-habit-tracker-v1')?.includes('Portable fixture') &&
         localStorage.getItem('ls-service-storage') !== null
     );
+    const capacityImportSetup = await backupPage.evaluate(() => {
+      const keys = [
+        'lifestreak-habit-tracker-v1',
+        'ls-progress-storage',
+        'ls-progress-settings',
+        'ls-gamification-storage',
+        'ls-goals-storage',
+        'ls-memories-storage',
+        'ls-service-storage',
+        'ls-reading-storage',
+      ];
+      const fillerPrefix = 'lifestreak-import-capacity-fixture-';
+      const before = Object.fromEntries(keys.map((key) => [key, localStorage.getItem(key)]));
+      let nextKey = 0;
+      let quotaFailures = 0;
+      for (const chunkSize of [262144, 65536, 16384, 4096, 1024, 256, 64, 16]) {
+        while (nextKey < 512) {
+          try {
+            localStorage.setItem(`${fillerPrefix}${nextKey}`, 'x'.repeat(chunkSize));
+            nextKey += 1;
+          } catch (error) {
+            if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+              quotaFailures += 1;
+              break;
+            }
+            throw error;
+          }
+        }
+      }
+      return { before, fillerPrefix, quotaFailures };
+    });
+    assert(
+      capacityImportSetup.quotaFailures > 0,
+      'The real Chromium localStorage quota was not reached before portable import.'
+    );
+    await backupPage.getByLabel('Import LifeStreak JSON').setInputFiles(backupPath);
+    await backupPage
+      .getByRole('heading', { name: 'Replace with validated complete backup?' })
+      .waitFor();
+    await backupPage.getByRole('button', { name: 'Restore complete backup' }).click();
+    await backupPage
+      .getByRole('status')
+      .getByText(/quota|storage|failed/i)
+      .waitFor();
+    const afterCapacityImport = await backupPage.evaluate(() => {
+      const keys = [
+        'lifestreak-habit-tracker-v1',
+        'ls-progress-storage',
+        'ls-progress-settings',
+        'ls-gamification-storage',
+        'ls-goals-storage',
+        'ls-memories-storage',
+        'ls-service-storage',
+        'ls-reading-storage',
+      ];
+      return Object.fromEntries(keys.map((key) => [key, localStorage.getItem(key)]));
+    });
+    assert(
+      JSON.stringify(afterCapacityImport) === JSON.stringify(capacityImportSetup.before),
+      'Actual-capacity portable import changed a recognized store.'
+    );
+    await backupPage.evaluate((fillerPrefix) => {
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith(fillerPrefix))
+        .forEach((key) => localStorage.removeItem(key));
+    }, capacityImportSetup.fillerPrefix);
+    await Promise.all([
+      backupPage.waitForEvent('load'),
+      backupPage
+        .getByRole('button', { name: 'Restore complete backup' })
+        .evaluate((button) => button.click()),
+    ]);
+    await backupPage.waitForFunction(
+      () =>
+        localStorage.getItem('lifestreak-habit-tracker-v1')?.includes('Portable fixture') &&
+        localStorage.getItem('ls-service-storage') !== null
+    );
     await backupContext.close();
 
     const storageFailureContext = await browser.newContext({

@@ -127,7 +127,7 @@ function GoalsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-linear-to-br from-amber-400 to-orange-500 rounded-xl">
+          <div className="p-2 bg-linear-to-br from-warning to-warning/70 rounded-xl">
             <Target className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -163,9 +163,9 @@ function GoalsTab() {
 
       {/* Suggestions Panel */}
       {showSuggestions && (
-        <div className="card bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200">
+        <div className="card bg-linear-to-br from-warning/15 to-warning/5 border border-warning/25">
           <div className="card-body p-4">
-            <h4 className="font-semibold text-amber-800 flex items-center gap-2">
+            <h4 className="font-semibold text-base-content flex items-center gap-2">
               <Star className="w-4 h-4" />
               Goal Ideas
             </h4>
@@ -180,7 +180,7 @@ function GoalsTab() {
                     className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
                       isAlreadyAdded
                         ? 'bg-base-200 opacity-50 cursor-not-allowed'
-                        : 'bg-white hover:bg-amber-100 active:scale-[0.98]'
+                        : 'bg-base-100 hover:bg-warning/10 active:scale-[0.98]'
                     }`}
                   >
                     <span className="text-2xl">{suggested.icon}</span>
@@ -193,7 +193,7 @@ function GoalsTab() {
                     {isAlreadyAdded ? (
                       <Check className="w-4 h-4 text-success" />
                     ) : (
-                      <Plus className="w-4 h-4 text-amber-600" />
+                      <Plus className="w-4 h-4 text-warning" />
                     )}
                   </button>
                 );
@@ -255,8 +255,8 @@ function GoalsTab() {
       {/* Active Goals */}
       {activeGoals.length === 0 && !showAddForm && !showSuggestions ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-            <Target className="w-8 h-8 text-amber-500" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-warning/15 to-warning/5 flex items-center justify-center">
+            <Target className="w-8 h-8 text-warning" />
           </div>
           <p className="font-medium text-base-content/70">No goals yet</p>
           <p className="text-sm text-base-content/50 mt-1">Set a spiritual goal to work toward</p>

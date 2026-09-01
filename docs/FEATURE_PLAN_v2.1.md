@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document outlines new features to improve the JW Progress Tracker app with:
+> Historical specialist-feature plan. For current LifeStreak priorities, use `docs/ISSUE_ROADMAP.md`.
+
+This document outlined features for an earlier specialist version of LifeStreak:
 1. **Partial Progress Tracking** - Track completion percentage for reading/study activities
 2. **Detailed Midweek Meeting Breakdown** - Individual parts of the Life and Ministry Meeting
 

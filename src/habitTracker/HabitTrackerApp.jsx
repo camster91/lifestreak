@@ -1,0 +1,2395 @@
+import { useEffect, useRef, useState } from 'react';
+import {
+  addDays,
+  buildWeeklyReview,
+  calculateHabitStats,
+  compareHabitPeriods,
+  configurationForDate,
+  describeSchedule,
+  eachDate,
+  explainStreak,
+  getDayState,
+  getSchedulePeriodProgress,
+  lifecycleAt,
+  logForDate,
+  parseLocalDate,
+  starterTemplates,
+  statusLabel,
+  startOfWeek,
+  summarizeQuantitativePeriod,
+  TIME_GROUPS,
+  toLocalDate,
+} from './engine';
+import { habitStore, LEGACY_PROGRESS_MAPPINGS, useHabitState } from './store';
+import {
+  createPortableBackup,
+  restorePortableBackup,
+  validatePortableBackup,
+} from '../utils/portableBackup';
+import { MAX_BACKUP_BYTES } from '../utils/backupValidation';
+import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics';
+import { parseJsonWithoutDuplicateKeys } from '../utils/strictJson';
+import { reconcileHabitNotifications } from './habitReminders';
+import {
+  checkNotificationPermission,
+  PRIVATE_REMINDER_BODY,
+  PRIVATE_REMINDER_TITLE,
+  requestNotificationPermission,
+  showNotification,
+} from '../utils/notifications';
+import './styles.css';
+
+const GROUP_LABELS = {
+  morning: 'Morning',
+  afternoon: 'Afternoon',
+  evening: 'Evening',
+  anytime: 'Anytime',
+};
+
+const TRACKING_LABELS = {
+  binary: 'Yes / no',
+  count: 'Count',
+  duration: 'Duration',
+  distance: 'Distance',
+  volume: 'Volume',
+  weight: 'Weight',
+  energy: 'Energy',
+  custom: 'Custom number',
+};
+
+let lastDialogTrigger = null;
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'pointerdown',
+    (event) => {
+      const trigger =
+        event.target instanceof Element ? event.target.closest('button, a[href]') : null;
+      if (trigger instanceof HTMLElement) lastDialogTrigger = trigger;
+    },
+    true
+  );
+}
+
+function formatDate(dateKey, options = { weekday: 'long', month: 'long', day: 'numeric' }) {
+  return new Intl.DateTimeFormat(undefined, options).format(parseLocalDate(dateKey));
+}
+
+function downloadJson(filename, value) {
+  const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function useOpenAppNotifications(snapshot) {
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return undefined;
+    if (window.Notification.permission !== 'granted') return undefined;
+
+    const check = () => {
+      const now = new Date();
+      const today = toLocalDate(now);
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(
+        now.getMinutes()
+      ).padStart(2, '0')}`;
+      snapshot.habits.forEach((habit) => {
+        if (!habit.reminderTime || habit.reminderTime !== currentTime) return;
+        const state = getDayState(habit, snapshot.logs, today, {
+          today,
+          weekStartsOn: snapshot.preferences.weekStartsOn,
+        });
+        if (!['due', 'partial', 'missed'].includes(state.status)) return;
+        const dedupeKey = `lifestreak-reminder:${habit.id}:${today}:${currentTime}`;
+        if (window.sessionStorage.getItem(dedupeKey)) return;
+        const body = snapshot.preferences.showHabitNamesInNotifications
+          ? `${habit.name} is ready when you are.`
+          : 'A LifeStreak habit is ready when you are.';
+        new window.Notification('LifeStreak reminder', { body, tag: dedupeKey });
+        window.sessionStorage.setItem(dedupeKey, 'shown');
+      });
+    };
+
+    check();
+    const timer = window.setInterval(check, 60_000);
+    return () => window.clearInterval(timer);
+  }, [snapshot]);
+}
+
+function useNativeHabitNotifications(snapshot) {
+  const { habits, logs, preferences } = snapshot;
+  useEffect(() => {
+    const reconcile = () => {
+      reconcileHabitNotifications({ habits, logs, preferences }).catch((error) => {
+        console.warn('Habit reminder reconciliation failed:', error);
+      });
+    };
+    const reconcileOnReturn = () => {
+      if (document.visibilityState === 'visible') reconcile();
+    };
+    reconcile();
+    document.addEventListener('visibilitychange', reconcileOnReturn);
+    return () => document.removeEventListener('visibilitychange', reconcileOnReturn);
+  }, [habits, logs, preferences]);
+}
+
+export default function HabitTrackerApp({ onOpenCollections }) {
+  const snapshot = useHabitState();
+  const [view, setView] = useState('today');
+  const [selectedDate, setSelectedDate] = useState(toLocalDate());
+  const [editingHabitId, setEditingHabitId] = useState(null);
+  const [createDefaults, setCreateDefaults] = useState(null);
+  const [historyHabitId, setHistoryHabitId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+
+  useOpenAppNotifications(snapshot);
+  useNativeHabitNotifications(snapshot);
+
+  const openCreate = (defaults = null) => {
+    setEditingHabitId(null);
+    setCreateDefaults(defaults?.templateId ? defaults : null);
+    setShowForm(true);
+  };
+
+  const openEdit = (habitId) => {
+    setEditingHabitId(habitId);
+    setCreateDefaults(null);
+    setShowForm(true);
+  };
+
+  const editingHabit = snapshot.habits.find((habit) => habit.id === editingHabitId) || null;
+  const historyHabit = snapshot.habits.find((habit) => habit.id === historyHabitId) || null;
+
+  return (
+    <div className="habit-app">
+      <a className="habit-skip-link" href="#habit-main">
+        Skip to main content
+      </a>
+      <header className="habit-header">
+        <div>
+          <p className="habit-eyebrow">LifeStreak</p>
+          <h1>{view === 'today' ? formatDate(selectedDate) : viewLabel(view)}</h1>
+        </div>
+        <div className="habit-header-actions">
+          <button
+            className="habit-button habit-button-secondary"
+            type="button"
+            onClick={onOpenCollections}
+          >
+            Collections
+          </button>
+          <button className="habit-button habit-button-primary" type="button" onClick={openCreate}>
+            Add habit
+          </button>
+        </div>
+      </header>
+
+      {snapshot.operation && (
+        <OperationBanner operation={snapshot.operation} onDismiss={habitStore.dismissOperation} />
+      )}
+
+      <main id="habit-main" className="habit-main" tabIndex="-1">
+        {view === 'today' && (
+          <TodayView
+            snapshot={snapshot}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            onCreate={openCreate}
+            onCustomize={openCreate}
+            onEdit={openEdit}
+            onHistory={setHistoryHabitId}
+          />
+        )}
+        {view === 'habits' && (
+          <HabitsView
+            snapshot={snapshot}
+            onCreate={openCreate}
+            onCustomize={openCreate}
+            onEdit={openEdit}
+            onHistory={setHistoryHabitId}
+          />
+        )}
+        {view === 'insights' && <InsightsView snapshot={snapshot} onEdit={openEdit} />}
+        {view === 'settings' && <SettingsView snapshot={snapshot} />}
+      </main>
+
+      <nav className="habit-primary-nav" aria-label="Primary">
+        {['today', 'habits', 'insights', 'settings'].map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={view === item ? 'is-active' : ''}
+            aria-current={view === item ? 'page' : undefined}
+            onClick={() => setView(item)}
+          >
+            <span aria-hidden="true">{navSymbol(item)}</span>
+            {viewLabel(item)}
+          </button>
+        ))}
+      </nav>
+
+      {showForm && (
+        <HabitFormDialog
+          habit={editingHabit}
+          initial={createDefaults}
+          returnFocus={lastDialogTrigger}
+          onClose={() => {
+            setShowForm(false);
+            setCreateDefaults(null);
+          }}
+          onSaved={(habitId) => {
+            setShowForm(false);
+            setCreateDefaults(null);
+            if (habitId) setHistoryHabitId(habitId);
+          }}
+        />
+      )}
+      {historyHabit && (
+        <HabitHistoryDialog
+          habit={historyHabit}
+          snapshot={snapshot}
+          returnFocus={lastDialogTrigger}
+          onClose={() => setHistoryHabitId(null)}
+          onEdit={() => {
+            setHistoryHabitId(null);
+            openEdit(historyHabit.id);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function viewLabel(view) {
+  return { today: 'Today', habits: 'Habits', insights: 'Insights', settings: 'Settings' }[view];
+}
+
+function navSymbol(view) {
+  return { today: '✓', habits: '≡', insights: '↗', settings: '⚙' }[view];
+}
+
+function OperationBanner({ operation, onDismiss }) {
+  return (
+    <div className={`habit-operation habit-operation-${operation.type}`} role="status">
+      <span>{operation.message}</span>
+      <div>
+        {operation.type === 'success' && (
+          <button type="button" onClick={() => habitStore.undo()}>
+            Undo
+          </button>
+        )}
+        {operation.type === 'error' && operation.retryable && (
+          <button type="button" onClick={() => habitStore.retryLastOperation()}>
+            Retry
+          </button>
+        )}
+        {operation.action === 'reload' && (
+          <button type="button" onClick={() => window.location.reload()}>
+            Retry after enabling storage
+          </button>
+        )}
+        {operation.dismissible !== false && (
+          <button type="button" onClick={onDismiss} aria-label="Dismiss message">
+            Dismiss
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TodayView({
+  snapshot,
+  selectedDate,
+  setSelectedDate,
+  onCreate,
+  onCustomize,
+  onEdit,
+  onHistory,
+}) {
+  const today = toLocalDate();
+  const [showCollapsedCompleted, setShowCollapsedCompleted] = useState(false);
+  const ordered = [...snapshot.habits].sort((a, b) => a.order - b.order);
+  const rows = ordered
+    .map((habit) => {
+      const config = configurationForDate(habit, selectedDate);
+      return {
+        habit,
+        config,
+        state: getDayState(habit, snapshot.logs, selectedDate, {
+          today,
+          weekStartsOn: snapshot.preferences.weekStartsOn,
+        }),
+        periodProgress: getSchedulePeriodProgress(habit, snapshot.logs, selectedDate, {
+          today,
+          weekStartsOn: snapshot.preferences.weekStartsOn,
+        }),
+      };
+    })
+    .filter(({ state }) =>
+      ['due', 'completed', 'partial', 'failed', 'skipped', 'missed'].includes(state.status)
+    );
+
+  const expectedRows = rows.filter(({ state }) => state.scheduled && state.status !== 'skipped');
+  const completedExpected = expectedRows.filter(({ state }) => state.status === 'completed').length;
+  const completedRows = rows.filter(({ state }) => state.status === 'completed');
+  const progress = expectedRows.length
+    ? Math.round((completedExpected / expectedRows.length) * 100)
+    : 0;
+  const collapseCompleted = snapshot.preferences.completedPlacement === 'hide';
+  const visibleRows =
+    collapseCompleted && !showCollapsedCompleted
+      ? rows.filter(({ state }) => state.status !== 'completed')
+      : rows;
+
+  const grouped = (snapshot.preferences.timeGroupOrder || TIME_GROUPS)
+    .map((group) => ({
+      group,
+      rows: visibleRows
+        .filter(({ config }) => config.timeOfDay === group)
+        .sort((a, b) => {
+          if (snapshot.preferences.completedPlacement !== 'bottom') return 0;
+          return Number(a.state.status === 'completed') - Number(b.state.status === 'completed');
+        }),
+    }))
+    .filter(({ rows: groupRows }) => groupRows.length);
+
+  return (
+    <section aria-labelledby="today-heading">
+      <div className="habit-date-toolbar">
+        <button
+          type="button"
+          className="habit-icon-button"
+          onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+        >
+          <span aria-hidden="true">←</span>
+          <span className="habit-visually-hidden">Previous day</span>
+        </button>
+        <div>
+          <h2 id="today-heading">Your day</h2>
+          <p>{selectedDate === today ? 'Today' : formatDate(selectedDate)}</p>
+        </div>
+        <button
+          type="button"
+          className="habit-icon-button"
+          disabled={selectedDate >= today}
+          onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+        >
+          <span aria-hidden="true">→</span>
+          <span className="habit-visually-hidden">Next day</span>
+        </button>
+        {selectedDate !== today && (
+          <button
+            type="button"
+            className="habit-button habit-button-quiet"
+            onClick={() => setSelectedDate(today)}
+          >
+            Return to today
+          </button>
+        )}
+      </div>
+
+      {snapshot.habits.length > 0 && (
+        <div
+          className="habit-progress-card"
+          aria-label={`${completedExpected} of ${expectedRows.length} expected habits completed`}
+        >
+          <div>
+            <strong>{progress}%</strong>
+            <span>
+              {completedExpected} of {expectedRows.length} completed
+            </span>
+          </div>
+          <progress max="100" value={progress}>
+            {progress}%
+          </progress>
+        </div>
+      )}
+
+      {collapseCompleted && completedRows.length > 0 && (
+        <button
+          type="button"
+          className="habit-button habit-button-quiet"
+          aria-expanded={showCollapsedCompleted}
+          onClick={() => setShowCollapsedCompleted((shown) => !shown)}
+        >
+          {showCollapsedCompleted
+            ? 'Hide completed habits'
+            : `Show ${completedRows.length} completed habit${completedRows.length === 1 ? '' : 's'}`}
+        </button>
+      )}
+
+      {!snapshot.habits.length && !snapshot.onboarding?.completed ? (
+        <StarterPanel onCreate={onCreate} onCustomize={onCustomize} />
+      ) : !snapshot.habits.length ? (
+        <EmptyState
+          title="No habits yet"
+          description="Starter suggestions are hidden. Add your own routine or show the optional templates again."
+          actionLabel="Show starter suggestions"
+          onAction={() => habitStore.reopenOnboarding()}
+        />
+      ) : !rows.length ? (
+        <EmptyState
+          title="Nothing is due"
+          description="There are no active habits scheduled for this date. Unscheduled days do not count as failures."
+          actionLabel="Add another habit"
+          onAction={onCreate}
+        />
+      ) : (
+        <div className="habit-groups">
+          {grouped.map(({ group, rows: groupRows }) => (
+            <section key={group} className="habit-group" aria-labelledby={`group-${group}`}>
+              <div className="habit-section-heading">
+                <h3 id={`group-${group}`}>{GROUP_LABELS[group]}</h3>
+                <span>{groupRows.length}</span>
+              </div>
+              <div className="habit-card-list">
+                {groupRows.map(({ habit, state, config, periodProgress }) => (
+                  <TodayHabitCard
+                    key={habit.id}
+                    habit={habit}
+                    state={state}
+                    config={config}
+                    periodProgress={periodProgress}
+                    dateKey={selectedDate}
+                    onEdit={() => onEdit(habit.id)}
+                    onHistory={() => onHistory(habit.id)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function StarterPanel({ onCreate, onCustomize }) {
+  const templates = starterTemplates();
+  return (
+    <section className="habit-starter-panel" aria-labelledby="starter-heading">
+      <div className="habit-starter-intro">
+        <p className="habit-eyebrow">A small, useful beginning</p>
+        <h2 id="starter-heading">Choose only the habits that fit your life</h2>
+        <p>
+          Templates are optional and fully editable. Spiritual, health, planning, and learning
+          habits use the same private habit engine.
+        </p>
+        <p>
+          Your records stay in this browser or installed app, work offline, and are never sent to an
+          account unless you explicitly export a backup.
+        </p>
+        <div className="habit-button-row">
+          <button
+            type="button"
+            className="habit-button habit-button-primary"
+            onClick={() => habitStore.addAllStarterTemplates()}
+          >
+            Add all starter habits
+          </button>
+          <button type="button" className="habit-button habit-button-secondary" onClick={onCreate}>
+            Create my own
+          </button>
+          <button
+            type="button"
+            className="habit-button habit-button-quiet"
+            onClick={() => habitStore.dismissOnboarding()}
+          >
+            Dismiss suggestions
+          </button>
+        </div>
+      </div>
+      <div className="habit-template-grid">
+        {templates.map((template) => (
+          <article key={template.templateId} className="habit-template-card">
+            <span>{template.category}</span>
+            <h3>
+              <span aria-hidden="true">{template.icon || '✓'} </span>
+              {template.name}
+            </h3>
+            <p>{template.description}</p>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => habitStore.addTemplate(template.templateId)}
+            >
+              Add template
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-quiet"
+              onClick={() => onCustomize(template)}
+            >
+              Customize first
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TodayHabitCard({ habit, state, config, periodProgress, dateKey, onEdit, onHistory }) {
+  const [value, setValue] = useState('');
+  const [showActions, setShowActions] = useState(false);
+  const completed = state.status === 'completed';
+
+  const addValue = (event) => {
+    event.preventDefault();
+    if (habitStore.addValue(habit.id, dateKey, value, config.tracking.unit)) setValue('');
+  };
+
+  return (
+    <article className={`habit-today-card status-${state.status}`}>
+      <div
+        className="habit-card-colour"
+        style={{ '--habit-colour': habit.colour }}
+        aria-hidden="true"
+      />
+      <div className="habit-card-content">
+        <div className="habit-card-title-row">
+          <div>
+            <p className="habit-card-meta">
+              {habit.category} · {describeSchedule(config.schedule)}
+            </p>
+            <h4>
+              <span aria-hidden="true">{habit.icon || '✓'} </span>
+              {habit.name}
+            </h4>
+          </div>
+          <span className={`habit-status status-${state.status}`}>{statusLabel(state.status)}</span>
+        </div>
+        {habit.description && <p>{habit.description}</p>}
+
+        {periodProgress && (
+          <p className="habit-card-meta">
+            {periodProgress.completed} of {periodProgress.target} this{' '}
+            {config.schedule.type === 'monthlyTarget' ? 'month' : 'week'} ·{' '}
+            {periodProgress.remaining === 0
+              ? 'Target met'
+              : `${periodProgress.remaining} remaining across ${periodProgress.availableDays} available day${periodProgress.availableDays === 1 ? '' : 's'}`}
+          </p>
+        )}
+
+        {config.tracking.type !== 'binary' && (
+          <div className="habit-value-summary">
+            <strong>
+              {state.value} {config.tracking.unit}
+            </strong>
+            <span>
+              {config.tracking.anyAmountCounts
+                ? 'Any amount counts'
+                : `Target ${config.tracking.target} ${config.tracking.unit}`}
+            </span>
+          </div>
+        )}
+
+        <div className="habit-card-actions">
+          {config.tracking.type === 'binary' ? (
+            <button
+              type="button"
+              className={`habit-button ${completed ? 'habit-button-secondary' : 'habit-button-primary'}`}
+              onClick={() =>
+                completed
+                  ? habitStore.clearDay(habit.id, dateKey)
+                  : habitStore.setDayStatus(habit.id, dateKey, 'completed')
+              }
+            >
+              {completed ? 'Clear completion' : 'Complete'}
+            </button>
+          ) : (
+            <form className="habit-value-form" onSubmit={addValue}>
+              <label>
+                <span className="habit-visually-hidden">Add progress for {habit.name}</span>
+                <input
+                  inputMode="decimal"
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={value}
+                  onChange={(event) => setValue(event.target.value)}
+                  placeholder={`Add ${config.tracking.unit}`}
+                  aria-label={`Add ${config.tracking.unit} for ${habit.name}`}
+                />
+              </label>
+              <button type="submit" className="habit-button habit-button-primary">
+                Add
+              </button>
+            </form>
+          )}
+          <button
+            type="button"
+            className="habit-button habit-button-secondary"
+            aria-expanded={showActions}
+            onClick={() => setShowActions(!showActions)}
+          >
+            More
+          </button>
+        </div>
+
+        {showActions && (
+          <div className="habit-more-actions" aria-label={`Actions for ${habit.name}`}>
+            {config.tracking.type !== 'binary' && (
+              <button
+                type="button"
+                onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'completed')}
+              >
+                Mark complete
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'skipped')}
+            >
+              Skip intentionally
+            </button>
+            <button
+              type="button"
+              onClick={() => habitStore.setDayStatus(habit.id, dateKey, 'failed')}
+            >
+              Mark not completed
+            </button>
+            <button type="button" onClick={() => habitStore.clearDay(habit.id, dateKey)}>
+              Clear day
+            </button>
+            <button type="button" onClick={onHistory}>
+              History and notes
+            </button>
+            <button type="button" onClick={onEdit}>
+              Edit habit
+            </button>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function HabitsView({ snapshot, onCreate, onCustomize, onEdit, onHistory }) {
+  const [filter, setFilter] = useState('active');
+  const today = toLocalDate();
+  const rows = [...snapshot.habits]
+    .filter((habit) => {
+      const lifecycle = lifecycleAt(habit, today);
+      return filter === 'all' || lifecycle === filter;
+    })
+    .sort((a, b) => a.order - b.order);
+
+  return (
+    <section aria-labelledby="habits-heading">
+      <div className="habit-page-heading">
+        <div>
+          <h2 id="habits-heading">Manage habits</h2>
+          <p>
+            Schedules and targets change prospectively, so previous records keep their original
+            meaning.
+          </p>
+        </div>
+        <button type="button" className="habit-button habit-button-primary" onClick={onCreate}>
+          Create habit
+        </button>
+      </div>
+      <div className="habit-filter-tabs" role="group" aria-label="Filter habits">
+        {['active', 'paused', 'archived', 'all'].map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={filter === item ? 'is-active' : ''}
+            aria-pressed={filter === item}
+            onClick={() => setFilter(item)}
+          >
+            {item[0].toUpperCase() + item.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {!rows.length ? (
+        <EmptyState
+          title={`No ${filter === 'all' ? '' : filter} habits`}
+          description="Create a habit or choose a different filter."
+          actionLabel="Create habit"
+          onAction={onCreate}
+        />
+      ) : (
+        <div className="habit-management-grid">
+          {rows.map((habit, index) => {
+            const config = configurationForDate(habit, today);
+            const lifecycle = lifecycleAt(habit, today);
+            return (
+              <article key={habit.id} className="habit-management-card">
+                <div className="habit-card-title-row">
+                  <div>
+                    <p className="habit-card-meta">
+                      {habit.category} · {GROUP_LABELS[config.timeOfDay]}
+                    </p>
+                    <h3>
+                      <span aria-hidden="true">{habit.icon || '✓'} </span>
+                      {habit.name}
+                    </h3>
+                  </div>
+                  <span className={`habit-status status-${lifecycle}`}>
+                    {statusLabel(lifecycle)}
+                  </span>
+                </div>
+                {habit.description && <p>{habit.description}</p>}
+                <dl className="habit-definition-list">
+                  <div>
+                    <dt>Schedule</dt>
+                    <dd>{describeSchedule(config.schedule)}</dd>
+                  </div>
+                  <div>
+                    <dt>Tracking</dt>
+                    <dd>{trackingDescription(config.tracking)}</dd>
+                  </div>
+                  <div>
+                    <dt>Reminder</dt>
+                    <dd>{habit.reminderTime || 'None'}</dd>
+                  </div>
+                </dl>
+                <div className="habit-management-actions">
+                  <button type="button" onClick={() => onEdit(habit.id)}>
+                    Edit
+                  </button>
+                  <button type="button" onClick={() => onHistory(habit.id)}>
+                    History
+                  </button>
+                  <button type="button" onClick={() => habitStore.duplicateHabit(habit.id)}>
+                    Duplicate
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => habitStore.moveHabit(habit.id, 'up')}
+                  >
+                    Move up
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === rows.length - 1}
+                    onClick={() => habitStore.moveHabit(habit.id, 'down')}
+                  >
+                    Move down
+                  </button>
+                  {lifecycle === 'active' && (
+                    <button
+                      type="button"
+                      onClick={() => habitStore.setLifecycle(habit.id, 'paused')}
+                    >
+                      Pause
+                    </button>
+                  )}
+                  {lifecycle === 'paused' && (
+                    <button
+                      type="button"
+                      onClick={() => habitStore.setLifecycle(habit.id, 'active')}
+                    >
+                      Resume
+                    </button>
+                  )}
+                  {lifecycle !== 'archived' && (
+                    <button
+                      type="button"
+                      onClick={() => habitStore.setLifecycle(habit.id, 'archived')}
+                    >
+                      Archive
+                    </button>
+                  )}
+                  {lifecycle === 'archived' && (
+                    <button
+                      type="button"
+                      onClick={() => habitStore.setLifecycle(habit.id, 'active')}
+                    >
+                      Restore
+                    </button>
+                  )}
+                  <DeleteHabitButton habit={habit} />
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      <section className="habit-template-library" aria-labelledby="templates-heading">
+        <div className="habit-section-heading">
+          <h3 id="templates-heading">Starter templates</h3>
+        </div>
+        <div className="habit-template-grid compact">
+          {starterTemplates().map((template) => {
+            const added = snapshot.habits.some(
+              (habit) => habit.sourceTemplateId === template.templateId
+            );
+            return (
+              <article key={template.templateId} className="habit-template-card">
+                <span>{template.category}</span>
+                <h4>{template.name}</h4>
+                <p>{template.description}</p>
+                <button
+                  type="button"
+                  className="habit-button habit-button-secondary"
+                  disabled={added}
+                  onClick={() => habitStore.addTemplate(template.templateId)}
+                >
+                  {added ? 'Added' : 'Add template'}
+                </button>
+                <button
+                  type="button"
+                  className="habit-button habit-button-quiet"
+                  onClick={() => onCustomize(template)}
+                >
+                  Customize
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function DeleteHabitButton({ habit }) {
+  const [confirming, setConfirming] = useState(false);
+  if (!confirming) {
+    return (
+      <button type="button" className="habit-danger-text" onClick={() => setConfirming(true)}>
+        Delete
+      </button>
+    );
+  }
+  return (
+    <span className="habit-inline-confirm">
+      Delete permanently?
+      <button
+        type="button"
+        className="habit-danger-text"
+        onClick={() => habitStore.deleteHabit(habit.id)}
+      >
+        Yes, delete
+      </button>
+      <button type="button" onClick={() => setConfirming(false)}>
+        Cancel
+      </button>
+    </span>
+  );
+}
+
+function InsightsView({ snapshot, onEdit }) {
+  const today = toLocalDate();
+  const active = snapshot.habits.filter((habit) => lifecycleAt(habit, today) === 'active');
+  const categories = Array.from(new Set(snapshot.habits.map((habit) => habit.category))).sort();
+  const [category, setCategory] = useState('all');
+  const [rangeDays, setRangeDays] = useState(84);
+  const filteredHabits =
+    category === 'all'
+      ? snapshot.habits
+      : snapshot.habits.filter((habit) => habit.category === category);
+  const filteredActive =
+    category === 'all' ? active : active.filter((habit) => habit.category === category);
+  const [selectedId, setSelectedId] = useState(active[0]?.id || '');
+  const resolvedSelectedId = filteredHabits.some((habit) => habit.id === selectedId)
+    ? selectedId
+    : filteredHabits[0]?.id || '';
+  const selected = filteredHabits.find((habit) => habit.id === resolvedSelectedId) || null;
+  const stats = selected
+    ? calculateHabitStats(selected, snapshot.logs, {
+        days: rangeDays,
+        today,
+        endDate: today,
+        weekStartsOn: snapshot.preferences.weekStartsOn,
+      })
+    : null;
+  const trend = selected
+    ? compareHabitPeriods(selected, snapshot.logs, {
+        days: rangeDays,
+        today,
+        endDate: today,
+        weekStartsOn: snapshot.preferences.weekStartsOn,
+      })
+    : null;
+  const quantitative = selected
+    ? summarizeQuantitativePeriod(selected, snapshot.logs, {
+        days: rangeDays,
+        today,
+        endDate: today,
+      })
+    : null;
+  const filteredStats = filteredActive.map((habit) =>
+    calculateHabitStats(habit, snapshot.logs, {
+      days: rangeDays,
+      today,
+      endDate: today,
+      weekStartsOn: snapshot.preferences.weekStartsOn,
+    })
+  );
+  const overallExpected = filteredStats.reduce((total, row) => total + row.expected, 0);
+  const overallCompleted = filteredStats.reduce((total, row) => total + row.completed, 0);
+  const overallRate = overallExpected
+    ? Math.round((overallCompleted / overallExpected) * 100)
+    : null;
+  const review = buildWeeklyReview(filteredActive, snapshot.logs, {
+    endDate: today,
+    today,
+    weekStartsOn: snapshot.preferences.weekStartsOn,
+  });
+  const reviewWeekStart = startOfWeek(today, snapshot.preferences.weekStartsOn);
+  const dismissedReviewIds = snapshot.preferences.weeklyReviewDismissals?.[reviewWeekStart] || [];
+  const visibleReview = (rows) =>
+    rows.filter(({ habit }) => !dismissedReviewIds.includes(habit.id));
+  const dismissReview = (habitId) => habitStore.dismissWeeklyReviewSuggestion(habitId, today);
+
+  if (!snapshot.habits.length) {
+    return (
+      <EmptyState
+        title="No insights yet"
+        description="Create a habit and log a few scheduled days before looking for trends."
+      />
+    );
+  }
+
+  return (
+    <section aria-labelledby="insights-heading">
+      <div className="habit-page-heading">
+        <div>
+          <h2 id="insights-heading">Schedule-aware insights</h2>
+          <p>
+            Only expected dates count in completion rates. Skipped, paused, future, and unscheduled
+            dates stay neutral.
+          </p>
+        </div>
+        <div>
+          <label className="habit-field compact-field">
+            <span>Date range</span>
+            <select
+              value={rangeDays}
+              onChange={(event) => setRangeDays(Number(event.target.value))}
+            >
+              <option value="28">Last 28 days</option>
+              <option value="84">Last 84 days</option>
+              <option value="365">Last 365 days</option>
+            </select>
+          </label>
+          <label className="habit-field compact-field">
+            <span>Category</span>
+            <select value={category} onChange={(event) => setCategory(event.target.value)}>
+              <option value="all">All categories</option>
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="habit-field compact-field">
+            <span>Habit</span>
+            <select
+              value={resolvedSelectedId}
+              disabled={!filteredHabits.length}
+              onChange={(event) => setSelectedId(event.target.value)}
+            >
+              {filteredHabits.map((habit) => (
+                <option key={habit.id} value={habit.id}>
+                  {habit.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div className="habit-metric-grid" aria-label="Overall filtered insight summary">
+        <Metric
+          label="Overall completion rate"
+          value={overallRate == null ? 'Not enough data' : `${overallRate}%`}
+          detail={`${overallCompleted} of ${overallExpected} expected periods across ${filteredActive.length} active habit${filteredActive.length === 1 ? '' : 's'}`}
+        />
+      </div>
+
+      {!filteredHabits.length && (
+        <p className="habit-supporting-copy" role="status">
+          No active habits match this category. Choose another category to view insights.
+        </p>
+      )}
+
+      {selected && stats && (
+        <>
+          <div className="habit-metric-grid">
+            <Metric
+              label="Completion rate"
+              value={stats.completionRate == null ? 'Not enough data' : `${stats.completionRate}%`}
+            />
+            <Metric
+              label="Current streak"
+              value={`${stats.currentStreak}`}
+              detail="scheduled successes"
+            />
+            <Metric
+              label="Best streak"
+              value={`${stats.bestStreak}`}
+              detail="scheduled successes"
+            />
+            <Metric
+              label="Expected periods"
+              value={`${stats.expected}`}
+              detail={`${stats.completed} completed`}
+            />
+            <Metric
+              label="Compared with prior equal period"
+              value={
+                trend?.status !== 'ready'
+                  ? 'Not enough data'
+                  : `${trend.delta > 0 ? '+' : ''}${trend.delta} points`
+              }
+              detail={
+                trend?.status === 'ready'
+                  ? `${trend.current.completionRate}% now; ${trend.previous.completionRate}% before`
+                  : 'At least three expected periods are required in both ranges'
+              }
+            />
+            {quantitative?.segments.map((segment) => (
+              <Metric
+                key={`${segment.fromDate}:${segment.trackingType}:${segment.unit}:${segment.target}`}
+                label={`Logged ${segment.unit}`}
+                value={`${segment.value}`}
+                detail={`${segment.loggedDays} logged day${segment.loggedDays === 1 ? '' : 's'}; target ${segment.target} ${segment.unit} from ${segment.fromDate} through ${segment.endDate}`}
+              />
+            ))}
+          </div>
+          <p role="status">{explainStreak(stats)}</p>
+          <section className="habit-calendar-panel" aria-labelledby="history-calendar-heading">
+            <div className="habit-section-heading">
+              <h3 id="history-calendar-heading">Recent history</h3>
+              <span>{selected.name}</span>
+            </div>
+            <div
+              className="habit-calendar"
+              role="list"
+              tabIndex="0"
+              aria-label={`Recent history for ${selected.name}`}
+            >
+              {eachDate(addDays(today, -(Math.min(rangeDays, 28) - 1)), today).map((dateKey) => {
+                const dayState = getDayState(selected, snapshot.logs, dateKey, {
+                  today,
+                  weekStartsOn: snapshot.preferences.weekStartsOn,
+                });
+                return (
+                  <div
+                    key={dateKey}
+                    role="listitem"
+                    className={`habit-calendar-day status-${dayState.status}`}
+                    title={`${formatDate(dateKey, { month: 'short', day: 'numeric' })}: ${statusLabel(dayState.status)}`}
+                    aria-label={`${formatDate(dateKey)}: ${statusLabel(dayState.status)} for ${selected.name}`}
+                  >
+                    <span>{parseLocalDate(dateKey).getDate()}</span>
+                    <small>{statusLabel(dayState.status)}</small>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </>
+      )}
+
+      <section className="habit-review-panel" aria-labelledby="weekly-review-heading">
+        <div className="habit-section-heading">
+          <h3 id="weekly-review-heading">Weekly review</h3>
+        </div>
+        <div className="habit-review-grid">
+          <ReviewActionColumn
+            title="Going well"
+            empty="No habit has enough strong evidence yet."
+            rows={visibleReview(review.strong)}
+            format={({ habit, stats: rowStats }) => `${habit.name} — ${rowStats.completionRate}%`}
+            onEdit={onEdit}
+            onDismiss={dismissReview}
+          />
+          <ReviewActionColumn
+            title="Consider adjusting"
+            empty="No routine currently needs an obvious schedule or target adjustment."
+            rows={visibleReview(review.adjust)}
+            format={({ habit, stats: rowStats }) =>
+              `${habit.name} — ${rowStats.completionRate}% over expected periods`
+            }
+            onEdit={onEdit}
+            onDismiss={dismissReview}
+          />
+          <ReviewActionColumn
+            title="Not enough data"
+            empty="Every habit has enough recent scheduled data."
+            rows={visibleReview(review.insufficient)}
+            format={({ habit }) => habit.name}
+            onEdit={onEdit}
+            onDismiss={dismissReview}
+          />
+        </div>
+        <p className="habit-supporting-copy">
+          A lower rate is information, not a judgement. Adjust the minimum, schedule, or lifecycle
+          when a routine no longer fits.
+        </p>
+      </section>
+    </section>
+  );
+}
+
+function Metric({ label, value, detail }) {
+  return (
+    <article className="habit-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {detail && <small>{detail}</small>}
+    </article>
+  );
+}
+
+function ReviewActionColumn({ title, rows, empty, format, onEdit, onDismiss }) {
+  return (
+    <article>
+      <h4>{title}</h4>
+      {rows.length ? (
+        <ul className="habit-review-actions-list">
+          {rows.map((row) => (
+            <li key={row.habit.id}>
+              <span>{format(row)}</span>
+              <div className="habit-inline-actions">
+                <button type="button" onClick={() => onEdit(row.habit.id)}>
+                  Edit habit
+                </button>
+                <button type="button" onClick={() => onDismiss(row.habit.id)}>
+                  Dismiss suggestion
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>{empty}</p>
+      )}
+    </article>
+  );
+}
+
+function SettingsView({ snapshot }) {
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationPermission, setNotificationPermission] = useState('unknown');
+  const [importMode, setImportMode] = useState('replace');
+  const [pendingPortableImport, setPendingPortableImport] = useState(null);
+  const [backupMessage, setBackupMessage] = useState('');
+  const [resetText, setResetText] = useState('');
+  const [legacyCleanupText, setLegacyCleanupText] = useState({});
+  const [legacyMappingIds, setLegacyMappingIds] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    checkNotificationPermission().then((permission) => {
+      if (active) setNotificationPermission(permission);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const requestNotifications = async () => {
+    const current = await checkNotificationPermission();
+    const permission = current === 'prompt' ? await requestNotificationPermission() : current;
+    setNotificationPermission(permission);
+    let schedulingFailed = false;
+    if (permission === 'granted') {
+      try {
+        await reconcileHabitNotifications(snapshot);
+      } catch {
+        schedulingFailed = true;
+      }
+    }
+    setNotificationMessage(
+      permission === 'granted'
+        ? schedulingFailed
+          ? 'Permission was granted, but reminders could not be scheduled. Check system settings and try again.'
+          : 'Permission granted. You can send a private test reminder.'
+        : permission === 'denied'
+          ? 'Permission is denied. LifeStreak will not ask again automatically; enable it in browser or system settings.'
+          : permission === 'unsupported'
+            ? 'Notifications are not supported on this device.'
+            : 'Notification permission could not be changed. Try again from browser or system settings.'
+    );
+  };
+
+  const testNotification = async () => {
+    const shown = await showNotification(PRIVATE_REMINDER_TITLE, {
+      body: PRIVATE_REMINDER_BODY,
+      tag: 'lifestreak-private-test',
+    });
+    setNotificationMessage(
+      shown
+        ? 'A private test reminder was sent.'
+        : 'The test reminder could not be sent. Check browser or system notification settings.'
+    );
+  };
+
+  const importFile = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      if (file.size > MAX_BACKUP_BYTES) {
+        throw new Error('Backup file is too large. The 5 MB limit protects this device.');
+      }
+      const parsed = parseJsonWithoutDuplicateKeys(await file.text());
+      if (parsed?.product === 'LifeStreak' && parsed?.formatVersion !== undefined) {
+        const validation = validatePortableBackup(parsed);
+        if (!validation.ok) throw new Error(validation.reason);
+        setPendingPortableImport({
+          payload: parsed,
+          storeCount: Object.keys(validation.sanitized).length,
+          filename: file.name,
+        });
+        setBackupMessage('Portable backup validated. Review and confirm the replacement below.');
+        return;
+      }
+      habitStore.createRecoveryBackup('before-import');
+      habitStore.importData(parsed, importMode);
+    } catch (error) {
+      habitStore.dismissOperation();
+      window.setTimeout(
+        () =>
+          window.alert(`Import failed: ${error instanceof Error ? error.message : 'Invalid file'}`),
+        0
+      );
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  return (
+    <section aria-labelledby="settings-heading">
+      <div className="habit-page-heading">
+        <div>
+          <h2 id="settings-heading">Settings and recovery</h2>
+          <p>Your habit database stays in this browser or installed app unless you export it.</p>
+        </div>
+      </div>
+
+      <div className="habit-settings-grid">
+        <section className="habit-settings-card" aria-labelledby="display-settings-heading">
+          <h3 id="display-settings-heading">Routine preferences</h3>
+          <label className="habit-field">
+            <span>Week starts on</span>
+            <select
+              value={snapshot.preferences.weekStartsOn}
+              onChange={(event) =>
+                habitStore.setPreference('weekStartsOn', Number(event.target.value))
+              }
+            >
+              <option value="0">Sunday</option>
+              <option value="1">Monday</option>
+              <option value="6">Saturday</option>
+            </select>
+          </label>
+          <label className="habit-field">
+            <span>Completed habits</span>
+            <select
+              value={snapshot.preferences.completedPlacement}
+              onChange={(event) =>
+                habitStore.setPreference('completedPlacement', event.target.value)
+              }
+            >
+              <option value="bottom">Move below outstanding habits</option>
+              <option value="keep">Keep in their original order</option>
+              <option value="hide">Collapse with a reveal button</option>
+            </select>
+          </label>
+          <fieldset className="habit-inline-fieldset">
+            <legend>Time-of-day order</legend>
+            {(snapshot.preferences.timeGroupOrder || TIME_GROUPS).map((group, index, order) => (
+              <div key={group} className="habit-inline-actions">
+                <span>{GROUP_LABELS[group]}</span>
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  aria-label={`Move ${GROUP_LABELS[group]} earlier`}
+                  onClick={() => {
+                    const next = [...order];
+                    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                    habitStore.setPreference('timeGroupOrder', next);
+                  }}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  disabled={index === order.length - 1}
+                  aria-label={`Move ${GROUP_LABELS[group]} later`}
+                  onClick={() => {
+                    const next = [...order];
+                    [next[index], next[index + 1]] = [next[index + 1], next[index]];
+                    habitStore.setPreference('timeGroupOrder', next);
+                  }}
+                >
+                  ↓
+                </button>
+              </div>
+            ))}
+          </fieldset>
+        </section>
+
+        <section className="habit-settings-card" aria-labelledby="notification-settings-heading">
+          <h3 id="notification-settings-heading">Reminder privacy</h3>
+          <p>
+            LifeStreak never requests notification permission during startup or background
+            rescheduling. Enable it here only if timely, private prompts would help.
+          </p>
+          <label className="habit-check-row">
+            <input
+              type="checkbox"
+              checked={snapshot.preferences.showHabitNamesInNotifications}
+              onChange={(event) =>
+                habitStore.setPreference('showHabitNamesInNotifications', event.target.checked)
+              }
+            />
+            <span>Show habit names on notification surfaces</span>
+          </label>
+          <button
+            type="button"
+            className="habit-button habit-button-secondary"
+            disabled={['denied', 'unsupported'].includes(notificationPermission)}
+            onClick={requestNotifications}
+          >
+            Enable reminders
+          </button>
+          <button
+            type="button"
+            className="habit-button habit-button-secondary"
+            disabled={notificationPermission !== 'granted'}
+            onClick={testNotification}
+          >
+            Send private test reminder
+          </button>
+          {notificationPermission === 'denied' && !notificationMessage && (
+            <p role="status">
+              Permission is denied. LifeStreak will not prompt again; use browser or system settings
+              to enable reminders.
+            </p>
+          )}
+          {notificationMessage && <p role="status">{notificationMessage}</p>}
+          <small>
+            Browser reminders operate while LifeStreak is open. Native background scheduling remains
+            controlled by the installed app platform.
+          </small>
+        </section>
+
+        <section className="habit-settings-card" aria-labelledby="backup-settings-heading">
+          <h3 id="backup-settings-heading">Backup and portability</h3>
+          <p>
+            Complete backups include habits and every specialist collection. Session-only AI keys
+            and notification schedules managed by the operating system are excluded.
+          </p>
+          <div className="habit-button-stack">
+            <button
+              type="button"
+              className="habit-button habit-button-primary"
+              onClick={() => {
+                try {
+                  downloadJson(`lifestreak-backup-${toLocalDate()}.json`, createPortableBackup());
+                  setBackupMessage(
+                    'Complete backup downloaded. Session-only secrets were excluded.'
+                  );
+                } catch (error) {
+                  setBackupMessage(error instanceof Error ? error.message : 'Export failed.');
+                }
+              }}
+            >
+              Export complete LifeStreak backup
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() =>
+                downloadJson(`lifestreak-habits-${toLocalDate()}.json`, habitStore.exportData())
+              }
+            >
+              Export habits only
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => habitStore.createRecoveryBackup('manual')}
+            >
+              Create local recovery copy
+            </button>
+          </div>
+          <fieldset className="habit-inline-fieldset">
+            <legend>Import behaviour</legend>
+            <label>
+              <input
+                type="radio"
+                name="import-mode"
+                value="replace"
+                checked={importMode === 'replace'}
+                onChange={(event) => setImportMode(event.target.value)}
+              />{' '}
+              Replace after creating a recovery copy
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="import-mode"
+                value="merge"
+                checked={importMode === 'merge'}
+                onChange={(event) => setImportMode(event.target.value)}
+              />{' '}
+              Merge by stable record ID
+            </label>
+          </fieldset>
+          <label className="habit-file-label">
+            Import LifeStreak JSON
+            <input type="file" accept="application/json,.json" onChange={importFile} />
+          </label>
+          {backupMessage && <p role="status">{backupMessage}</p>}
+          {pendingPortableImport && (
+            <div
+              className="habit-import-confirm"
+              role="alert"
+              aria-labelledby="portable-import-heading"
+            >
+              <h4 id="portable-import-heading">Replace with validated complete backup?</h4>
+              <p>
+                {pendingPortableImport.filename} contains {pendingPortableImport.storeCount}{' '}
+                validated store{pendingPortableImport.storeCount === 1 ? '' : 's'}. A verified
+                recovery snapshot is created first, and a failed write rolls every store back.
+              </p>
+              <div className="habit-inline-actions">
+                <button
+                  type="button"
+                  className="habit-button habit-button-primary"
+                  onClick={() => {
+                    try {
+                      restorePortableBackup(pendingPortableImport.payload);
+                      setBackupMessage('Backup restored atomically. Reloading LifeStreak…');
+                      setPendingPortableImport(null);
+                      window.setTimeout(() => window.location.reload(), 400);
+                    } catch (error) {
+                      setBackupMessage(
+                        error instanceof Error
+                          ? error.message
+                          : 'Import failed. No data was changed.'
+                      );
+                    }
+                  }}
+                >
+                  Restore complete backup
+                </button>
+                <button
+                  type="button"
+                  className="habit-button habit-button-secondary"
+                  onClick={() => {
+                    setPendingPortableImport(null);
+                    setBackupMessage('Import cancelled. No data was changed.');
+                  }}
+                >
+                  Cancel import
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="habit-settings-card" aria-labelledby="legacy-settings-heading">
+          <h3 id="legacy-settings-heading">Existing LifeStreak records</h3>
+          <p>
+            Specialist stores are preserved without silently converting dates, notes, service
+            entries, or spiritual records into checkmarks.
+          </p>
+          <div className="habit-button-stack">
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => habitStore.scanLegacyData()}
+            >
+              Scan for preserved stores
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              disabled={!snapshot.legacy.detectedKeys.length}
+              onClick={() =>
+                downloadJson(
+                  `lifestreak-legacy-${toLocalDate()}.json`,
+                  habitStore.exportLegacyData()
+                )
+              }
+            >
+              Export preserved stores
+            </button>
+          </div>
+          {snapshot.legacy.detectedKeys.length > 0 && (
+            <div>
+              <p>
+                {snapshot.legacy.detectedKeys.length} stores detected. Open Collections from the
+                header to use the original specialist interface.
+              </p>
+              {snapshot.legacy.quarantinedRecords.length > 0 && (
+                <div className="habit-form-error" role="status">
+                  {snapshot.legacy.quarantinedRecords.length} stored value
+                  {snapshot.legacy.quarantinedRecords.length === 1 ? '' : 's'} need review and were
+                  not changed. Export preserved stores before attempting migration.
+                </div>
+              )}
+              {snapshot.legacy.migrationRecords?.map((record) => (
+                <div key={record.key} className="habit-inline-actions">
+                  <span>
+                    {record.key} → {record.successor} ({record.status})
+                  </span>
+                  {record.status === 'migration-candidate' && (
+                    <button
+                      type="button"
+                      className="habit-button habit-button-secondary"
+                      onClick={() => habitStore.migrateHistoricalStore(record.key)}
+                    >
+                      Preserve and migrate
+                    </button>
+                  )}
+                  {record.status === 'migrated' && record.backupKey && (
+                    <div className="habit-inline-confirm">
+                      <label className="habit-field compact-field">
+                        <span>Type REMOVE {record.key} to remove only the historical source</span>
+                        <input
+                          value={legacyCleanupText[record.key] || ''}
+                          onChange={(event) =>
+                            setLegacyCleanupText((current) => ({
+                              ...current,
+                              [record.key]: event.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="habit-button habit-button-danger"
+                        disabled={legacyCleanupText[record.key] !== `REMOVE ${record.key}`}
+                        onClick={() => {
+                          if (
+                            habitStore.cleanupHistoricalStore(
+                              record.key,
+                              legacyCleanupText[record.key]
+                            )
+                          ) {
+                            setLegacyCleanupText((current) => ({ ...current, [record.key]: '' }));
+                          }
+                        }}
+                      >
+                        Remove verified historical source
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {snapshot.legacy.detectedKeys.includes('ls-progress-storage') && (
+            <fieldset className="habit-fieldset">
+              <legend>Map selected completions into habits</legend>
+              <p>
+                Only full-date completed checkmarks are copied. The original store, notes, links,
+                chapter details, meeting records, and numeric progress remain unchanged.
+              </p>
+              {LEGACY_PROGRESS_MAPPINGS.map((mapping) => (
+                <label key={mapping.id} className="habit-checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={legacyMappingIds.includes(mapping.id)}
+                    onChange={(event) =>
+                      setLegacyMappingIds((current) =>
+                        event.target.checked
+                          ? [...current, mapping.id]
+                          : current.filter((id) => id !== mapping.id)
+                      )
+                    }
+                  />
+                  <span>{mapping.name}</span>
+                </label>
+              ))}
+              <button
+                type="button"
+                className="habit-button habit-button-secondary"
+                disabled={!legacyMappingIds.length}
+                onClick={() => habitStore.mapLegacyProgressToHabits(legacyMappingIds)}
+              >
+                Map selected completion history
+              </button>
+            </fieldset>
+          )}
+        </section>
+
+        <section className="habit-settings-card" aria-labelledby="diagnostics-settings-heading">
+          <h3 id="diagnostics-settings-heading">Private diagnostics</h3>
+          <p>
+            LifeStreak keeps at most 20 sanitized failures locally for 30 days. Records contain only
+            an error class/fingerprint, fixed route, platform, app version, and release revision—no
+            habit names, notes, values, raw messages, stacks, queries, or device identifier.
+          </p>
+          <div className="habit-button-stack">
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => {
+                downloadJson(
+                  `lifestreak-diagnostics-${toLocalDate()}.json`,
+                  createDiagnosticsExport()
+                );
+                setBackupMessage('Sanitized local diagnostics downloaded.');
+              }}
+            >
+              Export sanitized diagnostics
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => {
+                clearDiagnostics();
+                setBackupMessage('Local diagnostics deleted.');
+              }}
+            >
+              Delete local diagnostics
+            </button>
+          </div>
+        </section>
+
+        <section className="habit-settings-card habit-danger-zone" aria-labelledby="danger-heading">
+          <h3 id="danger-heading">Reset habit tracker</h3>
+          <p>
+            A recovery copy is created first. This removes habits only. Specialist collections,
+            notification schedules, Collections settings, and session-only AI credentials are not
+            changed.
+          </p>
+          <label className="habit-field">
+            <span>Type RESET to confirm</span>
+            <input value={resetText} onChange={(event) => setResetText(event.target.value)} />
+          </label>
+          <button
+            type="button"
+            className="habit-button habit-button-danger"
+            disabled={resetText !== 'RESET'}
+            onClick={() => {
+              if (habitStore.resetAllData()) setResetText('');
+            }}
+          >
+            Create backup and reset habits
+          </button>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
+  const today = toLocalDate();
+  const seed = habit || initial;
+  const current = habit
+    ? configurationForDate(habit, today)
+    : initial
+      ? {
+          schedule: initial.schedule,
+          tracking: initial.tracking,
+          timeOfDay: initial.timeOfDay,
+        }
+      : null;
+  const [form, setForm] = useState(() => ({
+    name: seed?.name || '',
+    description: seed?.description || '',
+    category: seed?.category || 'Personal',
+    icon: seed?.icon || '✓',
+    colour: seed?.colour || '#4f46e5',
+    timeOfDay: current?.timeOfDay || 'anytime',
+    startDate: habit?.startDate || today,
+    scheduleType: current?.schedule.type || 'daily',
+    weekdays: current?.schedule.weekdays || [1, 2, 3, 4, 5],
+    timesPerWeek: current?.schedule.timesPerWeek || 3,
+    monthlyTarget: current?.schedule.monthlyTarget || 3,
+    intervalDays: current?.schedule.intervalDays || 2,
+    monthlyDays: (current?.schedule.monthlyDays || [1]).join(', '),
+    endDate: current?.schedule.endDate || '',
+    trackingType: current?.tracking.type || 'binary',
+    target: current?.tracking.target || 1,
+    stretchTarget: current?.tracking.stretchTarget || '',
+    unit: current?.tracking.unit || 'rep',
+    anyAmountCounts: current?.tracking.anyAmountCounts || false,
+    reminderTime: seed?.reminderTime || '',
+    effectiveDate: today,
+  }));
+  const [error, setError] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(Boolean(habit || initial));
+
+  const set = (key, value) => setForm((currentForm) => ({ ...currentForm, [key]: value }));
+  const toggleWeekday = (day) =>
+    set(
+      'weekdays',
+      form.weekdays.includes(day)
+        ? form.weekdays.filter((item) => item !== day)
+        : [...form.weekdays, day]
+    );
+
+  const submit = (event) => {
+    event.preventDefault();
+    setError('');
+    const input = {
+      name: form.name,
+      description: form.description,
+      category: form.category,
+      icon: form.icon,
+      colour: form.colour,
+      timeOfDay: form.timeOfDay,
+      startDate: form.startDate,
+      reminderTime: form.reminderTime || null,
+      sourceTemplateId: habit?.sourceTemplateId || initial?.templateId || null,
+      schedule: {
+        type: form.scheduleType,
+        weekdays: form.weekdays,
+        timesPerWeek: Number(form.timesPerWeek),
+        monthlyTarget: Number(form.monthlyTarget),
+        intervalDays: Number(form.intervalDays),
+        monthlyDays: String(form.monthlyDays)
+          .split(',')
+          .map((value) => Number(value.trim()))
+          .filter(Boolean),
+        anchorDate: form.startDate,
+        endDate: form.endDate || null,
+      },
+      tracking: {
+        type: form.trackingType,
+        target: Number(form.target),
+        stretchTarget: form.stretchTarget === '' ? null : Number(form.stretchTarget),
+        unit: form.unit,
+        anyAmountCounts: form.anyAmountCounts,
+      },
+    };
+    try {
+      const result = habit
+        ? habitStore.updateHabit(habit.id, input, form.effectiveDate)
+        : habitStore.createHabit(input);
+      if (result) onSaved(habit?.id || result);
+      else {
+        setError('The habit was not saved. Review the message above and try again.');
+      }
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error ? submitError.message : 'The habit could not be saved.'
+      );
+    }
+  };
+
+  const retrySave = () => {
+    setError('');
+    const existingIds = new Set(habitStore.getSnapshot().habits.map(({ id }) => id));
+    if (!habitStore.retryLastOperation()) {
+      setError('The habit was not saved. Review the message above and try again.');
+      return;
+    }
+    const createdHabit = habitStore.getSnapshot().habits.find(({ id }) => !existingIds.has(id));
+    onSaved(habit?.id || createdHabit?.id || null);
+  };
+
+  return (
+    <Dialog
+      title={habit ? `Edit ${habit.name}` : 'Create a habit'}
+      onClose={onClose}
+      returnFocus={returnFocus}
+      wide
+    >
+      <form className="habit-form" onSubmit={submit}>
+        {error && (
+          <div className="habit-form-error" role="alert">
+            <span>{error}</span>
+            {error === 'The habit was not saved. Review the message above and try again.' && (
+              <button type="button" onClick={retrySave}>
+                Retry save
+              </button>
+            )}
+          </div>
+        )}
+        <div className="habit-form-grid">
+          <label className="habit-field full">
+            <span>
+              Name <strong aria-hidden="true">*</strong>
+            </span>
+            <input
+              autoFocus
+              required
+              maxLength="100"
+              value={form.name}
+              onChange={(event) => set('name', event.target.value)}
+            />
+          </label>
+        </div>
+
+        <details
+          className="habit-advanced-options"
+          open={showAdvanced}
+          onToggle={(event) => setShowAdvanced(event.currentTarget.open)}
+        >
+          <summary>Advanced options</summary>
+          <p className="habit-supporting-copy">
+            Optional description, category, appearance, schedule, tracking target, and reminder.
+          </p>
+          <div className="habit-form-grid">
+            <label className="habit-field full">
+              <span>Description</span>
+              <textarea
+                rows="3"
+                maxLength="500"
+                value={form.description}
+                onChange={(event) => set('description', event.target.value)}
+              />
+            </label>
+            <label className="habit-field">
+              <span>Category</span>
+              <input
+                maxLength="50"
+                value={form.category}
+                onChange={(event) => set('category', event.target.value)}
+              />
+            </label>
+            <label className="habit-field">
+              <span>Icon</span>
+              <input
+                value={form.icon}
+                maxLength="8"
+                onChange={(event) => set('icon', event.target.value)}
+                aria-describedby="habit-icon-help"
+              />
+              <small id="habit-icon-help">Choose a short symbol or emoji.</small>
+            </label>
+            <label className="habit-field">
+              <span>Colour</span>
+              <input
+                type="color"
+                value={form.colour}
+                onChange={(event) => set('colour', event.target.value)}
+              />
+            </label>
+            <label className="habit-field">
+              <span>Time of day</span>
+              <select
+                value={form.timeOfDay}
+                onChange={(event) => set('timeOfDay', event.target.value)}
+              >
+                {TIME_GROUPS.map((group) => (
+                  <option key={group} value={group}>
+                    {GROUP_LABELS[group]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="habit-field">
+              <span>Start date</span>
+              <input
+                type="date"
+                value={form.startDate}
+                onChange={(event) => set('startDate', event.target.value)}
+              />
+            </label>
+          </div>
+
+          <fieldset className="habit-form-section">
+            <legend>Schedule</legend>
+            <label className="habit-field">
+              <span>Frequency</span>
+              <select
+                value={form.scheduleType}
+                onChange={(event) => set('scheduleType', event.target.value)}
+              >
+                <option value="daily">Every day</option>
+                <option value="weekdays">Selected weekdays</option>
+                <option value="timesPerWeek">Times per week</option>
+                <option value="weekly">Once per week in a weekday window</option>
+                <option value="interval">Every N days</option>
+                <option value="monthly">Selected days of month</option>
+                <option value="monthlyTarget">Times per month</option>
+              </select>
+            </label>
+            {['weekdays', 'weekly'].includes(form.scheduleType) && (
+              <div className="habit-weekday-picker" role="group" aria-label="Scheduled weekdays">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((name, day) => (
+                  <label key={name}>
+                    <input
+                      type="checkbox"
+                      checked={form.weekdays.includes(day)}
+                      onChange={() => toggleWeekday(day)}
+                    />
+                    <span>{name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {form.scheduleType === 'timesPerWeek' && (
+              <label className="habit-field">
+                <span>Times per week</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="7"
+                  value={form.timesPerWeek}
+                  onChange={(event) => set('timesPerWeek', event.target.value)}
+                />
+              </label>
+            )}
+            {form.scheduleType === 'monthlyTarget' && (
+              <label className="habit-field">
+                <span>Times per month</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={form.monthlyTarget}
+                  onChange={(event) => set('monthlyTarget', event.target.value)}
+                />
+              </label>
+            )}
+            {form.scheduleType === 'interval' && (
+              <label className="habit-field">
+                <span>Repeat every</span>
+                <span className="habit-input-suffix">
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={form.intervalDays}
+                    onChange={(event) => set('intervalDays', event.target.value)}
+                  />
+                  <span>days</span>
+                </span>
+              </label>
+            )}
+            {form.scheduleType === 'monthly' && (
+              <label className="habit-field">
+                <span>Days of month</span>
+                <input
+                  value={form.monthlyDays}
+                  onChange={(event) => set('monthlyDays', event.target.value)}
+                  placeholder="1, 15, 28"
+                />
+                <small>Comma-separated values from 1 to 31.</small>
+              </label>
+            )}
+            <label className="habit-field">
+              <span>End date (optional)</span>
+              <input
+                type="date"
+                min={form.startDate}
+                value={form.endDate}
+                onChange={(event) => set('endDate', event.target.value)}
+              />
+            </label>
+            <p role="status">
+              Preview:{' '}
+              {describeSchedule({
+                type: form.scheduleType,
+                weekdays: form.weekdays,
+                timesPerWeek: Number(form.timesPerWeek),
+                monthlyTarget: Number(form.monthlyTarget),
+                intervalDays: Number(form.intervalDays),
+                monthlyDays: String(form.monthlyDays)
+                  .split(',')
+                  .map((value) => Number(value.trim()))
+                  .filter(Boolean),
+                anchorDate: form.startDate,
+                endDate: form.endDate || null,
+              })}
+              {form.endDate ? ` through ${formatDate(form.endDate)}` : ''}
+            </p>
+          </fieldset>
+
+          <fieldset className="habit-form-section">
+            <legend>Tracking</legend>
+            <label className="habit-field">
+              <span>Tracking type</span>
+              <select
+                value={form.trackingType}
+                onChange={(event) => set('trackingType', event.target.value)}
+              >
+                {Object.entries(TRACKING_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {form.trackingType !== 'binary' && (
+              <div className="habit-form-grid">
+                <label className="habit-field">
+                  <span>Minimum target</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={form.target}
+                    onChange={(event) => set('target', event.target.value)}
+                  />
+                </label>
+                <label className="habit-field">
+                  <span>Unit</span>
+                  <input
+                    maxLength="20"
+                    value={form.unit}
+                    onChange={(event) => set('unit', event.target.value)}
+                  />
+                </label>
+                <label className="habit-field">
+                  <span>Optional stretch target</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={form.stretchTarget}
+                    onChange={(event) => set('stretchTarget', event.target.value)}
+                  />
+                </label>
+                <label className="habit-check-row">
+                  <input
+                    type="checkbox"
+                    checked={form.anyAmountCounts}
+                    onChange={(event) => set('anyAmountCounts', event.target.checked)}
+                  />
+                  <span>Any amount counts as complete</span>
+                </label>
+              </div>
+            )}
+          </fieldset>
+
+          <fieldset className="habit-form-section">
+            <legend>Reminder</legend>
+            <label className="habit-field">
+              <span>Preferred time</span>
+              <input
+                type="time"
+                value={form.reminderTime}
+                onChange={(event) => set('reminderTime', event.target.value)}
+              />
+              <small>
+                Permission is requested only from Settings. Browser reminders run while LifeStreak
+                is open.
+              </small>
+            </label>
+          </fieldset>
+        </details>
+
+        {habit && (
+          <div className="habit-form-section">
+            <label className="habit-field">
+              <span>Changes take effect</span>
+              <input
+                type="date"
+                min={today}
+                value={form.effectiveDate}
+                onChange={(event) => set('effectiveDate', event.target.value)}
+              />
+              <small>
+                Choose a future date when today already has progress. Earlier logs keep the target
+                and unit active when they were recorded.
+              </small>
+            </label>
+          </div>
+        )}
+        <div className="habit-dialog-actions">
+          <button type="button" className="habit-button habit-button-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="habit-button habit-button-primary">
+            {habit ? 'Save changes' : 'Create habit'}
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
+  const today = toLocalDate();
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [note, setNote] = useState(logForDate(snapshot.logs, habit.id, today)?.note || '');
+  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
+  const [firstValue, setFirstValue] = useState('');
+  const config = configurationForDate(habit, selectedDate);
+  const log = logForDate(snapshot.logs, habit.id, selectedDate);
+  const dayState = getDayState(habit, snapshot.logs, selectedDate, {
+    today,
+    weekStartsOn: snapshot.preferences.weekStartsOn,
+  });
+  const hasAnyLog = snapshot.logs.some((item) => item.habitId === habit.id);
+  const canGuideFirstCheckIn =
+    !hasAnyLog && selectedDate === today && ['due', 'missed'].includes(dayState.status);
+
+  const selectDate = (dateKey) => {
+    setSelectedDate(dateKey);
+    setNote(logForDate(snapshot.logs, habit.id, dateKey)?.note || '');
+  };
+
+  return (
+    <Dialog title={habit.name} onClose={onClose} returnFocus={returnFocus} wide>
+      <div className="habit-history-header">
+        <div>
+          <span className={`habit-status status-${dayState.status}`}>
+            {statusLabel(dayState.status)}
+          </span>
+          <p>
+            {describeSchedule(config.schedule)} · {trackingDescription(config.tracking)}
+          </p>
+        </div>
+        <button type="button" className="habit-button habit-button-secondary" onClick={onEdit}>
+          Edit habit
+        </button>
+      </div>
+      <label className="habit-field">
+        <span>Review date</span>
+        <input
+          type="date"
+          max={today}
+          value={selectedDate}
+          onChange={(event) => selectDate(event.target.value)}
+        />
+      </label>
+      <section className="habit-history-day" aria-labelledby="selected-history-heading">
+        <h3 id="selected-history-heading">{formatDate(selectedDate)}</h3>
+        {canGuideFirstCheckIn && (
+          <div className="habit-empty-state">
+            <h4>Your habit is ready</h4>
+            <p>Record the first check-in now. You can correct or clear it at any time.</p>
+            {config.tracking.type === 'binary' ? (
+              <button
+                type="button"
+                className="habit-button habit-button-primary"
+                onClick={() => habitStore.setDayStatus(habit.id, selectedDate, 'completed')}
+              >
+                Complete first check-in
+              </button>
+            ) : (
+              <form
+                className="habit-value-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (habitStore.addValue(habit.id, selectedDate, firstValue)) setFirstValue('');
+                }}
+              >
+                <label>
+                  <span>First value in {config.tracking.unit}</span>
+                  <input
+                    inputMode="decimal"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={firstValue}
+                    onChange={(event) => setFirstValue(event.target.value)}
+                  />
+                </label>
+                <button type="submit" className="habit-button habit-button-primary">
+                  Save first check-in
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+        {log?.entries?.length ? (
+          <ul className="habit-entry-list">
+            {log.entries.map((entry) => (
+              <li key={entry.id}>
+                {editingEntryId === entry.id ? (
+                  <form
+                    className="habit-inline-actions"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (habitStore.updateValue(habit.id, selectedDate, entry.id, editingValue)) {
+                        setEditingEntryId(null);
+                      }
+                    }}
+                  >
+                    <label>
+                      <span className="habit-visually-hidden">Correct value in {entry.unit}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={editingValue}
+                        onChange={(event) => setEditingValue(event.target.value)}
+                      />
+                    </label>
+                    <span>{entry.unit}</span>
+                    <button type="submit">Save correction</button>
+                    <button type="button" onClick={() => setEditingEntryId(null)}>
+                      Cancel
+                    </button>
+                  </form>
+                ) : (
+                  <span>
+                    {entry.value} {entry.unit}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingEntryId(entry.id);
+                    setEditingValue(String(entry.value));
+                  }}
+                >
+                  Correct
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Remove ${entry.value} ${entry.unit} from this date?`)) {
+                      habitStore.removeValue(habit.id, selectedDate, entry.id);
+                    }
+                  }}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No individual numeric entries for this date.</p>
+        )}
+        <label className="habit-field">
+          <span>Private note</span>
+          <textarea
+            rows="4"
+            maxLength="2000"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+          />
+        </label>
+        <div className="habit-button-row">
+          <button
+            type="button"
+            className="habit-button habit-button-primary"
+            onClick={() => habitStore.setNote(habit.id, selectedDate, note)}
+          >
+            Save note
+          </button>
+          <button
+            type="button"
+            className="habit-button habit-button-secondary"
+            onClick={() => {
+              if (window.confirm(`Clear all status, progress, and notes for ${selectedDate}?`)) {
+                habitStore.clearDay(habit.id, selectedDate);
+                setNote('');
+              }
+            }}
+          >
+            Clear this date
+          </button>
+        </div>
+      </section>
+      <section aria-labelledby="recent-log-heading">
+        <h3 id="recent-log-heading">Recent records</h3>
+        <div className="habit-history-list">
+          {eachDate(addDays(today, -29), today)
+            .reverse()
+            .map((dateKey) => {
+              const state = getDayState(habit, snapshot.logs, dateKey, {
+                today,
+                weekStartsOn: snapshot.preferences.weekStartsOn,
+              });
+              return (
+                <button
+                  type="button"
+                  key={dateKey}
+                  className={selectedDate === dateKey ? 'is-selected' : ''}
+                  onClick={() => selectDate(dateKey)}
+                >
+                  <span>{formatDate(dateKey, { month: 'short', day: 'numeric' })}</span>
+                  <span>{statusLabel(state.status)}</span>
+                  {state.value > 0 && (
+                    <span>
+                      {state.value} {state.tracking.unit}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+        </div>
+      </section>
+    </Dialog>
+  );
+}
+
+function Dialog({ title, onClose, children, returnFocus = null, wide = false }) {
+  const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    const active = document.activeElement;
+    const previous =
+      returnFocus ||
+      (active instanceof HTMLElement && active !== document.body ? active : lastDialogTrigger);
+    const dialog = dialogRef.current;
+    const first = dialog?.querySelector('input, select, textarea, button');
+    first?.focus();
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onCloseRef.current();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previous?.focus?.();
+      window.setTimeout(() => {
+        if (previous?.isConnected) previous.focus();
+      }, 0);
+    };
+  }, [returnFocus]);
+
+  return (
+    <div
+      className="habit-dialog-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        ref={dialogRef}
+        className={`habit-dialog ${wide ? 'habit-dialog-wide' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="habit-dialog-title"
+      >
+        <header>
+          <h2 id="habit-dialog-title">{title}</h2>
+          <button
+            type="button"
+            className="habit-icon-button"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </header>
+        <div className="habit-dialog-body">{children}</div>
+      </section>
+    </div>
+  );
+}
+
+function EmptyState({ title, description, actionLabel, onAction }) {
+  return (
+    <div className="habit-empty-state">
+      <h2>{title}</h2>
+      <p>{description}</p>
+      {actionLabel && onAction && (
+        <button type="button" className="habit-button habit-button-primary" onClick={onAction}>
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function trackingDescription(tracking) {
+  if (tracking.type === 'binary') return 'Yes / no completion';
+  if (tracking.anyAmountCounts) return `${TRACKING_LABELS[tracking.type]} · any amount counts`;
+  return `${TRACKING_LABELS[tracking.type]} · ${tracking.target} ${tracking.unit}`;
+}

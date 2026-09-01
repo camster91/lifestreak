@@ -2,19 +2,38 @@
   "name": "lifestreak",
   "private": true,
   "version": "4.0.0",
+  "packageManager": "npm@11.17.0",
+  "allowScripts": {
+    "esbuild@0.27.2": true,
+    "fsevents": false
+  },
   "type": "module",
-  "description": "Track habits, service, reading, and goals — all in one place",
+  "description": "A private, local-first habit and routine tracker with optional specialist collections.",
+  "keywords": [
+    "habits",
+    "routines",
+    "streaks",
+    "local-first"
+  ],
   "scripts": {
     "dev": "vite",
     "start": "npm run dev:full",
     "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "design-system:check": "node scripts/check-design-system.mjs",
+    "identity:check": "node scripts/check-identity.mjs",
+    "permissions:check": "node scripts/check-permissions.mjs",
+    "signing:check": "node scripts/check-android-signing.mjs",
+    "supply-chain:check": "node scripts/check-supply-chain.mjs",
+    "toolchain:check": "node scripts/check-toolchain.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write \"src/**/*.{js,jsx,json,css}\"",
-    "format:check": "prettier --check \"src/**/*.{js,jsx,json,css}\"",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "ui:check": "node scripts/check-habit-ui.mjs",
     "cap:sync": "npx cap sync",
     "cap:copy": "npx cap copy",
     "cap:open:ios": "npx cap open ios",
@@ -35,16 +54,15 @@
     "dev:full": "concurrently \"npm run dev:vite\" \"npm run dev:server\" --names \"VITE,API\" --prefix-colors \"blue,green\""
   },
   "dependencies": {
-    "@capacitor/android": "^8.3.0",
+    "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/browser": "^8.0.3",
     "@capacitor/core": "^8.5.0",
     "@capacitor/haptics": "^8.0.2",
-    "@capacitor/ios": "^8.4.2",
+    "@capacitor/ios": "^8.5.0",
     "@capacitor/keyboard": "^8.0.5",
-    "@capacitor/local-notifications": "^8.2.0",
+    "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/preferences": "^8.0.1",
-    "@capacitor/push-notifications": "^8.1.1",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@xmldom/xmldom": "^0.9.10",
@@ -57,8 +75,9 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.3.0",
-    "@eslint/js": "^9.39.2",
+    "@axe-core/playwright": "^4.13.0",
+    "@capacitor/cli": "8.4.2",
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -87,6 +106,7 @@
     "vitest": "^4.0.17"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": "22.22.0",
+    "npm": "11.17.0"
   }
 }

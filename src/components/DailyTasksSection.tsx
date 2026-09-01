@@ -20,10 +20,7 @@ function DailyTasksSection() {
   const [noteText, setNoteText] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
 
-  const {
-    getDailyTextProgress,
-    updateDailyTextProgress,
-  } = useProgressStore();
+  const { getDailyTextProgress, updateDailyTextProgress } = useProgressStore();
 
   const dailyTextProgress = getDailyTextProgress(today);
 
@@ -83,14 +80,9 @@ function DailyTasksSection() {
             <BookOpen className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-lg">Daily Text</h3>
           </div>
-          <p className="text-sm text-base-content/60 mb-3">
-            {format(new Date(), 'EEEE, MMMM d')}
-          </p>
+          <p className="text-sm text-base-content/60 mb-3">{format(new Date(), 'EEEE, MMMM d')}</p>
 
-          <button
-            onClick={handleOpenDailyText}
-            className="btn btn-primary w-full gap-2 mb-3"
-          >
+          <button onClick={handleOpenDailyText} className="btn btn-primary w-full gap-2 mb-3">
             <ExternalLink className="w-4 h-4" />
             Open Daily Text
           </button>
@@ -98,13 +90,15 @@ function DailyTasksSection() {
           <button
             onClick={handleDailyTextCheck}
             className={`w-full p-4 rounded-xl flex items-center justify-between transition-all ${
-              dailyTextProgress.readScripture
-                ? 'bg-success/10 text-success-content'
-                : 'bg-base-200'
+              dailyTextProgress.readScripture ? 'bg-success/10 text-success-content' : 'bg-base-200'
             }`}
           >
             <span className="font-medium">I've read today's text</span>
-            {dailyTextProgress.readScripture ? <CheckCircle2 className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full border-2 border-base-content/20" />}
+            {dailyTextProgress.readScripture ? (
+              <CheckCircle2 className="w-6 h-6" />
+            ) : (
+              <div className="w-6 h-6 rounded-full border-2 border-base-content/20" />
+            )}
           </button>
         </div>
       </div>
@@ -134,7 +128,10 @@ function DailyTasksSection() {
                 placeholder="What did you learn today?"
                 rows={3}
               />
-              <button onClick={handleSaveNote} className={`btn btn-sm w-full ${noteSaved ? 'btn-success' : 'btn-primary'}`}>
+              <button
+                onClick={handleSaveNote}
+                className={`btn btn-sm w-full ${noteSaved ? 'btn-success' : 'btn-primary'}`}
+              >
                 <Save className="w-4 h-4" /> {noteSaved ? 'Saved' : 'Save'}
               </button>
             </div>

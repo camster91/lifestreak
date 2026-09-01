@@ -1,106 +1,141 @@
 # LifeStreak — App Store Submission Guide
 
-## App Details
+> Release metadata in this document is preparatory. It must be reconciled with the signed native builds, current store-console requirements, physical-device QA, and the hosted privacy policy before submission.
+
+## App details
+
 - **Name:** LifeStreak
-- **Bundle ID:** com.ashbi.lifestreak
-- **Android version:** 4.0.0 (versionCode 400)
-- **iOS version:** 3.0.0 (build 300; requires macOS/Xcode validation)
-- **Category:** Lifestyle / Reference
-- **Rating:** 4+ (no objectionable content)
+- **Bundle ID:** `com.ashbi.lifestreak`
+- **Repository version:** 4.0.0
+- **Primary category:** Lifestyle / Productivity
+- **Age rating target:** Appropriate for a general personal habit tracker, subject to the completed store questionnaire
+- **Product model:** Private, local-first habit and routine tracking with optional specialist Collections
 
-## Short Description (80 chars)
-Daily spiritual habits: Bible reading, meeting prep & progress tracking
+## Short description
 
-## Full Description
-LifeStreak helps people build consistent personal routines with private, easy-to-use tracking tools.
+Private habit and routine tracking with flexible schedules and useful insights.
 
-**Features:**
-- Daily Bible reading schedule with progress tracking
-- Meeting preparation tracker (Midweek & Weekend)
-- Prayer & family worship tracking
-- Daily spiritual goals and habits
-- Weekly and monthly progress statistics
-- Local notifications & reminders
-- Works offline — no account required
-- Dark mode support
+## Full description
 
-Build consistent spiritual habits and see your progress grow over time.
+LifeStreak helps you build practical routines without requiring an account or sending your personal tracking history to the developer.
 
----
+Create simple yes/no habits or measurable routines for health, learning, planning, family, spiritual, and other personal goals. Choose daily, selected-weekday, times-per-week, interval, or monthly schedules, then organise habits by morning, afternoon, evening, or anytime.
 
-## Android (Google Play Store)
+### Features
+
+- Focused Today view for habits expected on the selected date
+- Binary and measurable habits with partial progress
+- Counts, duration, distance, volume, weight, energy, and custom units
+- Flexible schedules, reminders, pauses, archives, corrections, notes, and undo
+- Schedule-aware completion rates, streaks, calendar history, and weekly review
+- Optional editable starter templates, including spiritual routines
+- Original study, service, reading, goal, and other richer records preserved in Collections
+- Local JSON export, validated import, and recovery copies
+- Offline-first use with no account required
+- Accessible responsive interface with light and dark theme support
+
+LifeStreak is a personal tracking tool. It is not a medical device and does not provide medical advice or emergency monitoring.
+
+## Privacy and claim requirements
+
+Store copy and screenshots must accurately state that:
+
+- General habit data is stored locally in a separate, versioned database.
+- Existing specialist Collections stores are preserved and are not silently converted or uploaded.
+- Notification permission is requested only after a deliberate Settings action.
+- Habit names are hidden from notification text by default.
+- Browser reminders operate while the app is open; native background reminder claims require platform verification.
+- Export and import occur only after a user action.
+- No cloud synchronisation, medical outcomes, automatic migration, or cross-device restore may be claimed unless separately implemented and verified.
+
+## Android release preparation
 
 ### Prerequisites
-1. Google Play Developer account ($25 one-time fee) — https://play.google.com/console
-2. A release signing keystore supplied and stored outside the repository.
 
-### Building the Release AAB
+1. Active Google Play Console access
+2. A production release keystore supplied and stored outside the repository
+3. Signing credentials supplied through the authorised release process
+4. Passing signed Android App Bundle build
+5. Physical-device QA on representative supported Android versions
+
+### Build sequence
+
 ```bash
-cd C:\path\to\lifestreak
 npm ci
+npm run lint
+npm test -- --run
 npm run build
 npx cap sync android
 npx cap open android
 ```
 
-In Android Studio, generate a signed Android App Bundle with the separately
-managed release keystore. Keep `KEYSTORE_PASSWORD` and `KEY_PASSWORD` in a
-secure secret manager; never commit them or the keystore.
+Generate a signed Android App Bundle in Android Studio with the separately managed release keystore. Keep the keystore and signing passwords in an approved secret manager; never commit them.
 
-### Play Store Listing
-- Screenshots: At least 2 phone screenshots (1080x1920 or 1080x2400)
-- Feature graphic: 1024x500 PNG
-- Icon: 512x512 PNG (hi-res)
+### Required evidence
 
-### Keystore Status
-The production release keystore is not present in this repository or current
-Windows workspace. It must be supplied through the authorized release process.
+- Signed release AAB builds successfully
+- Fresh install and upgrade from an existing LifeStreak version
+- Habit and Collections data remain accessible after upgrade
+- Notifications request permission only after the user action
+- Offline launch and tracking
+- Export/import and reset recovery
+- TalkBack, font scaling, zoom, contrast, touch targets, and keyboard behaviour
+- Phone and tablet screenshots generated from the release candidate
 
----
-
-## iOS (Apple App Store)
+## iOS release preparation
 
 ### Prerequisites
-1. Apple Developer account ($99/year) — https://developer.apple.com
-2. Mac with Xcode (cannot build iOS on Windows)
-3. Apple ID enrolled in developer program
 
-### Building
+1. Active Apple Developer and App Store Connect access
+2. macOS with a supported Xcode version
+3. Valid certificates, identifiers, and provisioning
+4. Passing archive and App Store validation
+5. TestFlight and physical-device QA
+
+### Build sequence
+
 ```bash
-# On Mac:
-cd /path/to/lifestreak
 npm ci
+npm run lint
+npm test -- --run
 npm run build
 npx cap sync ios
 npx cap open ios
 ```
 
-Then in Xcode: Product > Archive > Distribute App.
+Archive and validate the release candidate in Xcode. The repository cannot establish App Store readiness without the signed archive, App Store validation, and target-device evidence.
 
-### App Store Connect Setup
-1. Create the app at https://appstoreconnect.apple.com
-2. Use bundle ID `com.ashbi.lifestreak`
-3. Upload a build via Xcode or Transporter
-4. Fill in the metadata above
-5. Submit for review
+### Required evidence
 
----
+- Archive and validation succeed
+- Fresh install and upgrade preserve habit and Collections data
+- VoiceOver, Dynamic Type/font scaling, zoom, contrast, touch targets, and external keyboard behaviour
+- Notification permission and lock-screen privacy
+- Offline launch and tracking
+- Export/import and reset recovery
+- iPhone and iPad screenshots generated from the release candidate
 
-## Privacy Policy
-Required for both stores. The app collects no personal data, stores data
-locally on the device, requires no account, and has no analytics or tracking.
+## Store assets
 
-Hosted and browser-verified at: https://lifestreak.ashbi.ca/privacy.html
+Final assets should show the actual general-purpose product rather than a JW-only experience:
 
----
+1. Today with mixed general habits
+2. Habit creation and flexible schedules
+3. Quantitative progress
+4. Schedule-aware Insights and weekly review
+5. Settings, notification privacy, and backup/recovery
+6. Optional Collections without presenting them as mandatory
 
-## Screenshots Needed
-- Home screen (daily view)
-- Bible reading tracker
-- Statistics screen
-- Meeting prep screen
-- Settings/dark mode
+Required dimensions and asset counts must be verified in the current store consoles before production.
 
-Draft browser captures are stored under `app-store-assets/screenshots/`; they
-are not a substitute for physical-device or simulator evidence. Final store
-assets still require review on the target device class.
+## Privacy policy
+
+The repository policy is `PRIVACY_POLICY.md`. The proposed hosted location is:
+
+`https://lifestreak.ashbi.ca/privacy.html`
+
+Before submission, confirm that the hosted page is reachable, matches the repository policy, uses HTTPS without warnings, and reflects the release candidate.
+
+## Release decision
+
+Do not submit, publish, or replace a production listing until all automated gates, signed native builds, representative device/accessibility QA, upgrade/data-preservation testing, screenshots, privacy verification, and rollback planning are complete and explicitly approved.

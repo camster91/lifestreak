@@ -1,6 +1,6 @@
 # LifeStreak - Launch Checklist
 
-> **Archived:** LifeStreak was consolidated into [JW Companion](https://github.com/camster91/jw-companion) on 2026-08-13. This checklist documents historical release work and is not an active store-launch plan.
+> **Superseded release snapshot:** LifeStreak is active as an independent app. Current release gates are in [APP_STORE_TODO.md](APP_STORE_TODO.md), and canonical identity values are in [docs/product-identity.md](docs/product-identity.md).
 
 ## What Was Fixed
 
@@ -12,8 +12,8 @@
 | `ios/App/App/Info.plist` | Added `NSCalendarsUsageDescription` for calendar reminders |
 | `ios/App/App/Info.plist` | Added `NSUserTrackingUsageDescription` for App Store compliance |
 | `PRIVACY_POLICY.md` | Privacy policy source is the LifeStreak policy in the repository |
-| `ios/App/App.xcodeproj/project.pbxproj` | Set `MARKETING_VERSION` to `3.0.0` (was `1.0`) |
-| `ios/App/App.xcodeproj/project.pbxproj` | Set `CURRENT_PROJECT_VERSION` to `300` (was `1`) |
+| `ios/App/App.xcodeproj/project.pbxproj` | Aligns `MARKETING_VERSION` with the canonical product version |
+| `ios/App/App.xcodeproj/project.pbxproj` | Aligns `CURRENT_PROJECT_VERSION` with the canonical native build number |
 | `ios/App/App.xcodeproj/project.pbxproj` | Uses `PRODUCT_BUNDLE_IDENTIFIER = com.ashbi.lifestreak` |
 | `capacitor.config.json` | Uses `appId: com.ashbi.lifestreak` and `appName: LifeStreak` |
 | `PRIVACY_POLICY.md` | Uses the LifeStreak product identity |

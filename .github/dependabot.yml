@@ -39,3 +39,6 @@ updates:
       interval: 'weekly'
     labels:
       - 'dependencies'
+    ignore:
+      - dependency-name: 'node'
+        update-types: ['version-update:semver-major']

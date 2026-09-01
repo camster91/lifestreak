@@ -1,18 +1,18 @@
 # LifeStreak CI evidence register
 
-Last verified: 2026-08-28 against draft PR #106 at commit `95b2651005e895edbf677ee50d4812e8a16c1b9b`.
+Last verified: 2026-09-01 against released revision `b7d4420c83fd6b43db2db6081f25195fac53b5c0` and documentation merge `44ecc79d38ebcd5836285d2e93c3e5b0828f2b1e`.
 
 This register separates source/workflow evidence from account, installed-app, and external-runner state for issue #60. A green local run does not substitute for hosted execution, and an external check name does not prove which gate ran.
 
-## Current PR checks
+## Released source and production evidence
 
-| Check                    | Authoritative evidence                                                                                 | Classification                                                                                            | Required next action                                                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Habit-first verification | GitHub run `33204758518`, job `98962861497`: runner ID `0`, no steps, one failure annotation           | External account gate: “recent account payments have failed or your spending limit needs to be increased” | Owner resolves GitHub Billing & plans, then reruns exact head                                                                  |
-| Android debug build      | GitHub run `33204758534`, job `98962861016`: runner ID `0`, no steps, same annotation                  | External account gate                                                                                     | Same billing resolution and rerun                                                                                              |
-| Unsigned iOS compile     | GitHub run `33204758538`, job `98962861236`: runner ID `0`, no steps, same annotation                  | External account gate                                                                                     | Same billing resolution and rerun                                                                                              |
-| Ashbi Local CI           | Check run `98962853705` is queued for exact head; its output contains no executed steps or annotations | External runner/app gate, not evidence of success or failure                                              | Restore/inspect the external runner and require a terminal result for the current head                                         |
-| GitGuardian              | Check run `98962852964`, finding `36683862`, occurrence `294047756`                                    | Scanner false positive requiring owner disposition                                                        | Resolve the incident as a false positive in the GitGuardian workspace; do not rewrite 104 PR commits without explicit approval |
+| Check                        | Authoritative evidence                                                                                                                                      | Classification                                          | Required next action                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Full source and native gates | PR #106 exact-head verifier, Android debug, and unsigned iOS passed; local exact toolchain completed 31 files / 281 tests and the production-browser matrix | Verified for web source and unsigned native compilation | Preserve per-change hosted evidence                                                   |
+| Published image              | GitHub run `33498097064` built the final multi-architecture image and passed the high/critical Trivy scan                                                   | Verified                                                | Retain registry provenance/SBOM and continue digest scans                             |
+| Production                   | Revision `b7d4420` is healthy on the VPS; route backup and prior healthy container are retained; public smoke run `33499203670` passed                      | Released and rollback-ready                             | Observe reliability and perform a deliberate rollback drill without user-data changes |
+| Ashbi Local CI               | Current checks execute with Node 22.23/npm 10.9 instead of exact Node 22.22/npm 11.17                                                                       | Runner contract mismatch, not product evidence          | Align the runner or remove it from required checks under #60/#64                      |
+| GitGuardian                  | Finding `36683862` cites an environment-variable requirement, not a secret value; subsequent release PR checks passed                                       | Documented false positive                               | Owner may resolve the historical workspace finding                                    |
 
 ## GitGuardian triage: finding 36683862
 
@@ -33,8 +33,8 @@ Pull-request verification and trusted release-source verification now require cl
 
 ## Evidence still required
 
-1. Rerun the exact current head after GitHub account execution is restored.
-2. Obtain a terminal independent local-CI result and preserve its executed-command evidence.
+1. Align Ashbi Local CI to the exact supported Node/npm contract and preserve its executed-command evidence.
+2. Keep GitHub branch/ruleset requirements aligned with the trusted verifier, Android, iOS, security, and image gates.
 3. Exercise intentional failures for format, type, lint, unit test, web build, native sync/drift, audit/secret/misconfiguration scan, and publish dependency without weakening branch protection.
-4. Publish one approved immutable image, record its digest/SBOM/provenance, deploy that exact digest, verify `/version.json`, and rehearse rollback to the recorded prior digest.
+4. Trace the published registry digest through SBOM/provenance retention and perform a deliberate route rollback/recovery rehearsal; the approved release used an exact-source VPS build because unauthenticated GHCR pull was denied.
 5. Produce signed Android/iOS artifacts from protected environments and prove fresh-install and upgrade continuity before store promotion.

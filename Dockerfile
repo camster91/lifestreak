@@ -21,7 +21,11 @@ COPY . .
 RUN npm run build
 
 # ─── Stage 2: serve ─────────────────────────────────────────────────────
-FROM nginx:alpine@sha256:db35bfc6b2951e7f8a72db5db120288c127ffaeeb4a6d4b95a26fead017d5913 AS production
+FROM nginx:alpine-slim@sha256:1870de6d59aafee152589b64404556d2535922cdd998e6dac1c4888c938ed8f9 AS production
+
+RUN apk add --no-cache --upgrade \
+  libcrypto3=3.5.8-r0 \
+  libssl3=3.5.8-r0
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

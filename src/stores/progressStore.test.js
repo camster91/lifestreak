@@ -186,6 +186,26 @@ describe('progressStore', () => {
       expect(getLocalDateKey(new Date(2024, 1, 29, 23, 30))).toBe('2024-02-29');
       expect(getLocalDateKey(new Date(2024, 2, 1, 0, 30))).toBe('2024-03-01');
     });
+
+    it('keeps local calendar keys stable across timezone extremes and DST zones', async () => {
+      const { getLocalDateKey } = await import('./progressStore.ts');
+      const originalTimezone = process.env.TZ;
+      try {
+        for (const timezone of [
+          'Etc/GMT+12',
+          'Pacific/Kiritimati',
+          'America/New_York',
+          'Europe/Berlin',
+        ]) {
+          process.env.TZ = timezone;
+          expect(getLocalDateKey(new Date(2024, 1, 29, 0, 30)), timezone).toBe('2024-02-29');
+          expect(getLocalDateKey(new Date(2026, 2, 8, 0, 30)), timezone).toBe('2026-03-08');
+          expect(getLocalDateKey(new Date(2026, 11, 31, 23, 30)), timezone).toBe('2026-12-31');
+        }
+      } finally {
+        process.env.TZ = originalTimezone;
+      }
+    });
   });
 
   describe('Meeting Preparation Progress', () => {

@@ -104,7 +104,7 @@ Every open issue has exactly one priority and one evidence-status label plus its
 - **#107** — closed as superseded by the independently verified Capacitor local-notifications 8.3.1 update in `5cfc4fe`; web gates and both native syncs pass.
 - **#108** — closed as an unsupported TypeScript 7 major under the pinned TypeScript 6 contract. Dependabot now ignores this major pending deliberate review.
 
-PRs #110, #112-#118, #120, and #121 are Dependabot updates under review. Docker PR #117 is an unsupported Node 26 major and is rejected under the exact Node 22 contract; Dependabot now ignores Docker Node majors. Compatible updates must pass clean install, lint, tests, web build, native sync/build as applicable, security review, and release-workflow behavior before merge.
+PR #127 consolidated and verified compatible npm and Action updates from PRs #110, #112-#116, #118, #120, and #121. Docker PRs #117 and #128 were rejected because isolated Node 26/22.23 updates violate the exact cross-environment Node 22.22.0 contract. Dependabot ignores Docker Node updates; runtime changes require one coordinated local/CI/Docker/native migration. Compatible updates must pass clean install, lint, tests, web build, native sync/build as applicable, security review, and release-workflow behavior before merge.
 
 ## Completion rules
 

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Start the JW Progress Tracker development environment.
+Start the LifeStreak development environment.
 
 .DESCRIPTION
 This script starts the full development environment including:
@@ -37,7 +37,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Set-Location $projectRoot
 
-Write-Host "JW Progress Tracker - Development Environment" -ForegroundColor Green
+Write-Host "LifeStreak - Development Environment" -ForegroundColor Green
 Write-Host "Project root: $projectRoot" -ForegroundColor Cyan
 
 # Check for existing processes on common ports

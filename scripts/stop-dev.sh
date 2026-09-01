@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stop JW Progress Tracker development servers
+# Stop LifeStreak development servers
 # Usage: ./stop-dev.sh [--kill-ports]
 
 set -e
@@ -24,7 +24,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "Stopping JW Progress Tracker development servers..."
+echo "Stopping LifeStreak development servers..."
 
 # 1. Stop process from PID file if exists
 PID_FILE="$PROJECT_ROOT/dev.pid"

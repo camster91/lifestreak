@@ -196,7 +196,7 @@ function ProjectsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-linear-to-br from-purple-400 to-pink-500 rounded-xl">
+          <div className="p-2 bg-linear-to-br from-primary to-secondary rounded-xl">
             <FolderKanban className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -232,9 +232,9 @@ function ProjectsTab() {
 
       {/* Suggestions Panel */}
       {showSuggestions && (
-        <div className="card bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200">
+        <div className="card bg-linear-to-br from-primary/10 to-secondary/10 border border-primary/20">
           <div className="card-body p-4">
-            <h4 className="font-semibold text-purple-800 flex items-center gap-2">
+            <h4 className="font-semibold text-base-content flex items-center gap-2">
               <Star className="w-4 h-4" />
               Project Ideas
             </h4>
@@ -249,7 +249,7 @@ function ProjectsTab() {
                     className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
                       isAlreadyAdded
                         ? 'bg-base-200 opacity-50 cursor-not-allowed'
-                        : 'bg-white hover:bg-purple-100 active:scale-[0.98]'
+                        : 'bg-base-100 hover:bg-primary/10 active:scale-[0.98]'
                     }`}
                   >
                     <span className="text-2xl">{suggested.icon}</span>
@@ -259,7 +259,7 @@ function ProjectsTab() {
                         {suggested.description}
                       </p>
                       {suggested.tasks && (
-                        <p className="text-xs text-purple-600 mt-1">
+                        <p className="text-xs text-primary mt-1">
                           {suggested.tasks.length} tasks included
                         </p>
                       )}
@@ -267,7 +267,7 @@ function ProjectsTab() {
                     {isAlreadyAdded ? (
                       <span className="text-xs text-success">Added</span>
                     ) : (
-                      <Plus className="w-4 h-4 text-purple-600" />
+                      <Plus className="w-4 h-4 text-primary" />
                     )}
                   </button>
                 );
@@ -329,8 +329,8 @@ function ProjectsTab() {
       {/* Projects List */}
       {activeProjects.length === 0 && !showAddForm && !showSuggestions ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-            <FolderKanban className="w-8 h-8 text-purple-500" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+            <FolderKanban className="w-8 h-8 text-primary" />
           </div>
           <p className="font-medium text-base-content/70">No projects yet</p>
           <p className="text-sm text-base-content/50 mt-1">Start a project to organize tasks</p>
@@ -351,43 +351,49 @@ function ProjectsTab() {
               <div key={project.id} className="card bg-base-100 shadow-sm">
                 <div className="card-body p-3">
                   {/* Project Header */}
-                  <div
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => toggleExpanded(project.id)}
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="w-4 h-4 text-base-content/60" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-base-content/60" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-medium">{project.title}</h4>
-                        {categoryInfo && (
-                          <span className={`badge badge-sm ${categoryInfo.color}`}>
-                            {categoryInfo.label}
-                          </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="flex flex-1 min-w-0 items-center gap-2 text-left cursor-pointer"
+                      onClick={() => toggleExpanded(project.id)}
+                      aria-expanded={isExpanded}
+                      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${project.title}`}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="w-4 h-4 text-base-content/60" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-base-content/60" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-medium">{project.title}</h4>
+                          {categoryInfo && (
+                            <span className={`badge badge-sm ${categoryInfo.color}`}>
+                              {categoryInfo.label}
+                            </span>
+                          )}
+                        </div>
+                        {project.tasks.length > 0 && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 h-1.5 bg-base-300 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${
+                                  progress === 100 ? 'bg-success' : 'bg-secondary'
+                                }`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-base-content/60">
+                              {completedTasks}/{project.tasks.length}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      {project.tasks.length > 0 && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="flex-1 h-1.5 bg-base-300 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all ${
-                                progress === 100 ? 'bg-success' : 'bg-secondary'
-                              }`}
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-base-content/60">
-                            {completedTasks}/{project.tasks.length}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    </button>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      type="button"
+                      aria-label={`Delete ${project.title}`}
+                      onClick={() => {
                         haptics.light();
                         deleteProject(project.id);
                       }}

@@ -20,6 +20,7 @@ function Service() {
 
   const {
     entries,
+    quarantinedEntries,
     weeklyGoal,
     monthlyGoal,
     addEntry,
@@ -32,6 +33,8 @@ function Service() {
 
   const weeklyTotal = getWeeklyTotal();
   const monthlyTotal = getMonthlyTotal();
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const futureEntryCount = entries.filter((entry) => entry.date > today).length;
 
   const handleAdd = () => {
     if (!hours.trim()) return;
@@ -57,23 +60,37 @@ function Service() {
         title="Service"
         subtitle="Log hours and track your progress"
         icon={Briefcase}
-        gradient="from-emerald-500 via-teal-500 to-cyan-500"
+        gradient="from-primary via-success to-secondary"
       />
 
       <main className="container mx-auto px-4 pt-4 space-y-4 max-w-2xl">
+        {(quarantinedEntries.length > 0 || futureEntryCount > 0) && (
+          <div className="alert alert-warning" role="status">
+            <span>
+              {quarantinedEntries.length > 0 &&
+                `${quarantinedEntries.length} invalid or duplicate service ${
+                  quarantinedEntries.length === 1 ? 'record is' : 'records are'
+                } preserved for recovery and excluded from totals. `}
+              {futureEntryCount > 0 &&
+                `${futureEntryCount} future-dated ${
+                  futureEntryCount === 1 ? 'entry is' : 'entries are'
+                } preserved and will count only when that local date arrives.`}
+            </span>
+          </div>
+        )}
         {/* Progress Cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="card bg-base-100 shadow-md">
             <div className="card-body p-3">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold uppercase text-base-content/60">This Week</span>
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
+                <TrendingUp className="w-4 h-4 text-success" />
               </div>
               <div className="text-2xl font-bold">{weeklyTotal.toFixed(1)}h</div>
               <div className="text-xs text-base-content/60">Goal: {weeklyGoal}h</div>
               <div className="w-full bg-base-200 rounded-full h-2 mt-2">
                 <div
-                  className="bg-emerald-500 h-2 rounded-full transition-all"
+                  className="bg-success h-2 rounded-full transition-all"
                   style={{ width: `${weeklyPercent}%` }}
                 />
               </div>
@@ -84,13 +101,13 @@ function Service() {
             <div className="card-body p-3">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold uppercase text-base-content/60">This Month</span>
-                <TrendingUp className="w-4 h-4 text-teal-500" />
+                <TrendingUp className="w-4 h-4 text-secondary" />
               </div>
               <div className="text-2xl font-bold">{monthlyTotal.toFixed(1)}h</div>
               <div className="text-xs text-base-content/60">Goal: {monthlyGoal}h</div>
               <div className="w-full bg-base-200 rounded-full h-2 mt-2">
                 <div
-                  className="bg-teal-500 h-2 rounded-full transition-all"
+                  className="bg-secondary h-2 rounded-full transition-all"
                   style={{ width: `${monthlyPercent}%` }}
                 />
               </div>
@@ -102,7 +119,7 @@ function Service() {
         <div className="card bg-base-100 shadow-md">
           <div className="card-body p-4 space-y-3">
             <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Plus className="w-5 h-5 text-emerald-500" /> Log Session
+              <Plus className="w-5 h-5 text-success" /> Log Session
             </h3>
             <div className="flex gap-2">
               <input

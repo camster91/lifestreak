@@ -1,0 +1,143 @@
+name: Build signed iOS release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-release:
+    name: Verify identity and archive signed IPA
+    runs-on: macos-15
+    environment: production
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup supported npm
+        run: npm install --global npm@11.17.0 && npm run toolchain:check
+
+      - name: Install and verify source
+        run: |
+          npm ci
+          npm run format:check
+          npm run typecheck
+          npm run lint
+          npm test -- --run
+          npm run identity:check
+          npm run permissions:check
+          npm run supply-chain:check
+          npm audit --audit-level=high
+          npm run build
+          npx cap sync ios
+          git diff --exit-code -- ios
+
+      - name: Install protected signing identity
+        env:
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+          IOS_CERT_SHA256: ${{ secrets.IOS_CERT_SHA256 }}
+        run: |
+          test -n "$IOS_DISTRIBUTION_CERTIFICATE_BASE64"
+          test -n "$IOS_CERTIFICATE_PASSWORD"
+          test -n "$IOS_PROVISIONING_PROFILE_BASE64"
+          test -n "$IOS_KEYCHAIN_PASSWORD"
+          test -n "$IOS_CERT_SHA256"
+          keychain="$RUNNER_TEMP/lifestreak-signing.keychain-db"
+          security create-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$keychain"
+          security list-keychains -d user -s "$keychain"
+          security default-keychain -d user -s "$keychain"
+          printf '%s' "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" | base64 -D > "$RUNNER_TEMP/distribution.p12"
+          security import "$RUNNER_TEMP/distribution.p12" -k "$keychain" -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$IOS_KEYCHAIN_PASSWORD" "$keychain"
+          actual_fingerprint="$(security find-certificate -a -p "$keychain" | openssl x509 -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          expected_fingerprint="$(printf '%s' "$IOS_CERT_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          test "$actual_fingerprint" = "$expected_fingerprint"
+          install -d "$HOME/Library/MobileDevice/Provisioning Profiles"
+          printf '%s' "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -D > "$HOME/Library/MobileDevice/Provisioning Profiles/lifestreak.mobileprovision"
+
+      - name: Archive and export signed IPA
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+        run: |
+          test -n "$IOS_TEAM_ID"
+          test -n "$IOS_PROVISIONING_PROFILE_NAME"
+          security cms -D -i "$HOME/Library/MobileDevice/Provisioning Profiles/lifestreak.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")" = "$IOS_TEAM_ID.com.ashbi.lifestreak"
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/LifeStreak.xcarchive" \
+            DEVELOPMENT_TEAM="$IOS_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY='Apple Distribution' \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_NAME" \
+            clean archive
+          cp ios/ExportOptions.plist.template "$RUNNER_TEMP/ExportOptions.plist"
+          /usr/libexec/PlistBuddy -c "Set :teamID $IOS_TEAM_ID" "$RUNNER_TEMP/ExportOptions.plist"
+          /usr/libexec/PlistBuddy -c "Set :provisioningProfiles:com.ashbi.lifestreak $IOS_PROVISIONING_PROFILE_NAME" "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/LifeStreak.xcarchive" \
+            -exportPath "$RUNNER_TEMP/LifeStreakExport" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Verify identity and record artifact metadata
+        run: |
+          ipa="$(find "$RUNNER_TEMP/LifeStreakExport" -maxdepth 1 -name '*.ipa' -print -quit)"
+          test -n "$ipa"
+          unzip -q "$ipa" -d "$RUNNER_TEMP/ipa-inspect"
+          app="$(find "$RUNNER_TEMP/ipa-inspect/Payload" -maxdepth 1 -name '*.app' -print -quit)"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = 'com.ashbi.lifestreak'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = '4.0.0'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = '400'
+          codesign --verify --deep --strict --verbose=2 "$app"
+          cp "$ipa" LifeStreak.ipa
+          shasum -a 256 LifeStreak.ipa | tee ios-app-release.sha256
+          jq -n \
+            --arg app "LifeStreak" \
+            --arg bundleId "com.ashbi.lifestreak" \
+            --arg version "4.0.0" \
+            --arg build "400" \
+            --arg revision "${{ github.sha }}" \
+            --arg runner "$RUNNER_NAME" \
+            --arg workflow "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            '{app:$app,platform:"ios",bundleId:$bundleId,version:$version,build:$build,revision:$revision,runner:$runner,workflow:$workflow}' \
+            > ios-release-metadata.json
+
+      - name: Attest signed IPA provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: LifeStreak.ipa
+
+      - name: Upload signed IPA and evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lifestreak-${{ github.sha }}-signed-ipa
+          path: |
+            LifeStreak.ipa
+            ios-app-release.sha256
+            ios-release-metadata.json
+          if-no-files-found: error
+          retention-days: 30

@@ -23,3 +23,4 @@ export declare const isIOS: () => boolean;
 
 export declare function showAlert(title: string, message?: string): void;
 export declare function showConfirm(title: string, message?: string): Promise<boolean>;
+export declare function openBrowser(url: string): Promise<boolean>;

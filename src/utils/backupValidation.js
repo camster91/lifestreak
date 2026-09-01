@@ -2,7 +2,10 @@
  * Validate / sanitize LifeStreak backup JSON before writing to localStorage.
  */
 
+import { assertValidHabitDatabase } from '../habitTracker/domain';
+
 export const BACKUP_STORAGE_KEYS = [
+  'lifestreak-habit-tracker-v1',
   'ls-progress-storage',
   'ls-progress-settings',
   'ls-gamification-storage',
@@ -11,6 +14,17 @@ export const BACKUP_STORAGE_KEYS = [
   'ls-service-storage',
   'ls-reading-storage',
 ];
+
+export const BACKUP_STORE_VERSIONS = {
+  'lifestreak-habit-tracker-v1': 1,
+  'ls-progress-storage': 2,
+  'ls-progress-settings': 1,
+  'ls-gamification-storage': 1,
+  'ls-goals-storage': 2,
+  'ls-memories-storage': 1,
+  'ls-service-storage': 1,
+  'ls-reading-storage': 1,
+};
 
 export const MAX_BACKUP_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -80,12 +94,62 @@ function validateGamificationState(state) {
   return true;
 }
 
+function validateServiceState(state) {
+  if (!isPlainObject(state) || (state.entries !== undefined && !Array.isArray(state.entries))) {
+    return false;
+  }
+  return (state.entries || []).every(
+    (entry) =>
+      isPlainObject(entry) &&
+      typeof entry.id === 'number' &&
+      typeof entry.date === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/.test(entry.date) &&
+      typeof entry.hours === 'number' &&
+      Number.isFinite(entry.hours) &&
+      entry.hours >= 0 &&
+      typeof entry.type === 'string' &&
+      typeof entry.notes === 'string'
+  );
+}
+
+function validateReadingState(state) {
+  if (!isPlainObject(state) || (state.items !== undefined && !Array.isArray(state.items))) {
+    return false;
+  }
+  return (state.items || []).every(
+    (item) =>
+      isPlainObject(item) &&
+      typeof item.id === 'number' &&
+      typeof item.title === 'string' &&
+      ['book', 'audio', 'video', 'article'].includes(item.type) &&
+      typeof item.totalUnits === 'number' &&
+      Number.isFinite(item.totalUnits) &&
+      item.totalUnits > 0 &&
+      typeof item.completedUnits === 'number' &&
+      Number.isFinite(item.completedUnits) &&
+      item.completedUnits >= 0 &&
+      item.completedUnits <= item.totalUnits &&
+      typeof item.startedDate === 'string' &&
+      typeof item.notes === 'string'
+  );
+}
+
 const KEY_VALIDATORS = {
+  'lifestreak-habit-tracker-v1': (state) => {
+    try {
+      assertValidHabitDatabase(state);
+      return true;
+    } catch {
+      return false;
+    }
+  },
   'ls-progress-storage': validateProgressState,
   'ls-progress-settings': validateSettingsState,
   'ls-goals-storage': validateGoalsState,
   'ls-memories-storage': validateMemoriesState,
   'ls-gamification-storage': validateGamificationState,
+  'ls-service-storage': validateServiceState,
+  'ls-reading-storage': validateReadingState,
 };
 
 /**
@@ -122,6 +186,17 @@ export function validateBackupStoreData(storeData) {
     }
 
     const state = unwrapPersistPayload(clone);
+    const supportedVersion = BACKUP_STORE_VERSIONS[key];
+    if (
+      isPlainObject(clone) &&
+      clone.version !== undefined &&
+      (!Number.isInteger(clone.version) || clone.version < 0 || clone.version > supportedVersion)
+    ) {
+      return {
+        ok: false,
+        reason: `Unsupported ${key} version ${String(clone.version)}; supported through ${supportedVersion}`,
+      };
+    }
     const validator = KEY_VALIDATORS[key];
     if (validator && state && !validator(state)) {
       return { ok: false, reason: `Schema validation failed for ${key}` };

@@ -1,5 +1,24 @@
 @import 'tailwindcss';
 
+:root {
+  --ls-focus-ring: #0c66e4;
+  --ls-danger-text: #7a271a;
+  --ls-danger-border: #b42318;
+  --ls-danger-surface: #fffbfa;
+  --ls-overlay-shadow: 0 10px 30px rgb(0 0 0 / 20%);
+  --ls-control-radius: 12px;
+  --ls-control-min-size: 44px;
+  --ls-motion-fast: 100ms;
+  --ls-motion-standard: 200ms;
+}
+
+[data-theme='dark'] {
+  --ls-focus-ring: #77b7ff;
+  --ls-danger-text: #ffb4ab;
+  --ls-danger-border: #ff897d;
+  --ls-danger-surface: #3b1110;
+}
+
 /*
   daisyUI 5 (CSS-first): built-in theme application is disabled here and
   re-declared below via `@plugin "daisyui/theme"` so the project's custom
@@ -33,9 +52,6 @@
 }
 
 @theme {
-  --color-jw-blue: #4a6fa4;
-  --color-jw-green: #71bc37;
-
   --animate-float: float 3s ease-in-out infinite;
   --animate-glow: glow 2s ease-in-out infinite alternate;
   --animate-slide-up: slideUp 0.5s ease-out;
@@ -126,6 +142,65 @@ body {
   touch-action: manipulation;
 }
 
+:where(button, a[href], input, select, textarea):focus-visible {
+  outline: 3px solid var(--ls-focus-ring);
+  outline-offset: 3px;
+}
+
+.app-mode-switch {
+  position: fixed;
+  z-index: 10000;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  min-height: var(--ls-control-min-size);
+  padding: 10px 14px;
+  border: 2px solid currentColor;
+  border-radius: var(--ls-control-radius);
+  color: var(--color-base-content);
+  background: var(--color-base-100);
+  box-shadow: var(--ls-overlay-shadow);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.storage-recovery-banner {
+  position: fixed;
+  z-index: 11000;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  left: 12px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px;
+  border: 2px solid var(--ls-danger-border);
+  border-radius: var(--ls-control-radius);
+  color: var(--ls-danger-text);
+  background: var(--ls-danger-surface);
+  box-shadow: var(--ls-overlay-shadow);
+}
+
+.storage-recovery-banner p {
+  margin: 6px 0;
+}
+
+.storage-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.storage-recovery-actions button {
+  min-height: var(--ls-control-min-size);
+  border: 1px solid currentColor;
+  border-radius: var(--ls-control-radius);
+  padding: 8px 12px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
@@ -140,10 +215,6 @@ html {
 @utility card-elevated {
   /* Elevated cards with press feedback */
   @apply shadow-lg hover:shadow-xl transition-all duration-200;
-}
-
-@utility btn-primary-custom {
-  @apply bg-jw-blue hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-sm;
 }
 
 @utility card-mobile {
@@ -624,4 +695,19 @@ input[type='range']::-webkit-slider-thumb {
   height: 20px;
   color: oklch(0.556 0 0);
   flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

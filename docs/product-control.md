@@ -20,11 +20,11 @@ Last reconciled: 2026-09-01. This is the durable product charter, evidence regis
 
 ### Verified facts
 
-- PR #106 and release-hardening PRs #119, #123, and #124 are merged. The independent app is on `main` and released at `https://lifestreak.ashbi.ca/` as revision `b7d4420c83fd6b43db2db6081f25195fac53b5c0`.
+- PR #106 and subsequent release-hardening, dependency, verification, and backlog-reconciliation changes are merged. The independent app is on `main` and released at `https://lifestreak.ashbi.ca/` as revision `c6313758a10efc2495580db0c91630baa3582aaa`.
 - The repository has 30 open issues after closing released defects #41/#61/#62/#68 and superseded umbrella trackers #81-#83. Fourteen are verification pending and sixteen are externally blocked; none is currently independently actionable without new acceptance evidence or an external owner/system/device action.
 - The release source passed 31 files / 281 tests, formatting, typecheck, lint, production build, dependency audit, identity, permission/signing, supply-chain, responsive/accessibility Chromium, Android debug, unsigned iOS, exact-source image build, and published-image high/critical scanning.
 - `main` implements versioned habits/logs, flexible schedules, quantitative entries, lifecycle history, onboarding, Today/Habits/Insights/Settings, optional Collections, portable backup/recovery, private reminders, offline PWA behavior, native build/release definitions, sanitized diagnostics, and immutable supply-chain checks.
-- Production serves HTTP 200, exact release identity, the PWA manifest/service worker, and required security headers. The prior healthy `68f0270` container and timestamped Traefik route backup remain the immediate rollback path.
+- Production serves HTTP 200, exact release identity, the PWA manifest/service worker, and required security headers. The prior healthy `b7d4420` container on port `18099` and timestamped Traefik route backup remain the immediate rollback path.
 - There is no implemented account, billing, cloud-sync, customer analytics, consented pilot measurement, or verified app-store release.
 
 ### Reasonable inferences
@@ -48,7 +48,7 @@ Last reconciled: 2026-09-01. This is the durable product charter, evidence regis
 | ------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- | ---------------- |
 | Local repository and tests      | Full read/write; branch commits pushed                                | Routine implementation authorized                                 | Preserve unrelated work                                 | Codex / Cameron  |
 | GitHub repo, issues, PR         | Authenticated `camster91`; issue comments and branch push work        | Backlog/PR maintenance in goal scope                              | Hosted checks currently fail/queue externally           | Cameron / GitHub |
-| Public production               | Revision `b7d4420` released; manual smoke run `33499203670` passed    | Explicit approval required before each future deploy/route change | No real-user reliability baseline                       | Cameron          |
+| Public production               | Revision `c631375` released; smoke run `33505245704` passed           | Explicit approval required before each future deploy/route change | No real-user reliability baseline                       | Cameron          |
 | Ashbi VPS / Docker daemon       | Exact source image healthy; prior container and route backup retained | Explicit production approval required for future mutations        | Registry package remains private to unauthenticated VPS | Cameron          |
 | Apple/Google stores and signing | Workflows/runbooks exist                                              | Protected credentials and release approval required               | No signed-device/store evidence                         | Cameron          |
 | Customer research / pilot       | No participants or consented evidence available                       | Recruitment/contact approval required                             | Position and retention remain hypotheses                | Cameron          |
@@ -147,3 +147,4 @@ Release-candidate approval requires: merged/current source; green hosted or inde
 - 2026-09-01: replaced the stale integration-pending backlog state, closed released defects #41/#68, and closed superseded aggregate trackers #81-#83; 32 individually scoped issues remained.
 - 2026-09-01: merged PR #131 with explicit UTC-12, UTC+14, DST, leap-day, and year-boundary verification; closed released calendar-history issues #61/#62, leaving 30 open issues.
 - 2026-09-01: reclassified #60/#64/#67/#79/#80 from actionable to external blocked after repository-owned work was exhausted; the remaining backlog is 14 verification-pending and 16 external-blocked issues.
+- 2026-09-01: released exact revision `c631375` after source, native, multi-architecture image, zero-high/critical scan, candidate, cutover, and independent public-smoke verification; retained `b7d4420` as rollback.

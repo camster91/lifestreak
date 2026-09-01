@@ -95,6 +95,7 @@ describe('habit management', () => {
   });
 
   it('refuses malformed, future, not-started, and inactive new logs', () => {
+    const today = toLocalDate();
     const futureHabitId = habitStore.createHabit({
       ...input('Future habit'),
       startDate: '2099-01-01',
@@ -104,8 +105,8 @@ describe('habit management', () => {
     expect(habitStore.setNote(futureHabitId, 'not-a-date', 'No phantom note')).toBe(false);
 
     const inactiveId = habitStore.createHabit(input('Inactive habit'));
-    expect(habitStore.setLifecycle(inactiveId, 'paused', '2026-08-28')).toBe(true);
-    expect(habitStore.setDayStatus(inactiveId, '2026-08-28', 'completed')).toBe(false);
+    expect(habitStore.setLifecycle(inactiveId, 'paused', today)).toBe(true);
+    expect(habitStore.setDayStatus(inactiveId, today, 'completed')).toBe(false);
     expect(habitStore.getSnapshot().logs).toEqual([]);
   });
 

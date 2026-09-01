@@ -289,10 +289,10 @@
 
 .habit-operation button {
   min-height: 44px;
-  border: 1px solid currentColor;
+  border: 1px solid var(--habit-border);
   border-radius: 9px;
-  color: inherit;
-  background: transparent;
+  color: var(--habit-text);
+  background: var(--habit-surface);
   cursor: pointer;
   font-weight: 800;
 }

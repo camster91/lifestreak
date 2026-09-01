@@ -31,6 +31,7 @@ pnpm-debug.log*
 # Testing
 coverage/
 .nyc_output/
+artifacts/visual-baselines/
 
 # Misc
 *.cache

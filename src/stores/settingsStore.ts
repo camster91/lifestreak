@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
 interface NotificationSetting {
@@ -65,7 +65,13 @@ const DEFAULT_NOTIFICATIONS: Notifications = {
   eveningPrayer: { enabled: true, time: '21:00', label: 'Evening Prayer' },
   bibleReading: { enabled: true, time: '20:00', label: 'Bible Reading' },
   familyWorship: { enabled: true, dayOfWeek: 1, time: '19:00', label: 'Family Worship' },
-  meetingPrep: { enabled: true, daysBefore: 1, meetingDays: [0, 4], time: '19:00', label: 'Meeting Preparation' },
+  meetingPrep: {
+    enabled: true,
+    daysBefore: 1,
+    meetingDays: [0, 4],
+    time: '19:00',
+    label: 'Meeting Preparation',
+  },
   streakMotivation: { enabled: true, time: '10:00', label: 'Keep Your Streak' },
 };
 
@@ -102,9 +108,11 @@ export function redactSettingsSecrets<T>(value: T): T {
   const clone = structuredClone(value) as Record<string, unknown>;
 
   // Zustand persist shape: { state: { ai: { ollamaApiKey } }, version }
-  const state = (clone.state && typeof clone.state === 'object'
-    ? (clone.state as Record<string, unknown>)
-    : clone) as Record<string, unknown>;
+  const state = (
+    clone.state && typeof clone.state === 'object'
+      ? (clone.state as Record<string, unknown>)
+      : clone
+  ) as Record<string, unknown>;
 
   if (state.ai && typeof state.ai === 'object') {
     const ai = { ...(state.ai as Record<string, unknown>), ollamaApiKey: '' };
@@ -160,16 +168,19 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
         })),
       getEffectiveScheduleDay: () => {
         const state = get();
-        const { startingScheduleDay, readingPace, customStartDate, useCustomSchedule } = state.bibleReadingSchedule;
+        const { startingScheduleDay, readingPace, customStartDate, useCustomSchedule } =
+          state.bibleReadingSchedule;
         if (useCustomSchedule && customStartDate) {
           const start = new Date(customStartDate);
           const today = new Date();
           const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-          return Math.max(1, (diffDays * readingPace) + 1);
+          return Math.max(1, diffDays * readingPace + 1);
         }
         const now = new Date();
         const startOfYear = new Date(now.getFullYear(), 0, 0);
-        const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+        const dayOfYear = Math.floor(
+          (now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)
+        );
         return ((dayOfYear - 1 + startingScheduleDay - 1) % 366) + 1;
       },
       setBibleReadingStartDay: (day) =>
@@ -194,7 +205,7 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
     {
       name: 'ls-progress-settings',
       version: 1,
-      storage: createSafeStorage('ls-progress-settings') as any,
+      storage: createJSONStorage(() => createSafeStorage('ls-progress-settings')),
       // Never persist API keys to localStorage (exports, Android backups, XSS blast radius)
       partialize: (state) => ({
         notifications: state.notifications,
@@ -216,7 +227,7 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
           }
           delete ai.ollamaApiKey;
         }
-        return data as SettingsState;
+        return data as unknown as SettingsState;
       },
       onRehydrateStorage: () => (state) => {
         if (!state) return;

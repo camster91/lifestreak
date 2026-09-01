@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { createSafeStorage } from '../utils/storageErrorHandler';
 
 const useGoalsStore = create(
@@ -152,7 +152,7 @@ const useGoalsStore = create(
     }),
     {
       name: 'ls-goals-storage',
-      storage: createSafeStorage('ls-goals-storage'),
+      storage: createJSONStorage(() => createSafeStorage('ls-goals-storage')),
       version: 2,
       migrate: (persistedState, version) => {
         if (version === 1) {

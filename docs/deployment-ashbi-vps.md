@@ -2,34 +2,20 @@
 
 This is the runbook for the manually managed static deployment at `https://lifestreak.ashbi.ca`.
 
-## Archive status
+## Active product status
 
-The source repository was archived and consolidated into
-[`camster91/jw-companion`](https://github.com/camster91/jw-companion) on
-2026-08-13. The canonical JW Companion repository documents its public
-deployment at `https://jw.cstack67.win/` on a separate Windows/Cloudflare
-Tunnel environment. The legacy hostname still serves the last verified
-LifeStreak deployment; redirecting or decommissioning that hostname is
-intentionally a separate production decision because it would change access to
-existing local-only LifeStreak data.
+LifeStreak is an independent active product. `lifestreak.ashbi.ca` must continue
+to serve LifeStreak and must not redirect to JW Companion. The old successor
+guard remains only as historical evidence from the abandoned consolidation
+attempt; it is not part of the current release procedure.
 
-At the time of this audit, `jw.cstack67.win` returned Cloudflare 530 / error
-1033. The local JW Companion scheduled tasks were present but not running, and
-port 8001 had no listener. Do not redirect the legacy hostname until the
-successor is externally reachable and its own release verification passes.
+Changes to the hostname or route require a separate explicit production
+decision, a timestamped backup of `/opt/traefik/dynamic/lifestreak.yml`, public
+verification, and a tested rollback. Never redirect the hostname merely because
+another application is reachable: doing so would break installed-app behavior
+and access to existing local-only LifeStreak data.
 
-Before any redirect, run the repository guard from PowerShell:
-
-```powershell
-./scripts/check-successor.ps1
-```
-
-Only after that check passes should an operator create a timestamped backup of
-`/opt/traefik/dynamic/lifestreak.yml`, change the route to the approved
-successor, verify the public URL, and retain the prior route for rollback. If
-the check fails, leave the LifeStreak route unchanged.
-
-### 2026-08-14 cutover attempt
+### Historical 2026-08-14 cutover attempt
 
 The JW Companion origin was started and verified locally on port 8001. The
 Cloudflare tunnel briefly obtained a connector and the successor guard passed,
@@ -39,9 +25,8 @@ that unstable successor, and was immediately rolled back. LifeStreak remains
 the active legacy deployment until the successor is externally reachable and
 its own release verification passes.
 
-Do not retry the redirect until the tunnel remains connected and
-`./scripts/check-successor.ps1` passes repeatedly, followed by a successful
-redirect-following smoke check.
+The redirect was abandoned when LifeStreak was restored as its own product. Do
+not retry it under the current product contract.
 
 ### 2026-08-17 LifeStreak releases
 
@@ -65,10 +50,9 @@ than the SPA fallback.
 1. Confirm the working tree is clean, the target commit is pushed, and the local gates pass:
    `npm ci`, `npm test`, `npm run lint`, `npm run format:check`, and `npm run build`.
 2. Create a source archive from the exact commit and copy it to the VPS using binary-safe SCP (`scp -O`). Do not copy `node_modules` or `dist`.
-3. Build an immutable image on the VPS:
-   `docker build -t lifestreak:<commit> /opt/lifestreak-src-<commit>`.
-4. Start the candidate on a new loopback port, for example `127.0.0.1:18082`, and verify it locally before changing Traefik:
-   `curl -fsSI http://127.0.0.1:18082/`.
+3. Build an immutable image on the VPS and embed the full source revision:
+   `docker build --build-arg LIFESTREAK_BUILD_REVISION=<40-character-commit> -t lifestreak:<commit> /opt/lifestreak-src-<commit>`.
+4. Start the candidate on a new loopback port, for example `127.0.0.1:18082`, and verify it locally before changing Traefik. Check `/`, `/manifest.webmanifest`, `/sw.js`, and confirm `/version.json` contains the exact candidate commit. Record the image digest; mutable tags are not deployment evidence.
 5. Update `/opt/traefik/dynamic/lifestreak.yml` to the candidate port. Copy the existing route to a timestamped `.bak` file before changing it, then check Traefik logs for configuration errors.
 6. Verify the public URL with the smoke script and inspect the candidate container logs. Keep the previous container and image until the release has passed its observation window.
 
@@ -90,6 +74,18 @@ The check validates HTTPS status, the LifeStreak document title, the PWA manifes
 2. Confirm `https://lifestreak.ashbi.ca` returns HTTP 200 and the expected LifeStreak title.
 3. Keep the failed candidate stopped for investigation; do not delete the prior image or container until the rollback is confirmed.
 4. Record the deployed image tag, image digest, route backup path, and verification result in the release notes.
+
+After restoring an older image, `/version.json` must identify the prior commit. Do not roll back local databases or clear browser storage: the habit schema and specialist migrations are forward-compatible and the previous app must leave unknown/newer local records untouched rather than rewriting them.
+
+## Emergency service-worker disable
+
+Use this only when a broken worker prevents the normal waiting-worker update or rollback:
+
+1. Preserve the current route and image as evidence. Copy `ops/emergency-disable-sw.js` to the active origin as `/sw.js` with JavaScript content type, `Cache-Control: no-store`, and service-worker scope `/`.
+2. Verify the emergency worker content by digest before exposing it. It activates immediately, deletes LifeStreak Cache Storage entries, unregisters itself, and reloads controlled windows. It does **not** clear localStorage or IndexedDB.
+3. Confirm a previously controlled browser becomes uncontrolled after reload and that its local habit/Collections records remain byte-identical.
+4. Deploy or restore a verified immutable LifeStreak image, remove the emergency override, load twice online so the normal worker installs, then repeat the offline smoke.
+5. Record timestamps, emergency-script digest, affected revision, preserved-data comparison, and final deployed revision. A real production use requires incident review; do not treat cache deletion as ordinary update behavior.
 
 ## Monitoring
 

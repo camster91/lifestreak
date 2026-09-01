@@ -62,15 +62,12 @@ function AchievementPopup() {
   useEffect(() => {
     if (currentAchievement) {
       setParticles(
-        Array.from(
-          { length: 20 },
-          (_, i): Particle => ({
-            id: i,
-            delay: i * 50,
-            color: CONFETTI_COLORS[i % CONFETTI_COLORS.length] ?? '#FFD700',
-            left: Math.random() * 100,
-          })
-        )
+        Array.from({ length: 20 }, (_, i): Particle => ({
+          id: i,
+          delay: i * 50,
+          color: CONFETTI_COLORS[i % CONFETTI_COLORS.length] ?? '#FFD700',
+          left: Math.random() * 100,
+        }))
       );
     }
   }, [currentAchievement]);
@@ -119,7 +116,9 @@ function AchievementPopup() {
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
+      <button
+        type="button"
+        aria-label="Close achievement"
         className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
           isExiting ? 'opacity-0' : 'opacity-100'
         }`}
@@ -140,7 +139,7 @@ function AchievementPopup() {
 
       {/* Achievement card */}
       <div
-        className={`relative bg-linear-to-br from-amber-400 via-yellow-500 to-orange-500 rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300 ${
+        className={`relative bg-linear-to-br from-warning via-warning to-warning/70 rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300 ${
           isExiting ? 'scale-90 opacity-0' : 'animate-achievement-pop'
         }`}
       >
@@ -180,7 +179,7 @@ function AchievementPopup() {
               className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-4 animate-fade-in-up"
               style={{ animationDelay: '200ms' }}
             >
-              <Trophy className="w-5 h-5 text-yellow-200" />
+              <Trophy className="w-5 h-5 text-warning-content" />
               <span className="text-white font-bold">+{currentAchievement.points} points</span>
             </div>
           )}
@@ -203,13 +202,13 @@ function AchievementPopup() {
             )}
             <button
               onClick={handleNext}
-              className="btn bg-white text-amber-600 hover:bg-white/90 border-none shadow-lg"
+              className="btn bg-base-100 text-warning hover:bg-base-100/90 border-none shadow-lg"
             >
               {currentIndex < recentAchievements.length - 1 ? 'Next' : 'Awesome!'}
             </button>
           </div>
         </div>
-        <div className="h-2 bg-linear-to-r from-yellow-300 via-amber-400 to-orange-400" />
+        <div className="h-2 bg-linear-to-r from-warning/60 via-warning to-warning/70" />
       </div>
     </div>
   );

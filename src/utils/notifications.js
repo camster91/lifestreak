@@ -5,9 +5,11 @@
 
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { isAndroid } from './native';
 
 const isCapacitor = Capacitor.isNativePlatform();
+export const PRIVATE_REMINDER_TITLE = 'LifeStreak reminder';
+export const PRIVATE_REMINDER_BODY = 'A private LifeStreak reminder is ready.';
+export const HABIT_REMINDER_KIND = 'habit-reminder';
 
 // ── Permission helpers ─────────────────────────────────────────────
 
@@ -16,25 +18,38 @@ export function isNotificationSupported() {
   return 'Notification' in window && 'serviceWorker' in navigator;
 }
 
+export function isNativeNotificationPlatform() {
+  return isCapacitor;
+}
+
 export function getNotificationPermission() {
-  if (isCapacitor) return 'granted'; // checked at request time
+  if (isCapacitor) return 'prompt'; // Native permission state is asynchronous.
   if (!isNotificationSupported()) return 'unsupported';
   return Notification.permission;
+}
+
+export async function checkNotificationPermission() {
+  if (isCapacitor) {
+    try {
+      const { display } = await LocalNotifications.checkPermissions();
+      return display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'prompt';
+    } catch (error) {
+      console.warn('Capacitor notification permission check error:', error);
+      return 'error';
+    }
+  }
+  return getNotificationPermission();
 }
 
 export async function requestNotificationPermission() {
   if (isCapacitor) {
     try {
-      // Android 13+ requires runtime permission
-      if (isAndroid) {
-        const { state } = await LocalNotifications.checkPermissions();
-        if (state === 'prompt' || state === 'prompt-with-rationale') {
-          const result = await LocalNotifications.requestPermissions();
-          return result.state === 'granted' ? 'granted' : 'denied';
-        }
-        return state === 'granted' ? 'granted' : 'denied';
+      const current = await checkNotificationPermission();
+      if (current === 'prompt') {
+        const result = await LocalNotifications.requestPermissions();
+        return result.display === 'granted' ? 'granted' : 'denied';
       }
-      return 'granted';
+      return current;
     } catch (e) {
       console.warn('Capacitor notification permission error:', e);
       return 'error';
@@ -185,6 +200,41 @@ export async function cancelAllNotifications() {
   }
 }
 
+/**
+ * Replace only the native notifications owned by the independent habit tracker.
+ * Collections notifications use separate IDs and are intentionally untouched.
+ * Permission is checked but never requested here.
+ */
+export async function replaceNativeHabitNotifications(notifications) {
+  if (!isCapacitor) return { scheduled: 0, permission: 'unsupported' };
+
+  const pending = await LocalNotifications.getPending();
+  const owned = (pending.notifications || []).filter(
+    (notification) => notification.extra?.lifestreakKind === HABIT_REMINDER_KIND
+  );
+  if (owned.length) {
+    await LocalNotifications.cancel({
+      notifications: owned.map(({ id }) => ({ id })),
+    });
+  }
+
+  const permission = await checkNotificationPermission();
+  if (permission !== 'granted' || !notifications.length) {
+    return { scheduled: 0, permission };
+  }
+
+  await LocalNotifications.schedule({
+    notifications: notifications.map((notification) => ({
+      ...notification,
+      extra: {
+        ...notification.extra,
+        lifestreakKind: HABIT_REMINDER_KIND,
+      },
+    })),
+  });
+  return { scheduled: notifications.length, permission };
+}
+
 // ── Initialize all reminders from settings ────────────────────────
 
 /**
@@ -196,7 +246,7 @@ export async function initializeReminders(settings) {
 
   if (!settings.notificationsEnabled) return cancelHandles;
 
-  const permission = await requestNotificationPermission();
+  const permission = await checkNotificationPermission();
   if (permission !== 'granted') return cancelHandles;
 
   // Cancel existing first
@@ -209,28 +259,28 @@ export async function initializeReminders(settings) {
     {
       key: 'dailyText',
       id: 1,
-      title: 'Daily Text Reminder',
-      body: "Don't forget to read today's daily text!",
+      title: PRIVATE_REMINDER_TITLE,
+      body: PRIVATE_REMINDER_BODY,
     },
-    { key: 'morningPrayer', id: 2, title: 'Morning Prayer', body: 'Time for your morning prayer.' },
+    { key: 'morningPrayer', id: 2, title: PRIVATE_REMINDER_TITLE, body: PRIVATE_REMINDER_BODY },
     {
       key: 'afternoonPrayer',
       id: 3,
-      title: 'Afternoon Prayer',
-      body: 'Time for your afternoon prayer.',
+      title: PRIVATE_REMINDER_TITLE,
+      body: PRIVATE_REMINDER_BODY,
     },
-    { key: 'eveningPrayer', id: 4, title: 'Evening Prayer', body: 'Time for your evening prayer.' },
+    { key: 'eveningPrayer', id: 4, title: PRIVATE_REMINDER_TITLE, body: PRIVATE_REMINDER_BODY },
     {
       key: 'bibleReading',
       id: 5,
-      title: 'Bible Reading Reminder',
-      body: 'Time for your daily Bible reading!',
+      title: PRIVATE_REMINDER_TITLE,
+      body: PRIVATE_REMINDER_BODY,
     },
     {
       key: 'streakMotivation',
       id: 6,
-      title: 'Keep Your Streak',
-      body: 'Stay consistent with your spiritual habits!',
+      title: PRIVATE_REMINDER_TITLE,
+      body: PRIVATE_REMINDER_BODY,
     },
   ];
 
@@ -248,8 +298,8 @@ export async function initializeReminders(settings) {
     const handle = await scheduleWeeklyNotification(
       day,
       notifs.familyWorship.time,
-      'Family Worship Reminder',
-      'Time for family worship tonight!',
+      PRIVATE_REMINDER_TITLE,
+      PRIVATE_REMINDER_BODY,
       7
     );
     cancelHandles.push(handle);
@@ -263,8 +313,8 @@ export async function initializeReminders(settings) {
       const handle = await scheduleWeeklyNotification(
         dayBefore,
         notifs.meetingPrep.time,
-        'Meeting Tomorrow',
-        "Remember to prepare for tomorrow's meeting!",
+        PRIVATE_REMINDER_TITLE,
+        PRIVATE_REMINDER_BODY,
         8 + i
       );
       cancelHandles.push(handle);

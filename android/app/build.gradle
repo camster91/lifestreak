@@ -8,9 +8,16 @@ if (keystorePropertiesFile.exists()) {
 
 def releaseStorePassword = System.getenv('KEYSTORE_PASSWORD') ?: keystoreProperties['storePassword']
 def releaseKeyPassword = System.getenv('KEY_PASSWORD') ?: keystoreProperties['keyPassword']
-def releaseKeyAlias = keystoreProperties['keyAlias'] ?: 'lifestreak'
-def releaseStoreFilePath = keystoreProperties['storeFile'] ?: 'app/lifestreak-release.keystore'
-def hasReleaseSigning = releaseStorePassword && releaseKeyPassword
+def releaseKeyAlias = System.getenv('KEY_ALIAS') ?: keystoreProperties['keyAlias'] ?: 'lifestreak'
+def releaseStoreFilePath = System.getenv('KEYSTORE_FILE') ?: keystoreProperties['storeFile'] ?: 'app/lifestreak-release.keystore'
+def releaseStoreFile = rootProject.file(releaseStoreFilePath)
+def placeholderValues = ['REPLACE_ME', 'your-password', 'changeme']
+def hasReleaseSigning = releaseStorePassword &&
+        releaseKeyPassword &&
+        releaseKeyAlias &&
+        !placeholderValues.contains(releaseStorePassword) &&
+        !placeholderValues.contains(releaseKeyPassword) &&
+        releaseStoreFile.isFile()
 
 android {
     namespace = "com.ashbi.lifestreak"
@@ -38,7 +45,7 @@ android {
         }
         release {
             if (hasReleaseSigning) {
-                storeFile rootProject.file(releaseStoreFilePath)
+                storeFile releaseStoreFile
                 storePassword releaseStorePassword
                 keyAlias releaseKeyAlias
                 keyPassword releaseKeyPassword
@@ -61,7 +68,7 @@ android {
 tasks.configureEach { task ->
     if ((task.name == 'assembleRelease' || task.name == 'bundleRelease') && !hasReleaseSigning) {
         task.doFirst {
-            throw new GradleException('Release signing is unavailable. Supply KEYSTORE_PASSWORD, KEY_PASSWORD, and the external release keystore before building a release artifact.')
+            throw new GradleException('Release signing is unavailable. Supply non-placeholder KEYSTORE_PASSWORD, KEY_PASSWORD, KEY_ALIAS, and an existing external KEYSTORE_FILE before building a release artifact.')
         }
     }
 }

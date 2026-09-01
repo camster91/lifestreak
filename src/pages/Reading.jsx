@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import useReadingStore from '../stores/readingStore.js';
+import { readingItemPercent } from '../stores/readingStore.js';
 import PageHeader from '../components/PageHeader';
 import { haptics } from '../utils/native.js';
 
@@ -33,8 +34,15 @@ function Reading() {
   const [totalUnits, setTotalUnits] = useState('');
   const [unitLabel, setUnitLabel] = useState('chapters');
 
-  const { addItem, updateProgress, finishItem, deleteItem, getInProgress, getCompleted } =
-    useReadingStore();
+  const {
+    addItem,
+    updateProgress,
+    finishItem,
+    deleteItem,
+    getInProgress,
+    getCompleted,
+    quarantinedItems,
+  } = useReadingStore();
 
   const inProgress = getInProgress();
   const completed = getCompleted();
@@ -48,6 +56,7 @@ function Reading() {
       title: title.trim(),
       type: itemType,
       totalUnits: units,
+      unitLabel,
       notes: '',
     });
     setTitle('');
@@ -60,15 +69,24 @@ function Reading() {
         title="Reading"
         subtitle="Track books, audio, video, and articles"
         icon={Library}
-        gradient="from-amber-500 via-orange-500 to-red-500"
+        gradient="from-primary via-warning to-secondary"
       />
 
       <main className="container mx-auto px-4 pt-4 space-y-4 max-w-2xl">
+        {quarantinedItems.length > 0 && (
+          <div className="alert alert-warning" role="status">
+            <span>
+              {quarantinedItems.length} invalid or duplicate reading{' '}
+              {quarantinedItems.length === 1 ? 'record is' : 'records are'} preserved for recovery
+              and excluded from shelf progress.
+            </span>
+          </div>
+        )}
         {/* Add Item */}
         <div className="card bg-base-100 shadow-md">
           <div className="card-body p-4 space-y-3">
             <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Plus className="w-5 h-5 text-amber-500" /> Add to Shelf
+              <Plus className="w-5 h-5 text-warning" /> Add to Shelf
             </h3>
             <input
               type="text"
@@ -76,14 +94,14 @@ function Reading() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Title"
               aria-label="Reading title"
-              className="input input-bordered w-full"
+              className="input input-bordered min-h-11 w-full"
             />
             <div className="flex flex-col gap-2 sm:flex-row">
               <select
                 value={itemType}
                 onChange={(e) => setItemType(e.target.value)}
                 aria-label="Reading item type"
-                className="select select-bordered w-full sm:flex-1"
+                className="select select-bordered min-h-11 w-full sm:flex-1"
               >
                 <option value="book">Book</option>
                 <option value="audio">Audio</option>
@@ -96,14 +114,14 @@ function Reading() {
                 onChange={(e) => setTotalUnits(e.target.value)}
                 placeholder="Total"
                 aria-label="Total reading units"
-                className="input input-bordered w-full sm:w-28"
+                className="input input-bordered min-h-11 w-full sm:w-28"
                 min="1"
               />
               <select
                 value={unitLabel}
                 onChange={(e) => setUnitLabel(e.target.value)}
                 aria-label="Reading unit"
-                className="select select-bordered w-full sm:w-32"
+                className="select select-bordered min-h-11 w-full sm:w-32"
               >
                 <option value="chapters">Chapters</option>
                 <option value="pages">Pages</option>
@@ -111,7 +129,7 @@ function Reading() {
                 <option value="parts">Parts</option>
               </select>
             </div>
-            <button onClick={handleAdd} className="btn btn-primary w-full">
+            <button onClick={handleAdd} className="btn btn-primary min-h-11 w-full">
               Add
             </button>
           </div>
@@ -127,12 +145,12 @@ function Reading() {
               <div className="space-y-3">
                 {inProgress.map((item) => {
                   const Icon = TYPE_ICONS[item.type];
-                  const percent = Math.round((item.completedUnits / item.totalUnits) * 100);
+                  const percent = readingItemPercent(item) ?? 0;
                   return (
                     <div key={item.id} className="p-3 bg-base-200 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <Icon className="w-4 h-4 text-base-content/60" />
+                          <Icon className="w-4 h-4 text-base-content/80" />
                           <span className="font-medium">{item.title}</span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -145,7 +163,7 @@ function Reading() {
                                 updateProgress(item.id, item.completedUnits + 1);
                               }
                             }}
-                            className="btn btn-ghost btn-xs btn-square"
+                            className="btn btn-ghost btn-square min-h-11 min-w-11"
                             aria-label={`Increase progress for ${item.title}`}
                           >
                             <Plus className="w-3 h-3" />
@@ -155,7 +173,7 @@ function Reading() {
                               haptics.light();
                               deleteItem(item.id);
                             }}
-                            className="btn btn-ghost btn-xs btn-square text-error"
+                            className="btn btn-ghost btn-square min-h-11 min-w-11 text-error"
                             aria-label={`Delete ${item.title}`}
                           >
                             <Trash2 className="w-3 h-3" />
@@ -163,18 +181,26 @@ function Reading() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-base-content/60">
+                        <span className="text-xs text-base-content/80">
                           {TYPE_LABELS[item.type]} · {item.completedUnits}/{item.totalUnits}{' '}
-                          {unitLabel}
+                          {item.unitLabel || 'units'}
                         </span>
                       </div>
-                      <div className="w-full bg-base-300 rounded-full h-2 mt-2">
+                      <div
+                        className="w-full bg-base-300 rounded-full h-2 mt-2"
+                        role="progressbar"
+                        aria-label={`${item.title} progress`}
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={percent}
+                        aria-valuetext={`${item.completedUnits} of ${item.totalUnits} ${item.unitLabel || 'units'}, ${percent}%`}
+                      >
                         <div
-                          className="bg-amber-500 h-2 rounded-full transition-all"
+                          className="bg-warning h-2 rounded-full transition-all"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
-                      <div className="text-xs text-base-content/60 mt-1">{percent}%</div>
+                      <div className="text-xs text-base-content/80 mt-1">{percent}%</div>
                     </div>
                   );
                 })}
@@ -199,19 +225,19 @@ function Reading() {
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4 text-success" />
                         <span className="font-medium">{item.title}</span>
-                        <span className="text-xs text-base-content/60">
-                          {TYPE_LABELS[item.type]} · {item.totalUnits} {unitLabel}
+                        <span className="text-xs text-base-content/80">
+                          {TYPE_LABELS[item.type]} · {item.totalUnits} {item.unitLabel || 'units'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-success" />
-                        <span className="text-xs text-base-content/60">{item.finishedDate}</span>
+                        <span className="text-xs text-base-content/80">{item.finishedDate}</span>
                         <button
                           onClick={() => {
                             haptics.light();
                             deleteItem(item.id);
                           }}
-                          className="btn btn-ghost btn-xs btn-square text-error"
+                          className="btn btn-ghost btn-square min-h-11 min-w-11 text-error"
                           aria-label={`Delete completed item ${item.title}`}
                         >
                           <Trash2 className="w-3 h-3" />

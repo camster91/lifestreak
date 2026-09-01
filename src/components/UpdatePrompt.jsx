@@ -10,9 +10,9 @@ import { haptics } from '../utils/native';
 function UpdatePrompt() {
   const { updateAvailable, applyUpdate } = usePWA();
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     haptics.medium();
-    applyUpdate();
+    await applyUpdate();
   };
 
   if (!updateAvailable) {

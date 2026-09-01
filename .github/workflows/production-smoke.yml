@@ -13,6 +13,9 @@ jobs:
     name: Smoke lifestreak.ashbi.ca
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Check HTTPS document and security headers
         shell: bash
@@ -32,3 +35,43 @@ jobs:
           set -euo pipefail
           manifest="$(curl --fail --silent --show-error --location --retry 2 --retry-delay 5 --retry-all-errors --max-time 20 https://lifestreak.ashbi.ca/manifest.webmanifest)"
           grep -q '"name":"LifeStreak"' <<< "$manifest"
+
+      - name: Check deployed revision and service worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(curl --fail --silent --show-error --location --retry 2 --max-time 20 https://lifestreak.ashbi.ca/version.json)"
+          grep -q '"app":"LifeStreak"' <<< "$version"
+          grep -Eq '"revision":"[0-9a-f]{40}"' <<< "$version"
+          curl --fail --silent --show-error --location --retry 2 --max-time 20 https://lifestreak.ashbi.ca/sw.js | grep -q 'SKIP_WAITING'
+
+      - name: Open sanitized incident on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          title='[Production smoke] LifeStreak app-shell outage'
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$title in:title" --json number --jq '.[0].number // empty')"
+          revision="$(curl --silent --show-error --location --max-time 10 https://lifestreak.ashbi.ca/version.json | sed -n 's/.*"revision":"\([0-9a-f]*\)".*/\1/p' || true)"
+          body="Automated app-shell smoke failed. Platform: GitHub Actions ubuntu-latest. Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Observed release revision: ${revision:-unavailable}. This report contains no user content. Follow docs/incident-response.md."
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          fi
+
+      - name: Record recovery and close automated incident
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          title='[Production smoke] LifeStreak app-shell outage'
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$title in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Automated app-shell smoke recovered in run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Closing the synthetic alert; complete incident review if users were affected."
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --reason completed
+          fi

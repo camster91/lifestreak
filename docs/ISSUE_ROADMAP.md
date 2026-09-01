@@ -12,8 +12,8 @@ LifeStreak is an active, independent, general-purpose, local-first habit tracker
 
 - The independent habit-first app is integrated on `main` and web/PWA revision `b7d4420c83fd6b43db2db6081f25195fac53b5c0` is released at `https://lifestreak.ashbi.ca/`.
 - Exact release evidence includes 31 files / 281 tests, the responsive/accessibility Chromium matrix, Android debug, unsigned iOS, immutable source/image identity, zero high/critical published-image findings, a healthy candidate, retained rollback, and passing public smoke run `33499203670`.
-- The repository has 30 open issues after closing released defects #41/#61/#62/#68 and superseded umbrella trackers #81-#83. Open items remain because their own manual, native, store, pilot, or operational acceptance evidence is incomplete.
-- Ashbi Local CI currently runs Node 22.23/npm 10.9 instead of the repository's exact Node 22.22/npm 11.17 contract; trusted GitHub-hosted gates pass, but the external runner mismatch remains actionable under #60/#64.
+- The repository has 30 open issues after closing released defects #41/#61/#62/#68 and superseded umbrella trackers #81-#83. Fourteen are `status:verification-pending`; sixteen are `status:external-blocked`. No open issue is currently independently actionable without acceptance evidence or an external owner/system/device action.
+- Ashbi Local CI currently runs Node 22.23/npm 10.9 instead of the repository's exact Node 22.22/npm 11.17 contract; trusted GitHub-hosted gates pass, but the shared external runner mismatch blocks #60/#64 closure.
 - Production release does not prove signed App Store/Play continuity, physical-device upgrades/reminders/accessibility, real-customer retention, or willingness to pay.
 
 ## GitHub triage metadata

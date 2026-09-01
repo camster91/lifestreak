@@ -48,6 +48,32 @@ describe('service calendar totals', () => {
     expect(totals).toEqual({ weekly: 6, monthly: 3 });
   });
 
+  it('keeps date-only totals stable across timezone extremes and DST zones', () => {
+    const originalTimezone = process.env.TZ;
+    try {
+      for (const timezone of [
+        'Etc/GMT+12',
+        'Pacific/Kiritimati',
+        'America/New_York',
+        'Europe/Berlin',
+      ]) {
+        process.env.TZ = timezone;
+        const totals = getServicePeriodTotals(
+          [
+            entry('2026-03-01', 1),
+            entry('2026-03-08', 2),
+            entry('2026-03-09', 4),
+            entry('2026-03-10', 8),
+          ],
+          new Date(2026, 2, 9, 0, 30)
+        );
+        expect(totals, timezone).toEqual({ weekly: 4, monthly: 7 });
+      }
+    } finally {
+      process.env.TZ = originalTimezone;
+    }
+  });
+
   it('quarantines malformed dates and duplicate stable IDs without discarding raw records', () => {
     const valid = entry('2026-08-28', 2);
     valid.id = 7;

@@ -12,6 +12,7 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY .npmrc .nvmrc .node-version ./
+COPY scripts/check-toolchain.mjs ./scripts/check-toolchain.mjs
 RUN npm install --global npm@11.17.0 \
   && npm run toolchain:check \
   && npm ci --no-audit --no-fund --include=dev

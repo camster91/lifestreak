@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Book, CheckCircle2, Plus, Minus } from 'lucide-react';
+import { format } from 'date-fns';
 import { haptics } from '../utils/native';
 import useProgressStore from '../stores/progressStore';
 import useGamificationStore from '../stores/gamificationStore';
@@ -11,7 +12,8 @@ function BibleReadingCard() {
 
   const { recordBibleReading } = useGamificationStore();
 
-  const today = new Date().toISOString().split('T')[0];
+  // A reading belongs to the user's local calendar day, not the UTC day.
+  const today = format(new Date(), 'yyyy-MM-dd');
   const progress = getBibleReadingProgress?.(today) || { chaptersRead: 0, notes: '' };
 
   const handleAddChapter = () => {

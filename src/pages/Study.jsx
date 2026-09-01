@@ -39,7 +39,7 @@ function Study() {
         title="Study"
         subtitle="Track what you're studying"
         icon={BookOpen}
-        gradient="from-blue-500 via-indigo-500 to-purple-600"
+        gradient="from-primary via-primary to-secondary"
       />
 
       <main className="container mx-auto px-4 pt-4 space-y-4 max-w-2xl">

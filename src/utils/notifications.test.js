@@ -37,6 +37,8 @@ import {
   scheduleBibleReadingReminder,
   cancelScheduledNotification,
   initializeReminders,
+  PRIVATE_REMINDER_TITLE,
+  PRIVATE_REMINDER_BODY,
 } from './notifications.js';
 
 describe('notifications', () => {
@@ -213,6 +215,9 @@ describe('notifications', () => {
       const handles = await initializeReminders(settings);
 
       expect(handles.length).toBeGreaterThan(0);
+      expect(global.Notification.requestPermission).not.toHaveBeenCalled();
+      expect(PRIVATE_REMINDER_TITLE).toBe('LifeStreak reminder');
+      expect(PRIVATE_REMINDER_BODY).not.toMatch(/prayer|bible|family worship|meeting/i);
     });
 
     it('should return empty array when disabled', async () => {

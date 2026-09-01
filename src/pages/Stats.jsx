@@ -56,7 +56,7 @@ function Stats() {
         title="Your Progress"
         subtitle="Track your spiritual journey"
         icon={TrendingUp}
-        gradient="from-primary via-primary to-emerald-700"
+        gradient="from-primary via-primary to-secondary"
         iconBare
         shadow
         blurColor="emerald"
@@ -65,7 +65,7 @@ function Stats() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6 space-y-6 max-w-2xl">
         {/* Level & XP Card */}
-        <div className="card bg-linear-to-br from-amber-400 to-orange-500 text-white shadow-xl animate-fade-in-up">
+        <div className="card bg-linear-to-br from-warning to-warning/70 text-warning-content shadow-xl animate-fade-in-up">
           <div className="card-body">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ function Stats() {
           <div className="card-body">
             <div className="flex items-center justify-between">
               <h2 className="card-title">
-                <Trophy className="w-5 h-5 text-amber-500" />
+                <Trophy className="w-5 h-5 text-warning" />
                 Achievements
               </h2>
               <span className="badge badge-primary">
@@ -142,7 +142,7 @@ function Stats() {
                   key={achievement.id}
                   className={`p-3 rounded-xl border-2 transition-all ${
                     achievement.unlocked
-                      ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20'
+                      ? 'border-warning bg-warning/10'
                       : 'border-base-300 bg-base-200/50 opacity-60'
                   }`}
                 >
@@ -164,7 +164,7 @@ function Stats() {
                         {achievement.description}
                       </p>
                       <p
-                        className={`text-xs mt-1 font-medium ${achievement.unlocked ? 'text-amber-600' : 'text-base-content/40'}`}
+                        className={`text-xs mt-1 font-medium ${achievement.unlocked ? 'text-warning' : 'text-base-content/40'}`}
                       >
                         +{achievement.points} XP
                       </p>
@@ -202,7 +202,7 @@ function Stats() {
         >
           <div className="card-body">
             <h2 className="card-title">
-              <Flame className="w-5 h-5 text-orange-500 animate-flame" />
+              <Flame className="w-5 h-5 text-warning animate-flame" />
               Current Streaks
             </h2>
 
@@ -238,7 +238,7 @@ function Stats() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-medium">Daily Prayers</span>
-                  <span className="text-2xl font-bold text-pink-500">{prayerStreak} days</span>
+                  <span className="text-2xl font-bold text-secondary">{prayerStreak} days</span>
                 </div>
                 <progress
                   className="progress progress-accent w-full transition-all duration-500"
@@ -250,7 +250,7 @@ function Stats() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-medium">Family Worship</span>
-                  <span className="text-2xl font-bold text-purple-500">
+                  <span className="text-2xl font-bold text-primary">
                     {familyWorshipStreak} weeks
                   </span>
                 </div>
@@ -262,9 +262,9 @@ function Stats() {
               </div>
 
               {Math.max(dailyTextStreak, bibleReadingStreak, prayerStreak) > 0 && (
-                <div className="flex items-center justify-center gap-2 p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl animate-pulse">
-                  <Trophy className="w-5 h-5 text-amber-600" />
-                  <span className="font-medium text-amber-800 dark:text-amber-200">
+                <div className="flex items-center justify-center gap-2 p-3 bg-warning/15 rounded-xl animate-pulse">
+                  <Trophy className="w-5 h-5 text-warning" />
+                  <span className="font-medium text-base-content">
                     Best Current Streak:{' '}
                     {Math.max(dailyTextStreak, bibleReadingStreak, prayerStreak)} days
                   </span>
@@ -339,12 +339,12 @@ function Stats() {
                 {
                   label: 'Prayers Completed',
                   value: stats.prayersCompleted || 0,
-                  color: 'text-pink-500',
+                  color: 'text-secondary',
                 },
                 {
                   label: 'Family Worship Sessions',
                   value: stats.familyWorshipCompleted || 0,
-                  color: 'text-purple-500',
+                  color: 'text-primary',
                 },
                 {
                   label: 'Reflections Written',
@@ -374,7 +374,7 @@ function Stats() {
 
         {/* Motivational Message */}
         <div
-          className="card bg-linear-to-br from-purple-500 to-pink-500 text-white shadow-xl animate-fade-in-up"
+          className="card bg-linear-to-br from-primary to-secondary text-primary-content shadow-xl animate-fade-in-up"
           style={{ animationDelay: '600ms' }}
         >
           <div className="card-body text-center">

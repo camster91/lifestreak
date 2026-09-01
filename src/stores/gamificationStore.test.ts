@@ -123,7 +123,7 @@ describe('gamificationStore', () => {
 
       const state = useGamificationStore.getState();
       expect(state.unlockedAchievements.length).toBeGreaterThan(0);
-      expect(state.unlockedAchievements.some(a => a.id === 'first_text')).toBe(true);
+      expect(state.unlockedAchievements.some((a) => a.id === 'first_text')).toBe(true);
     });
 
     it('should add unlocked achievements to recentAchievements', () => {
@@ -134,7 +134,7 @@ describe('gamificationStore', () => {
 
       const state = useGamificationStore.getState();
       expect(state.recentAchievements.length).toBeGreaterThan(0);
-      expect(state.recentAchievements.some(a => a.id === 'first_text')).toBe(true);
+      expect(state.recentAchievements.some((a) => a.id === 'first_text')).toBe(true);
     });
 
     it('should not unlock the same achievement twice', () => {

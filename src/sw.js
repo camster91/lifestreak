@@ -11,13 +11,14 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Clean old caches on activation
 cleanupOutdatedCaches();
 
-// Activate upgrades immediately and take control on the next navigation.
-self.addEventListener('install', (event) => {
-  event.waitUntil(self.skipWaiting());
-});
-
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
+});
+
+// Updates wait until the user selects Update Now. This avoids replacing the running app while a
+// form or local transaction is in progress.
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // ── Notification click handler ────────────────────────────────────

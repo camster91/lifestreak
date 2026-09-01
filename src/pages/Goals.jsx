@@ -14,7 +14,7 @@ function Goals() {
         title="Goals"
         subtitle="Set and track your spiritual goals"
         icon={Target}
-        gradient="from-amber-500 via-amber-600 to-orange-600"
+        gradient="from-primary via-warning to-secondary"
         blurColor="orange"
       />
 
@@ -28,7 +28,7 @@ function Goals() {
             }}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-sm transition-all active:scale-95 ${
               activeTab === 'goals'
-                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25'
+                ? 'bg-warning text-warning-content shadow-lg shadow-warning/25'
                 : 'bg-base-200 text-base-content/60'
             }`}
           >
@@ -42,7 +42,7 @@ function Goals() {
             }}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-sm transition-all active:scale-95 ${
               activeTab === 'projects'
-                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25'
+                ? 'bg-warning text-warning-content shadow-lg shadow-warning/25'
                 : 'bg-base-200 text-base-content/60'
             }`}
           >

@@ -38,7 +38,7 @@ function BottomNav() {
         return (
           <button
             key={item.path}
-            className={active ? 'active' : ''}
+            className={`${active ? 'active' : ''} min-h-11 min-w-11`}
             onClick={() => handleNavClick(item.path)}
             aria-label={item.label}
             aria-current={active ? 'page' : undefined}

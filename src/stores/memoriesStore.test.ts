@@ -111,7 +111,7 @@ describe('memoriesStore', () => {
 
       const results = useMemoriesStore.getState().searchReflections('patience');
       expect(results.length).toBe(2);
-      expect(results.every(r => r.content.toLowerCase().includes('patience'))).toBe(true);
+      expect(results.every((r) => r.content.toLowerCase().includes('patience'))).toBe(true);
     });
 
     it('should be case-insensitive', () => {
@@ -143,7 +143,7 @@ describe('memoriesStore', () => {
 
       const aprilReflections = useMemoriesStore.getState().getReflectionsByMonth(2026, 4);
       expect(aprilReflections.length).toBe(2);
-      expect(aprilReflections.every(r => r.date.startsWith('2026-04'))).toBe(true);
+      expect(aprilReflections.every((r) => r.date.startsWith('2026-04'))).toBe(true);
     });
 
     it('should return empty array for month with no reflections', () => {

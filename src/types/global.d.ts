@@ -17,7 +17,10 @@ declare module '../utils/jwLibraryLinks.js' {
 }
 
 declare module '../utils/ollama.js' {
-  export function summarizeDailyText(text: string, ai: { modelUrl: string; apiKey: string }): Promise<string>;
+  export function summarizeDailyText(
+    text: string,
+    ai: { modelUrl: string; apiKey: string }
+  ): Promise<string>;
   export function summarizeDailyTextViaOllama(text: string, endpoint: string): Promise<string>;
 }
 
@@ -26,10 +29,14 @@ declare module '../utils/storageErrorHandler.js' {
 }
 
 declare module '../utils/notifications.js' {
+  type LifeStreakNotificationPermission =
+    NotificationPermission | 'prompt' | 'unsupported' | 'error';
   export function isNotificationSupported(): boolean;
-  export function getNotificationPermission(): NotificationPermission;
-  export function requestNotificationPermission(): Promise<NotificationPermission>;
-  export function initializeReminders(): void;
+  export function getNotificationPermission(): LifeStreakNotificationPermission;
+  export function requestNotificationPermission(): Promise<LifeStreakNotificationPermission>;
+  export function initializeReminders(settings: unknown): Promise<Array<{ cancel: () => void }>>;
+  export function cancelAllNotifications(): Promise<void>;
+  export function showNotification(title: string, options?: NotificationOptions): Promise<boolean>;
 }
 
 declare module '../components/Toast.jsx' {
@@ -52,7 +59,14 @@ declare module '../../components/Toast.jsx' {
 }
 
 declare module '../components/PageHeader.jsx' {
-  const PageHeader: React.FC<{ title: string; subtitle?: string; gradient?: string; shadow?: boolean; noBlurs?: boolean; icon?: any }>;
+  const PageHeader: React.FC<{
+    title: string;
+    subtitle?: string;
+    gradient?: string;
+    shadow?: boolean;
+    noBlurs?: boolean;
+    icon?: any;
+  }>;
   export default PageHeader;
 }
 
@@ -72,7 +86,9 @@ declare module '../components/settings/NotificationItems.js' {
     color?: string;
   }
   export function NotificationItem(props: NotificationItemProps): JSX.Element;
-  export function WeeklyNotificationItem(props: NotificationItemProps & { day?: string }): JSX.Element;
+  export function WeeklyNotificationItem(
+    props: NotificationItemProps & { day?: string }
+  ): JSX.Element;
 }
 
 declare module '../stores/settingsStore.js' {
@@ -87,3 +103,5 @@ declare module './PrayerTrackingCard.jsx' {
   const PrayerTrackingCard: React.FC<any>;
   export default PrayerTrackingCard;
 }
+declare const __LIFESTREAK_VERSION__: string;
+declare const __LIFESTREAK_REVISION__: string;

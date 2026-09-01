@@ -247,6 +247,61 @@ async function main() {
       await context.close();
     }
 
+    const activationContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      serviceWorkers: 'block',
+    });
+    const activationPage = await activationContext.newPage();
+    await activationPage.goto(origin, { waitUntil: 'networkidle' });
+    await activationPage.getByRole('button', { name: 'Dismiss suggestions' }).click();
+    await activationPage.getByRole('button', { name: 'Show starter suggestions' }).click();
+    const movementTemplate = activationPage
+      .locator('article')
+      .filter({ has: activationPage.getByRole('heading', { name: 'Move / workout' }) });
+    await movementTemplate.getByRole('button', { name: 'Customize first' }).click();
+    const templateDialog = activationPage.getByRole('dialog', { name: 'Create a habit' });
+    await templateDialog.waitFor();
+    assert(
+      await templateDialog.getByLabel('Frequency').isVisible(),
+      'Template customization hid the schedule and tracking values being copied.'
+    );
+    await templateDialog.getByLabel(/Name/).fill('Customized movement');
+    await templateDialog.getByRole('button', { name: 'Create habit' }).click();
+    const firstCheckInDialog = activationPage.getByRole('dialog', {
+      name: 'Customized movement',
+    });
+    await firstCheckInDialog.getByText('Your habit is ready').waitFor();
+    await firstCheckInDialog.getByLabel('First value in min').fill('20');
+    await firstCheckInDialog.getByRole('button', { name: 'Save first check-in' }).click();
+    await firstCheckInDialog.locator('.habit-status', { hasText: 'Completed' }).waitFor();
+    const activationBeforeReload = await activationPage.evaluate(() =>
+      localStorage.getItem('lifestreak-habit-tracker-v1')
+    );
+    await firstCheckInDialog.getByRole('button', { name: 'Close dialog' }).click();
+    await activationPage.reload({ waitUntil: 'networkidle' });
+    await activationPage.getByRole('heading', { name: 'Customized movement' }).waitFor();
+    const activationAfterReload = await activationPage.evaluate(() =>
+      localStorage.getItem('lifestreak-habit-tracker-v1')
+    );
+    assert(
+      activationAfterReload === activationBeforeReload,
+      'Reload changed the customized first-check-in database.'
+    );
+    const activationDatabase = JSON.parse(activationAfterReload);
+    assert(
+      activationDatabase.habits.length === 1 &&
+        activationDatabase.habits[0].sourceTemplateId === 'move-workout' &&
+        activationDatabase.habits[0].name === 'Customized movement' &&
+        activationDatabase.logs.length === 1 &&
+        activationDatabase.logs[0].habitId === activationDatabase.habits[0].id &&
+        activationDatabase.logs[0].entries.length === 1 &&
+        activationDatabase.logs[0].entries[0].value === 20 &&
+        activationDatabase.logs[0].entries[0].unit === 'min',
+      'Customized template activation did not preserve one stable habit and source log.'
+    );
+    await inspectPage(activationPage, 'phone', 'first-check-in-reloaded');
+    await activationContext.close();
+
     const zoomContext = await browser.newContext({
       viewport: { width: 640, height: 450 },
       screen: { width: 1280, height: 900 },

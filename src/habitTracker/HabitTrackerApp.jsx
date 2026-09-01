@@ -1743,6 +1743,7 @@ function HabitFormDialog({ habit, initial, onClose, onSaved, returnFocus }) {
       timeOfDay: form.timeOfDay,
       startDate: form.startDate,
       reminderTime: form.reminderTime || null,
+      sourceTemplateId: habit?.sourceTemplateId || initial?.templateId || null,
       schedule: {
         type: form.scheduleType,
         weekdays: form.weekdays,

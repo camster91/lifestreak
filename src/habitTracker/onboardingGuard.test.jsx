@@ -53,6 +53,19 @@ describe('starter suggestion onboarding', () => {
     expect(screen.getByDisplayValue('Morning Bible reading')).toBeInTheDocument();
     expect(screen.getByDisplayValue('5')).toBeVisible();
     expect(screen.getByText('Advanced options').closest('details')).toHaveAttribute('open');
+
+    fireEvent.change(screen.getByLabelText(/^Name/), {
+      target: { value: 'Customized morning reading' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create habit' }));
+    await waitFor(() => {
+      expect(habitStore.getSnapshot().habits).toEqual([
+        expect.objectContaining({
+          name: 'Customized morning reading',
+          sourceTemplateId: 'bible-reading',
+        }),
+      ]);
+    });
   });
 
   it('keeps a blank habit name-first while advanced controls remain optional', async () => {

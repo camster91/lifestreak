@@ -1,7 +1,32 @@
-import { Trash2, Download, Upload, Moon, Sun, Bell, BellOff, Clock, Flame, BookOpen, Heart, Users, Calendar, ChevronDown, ChevronUp, RefreshCw, AlertTriangle, X, Bot, Eye, EyeOff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  Trash2,
+  Download,
+  Upload,
+  Moon,
+  Sun,
+  Bell,
+  BellOff,
+  Clock,
+  Flame,
+  BookOpen,
+  Heart,
+  Users,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  AlertTriangle,
+  X,
+  Bot,
+  Eye,
+  EyeOff,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import useProgressStore from '../stores/progressStore.js';
-import useSettingsStore, { redactSettingsSecrets, type Notifications } from '../stores/settingsStore.js';
+import useSettingsStore, { type Notifications } from '../stores/settingsStore.js';
 import { useToast } from '../components/Toast.jsx';
 import { haptics } from '../utils/native.js';
 import PageHeader from '../components/PageHeader.jsx';
@@ -9,16 +34,27 @@ import {
   isNotificationSupported,
   getNotificationPermission,
   requestNotificationPermission,
-  initializeReminders
+  initializeReminders,
+  cancelAllNotifications,
+  showNotification,
 } from '../utils/notifications.js';
-import { NotificationItem, WeeklyNotificationItem } from '../components/settings/NotificationItems.js';
+import {
+  NotificationItem,
+  WeeklyNotificationItem,
+} from '../components/settings/NotificationItems.js';
 import { validateOllamaBaseUrl } from '../utils/safeNavigation.js';
 import {
-  BACKUP_STORAGE_KEYS,
   MAX_BACKUP_BYTES,
   validateBackupStoreData,
   validateLegacyBackup,
 } from '../utils/backupValidation.js';
+import {
+  createPortableBackup,
+  restorePortableBackup,
+  validatePortableBackup,
+} from '../utils/portableBackup.js';
+import { parseJsonWithoutDuplicateKeys } from '../utils/strictJson.js';
+import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics.js';
 
 function Settings() {
   const toast = useToast();
@@ -36,9 +72,14 @@ function Settings() {
   } = useSettingsStore();
 
   const [showApiKey, setShowApiKey] = useState(false);
-  const [aiTestStatus, setAiTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [aiTestStatus, setAiTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>(
+    'idle'
+  );
+  const [aiTransmissionConfirmed, setAiTransmissionConfirmed] = useState(false);
 
-  const [notificationPermission, setNotificationPermission] = useState(() => getNotificationPermission());
+  const [notificationPermission, setNotificationPermission] = useState(() =>
+    getNotificationPermission()
+  );
   const [notificationSupported] = useState(() => isNotificationSupported());
 
   useEffect(() => {
@@ -63,9 +104,19 @@ function Settings() {
     }
   };
 
-  const handleDisableNotifications = () => {
+  const handleDisableNotifications = async () => {
     setNotificationsEnabled(false);
+    await cancelAllNotifications();
     toast.info('Notifications disabled');
+  };
+
+  const handleTestNotification = async () => {
+    const shown = await showNotification('LifeStreak reminder', {
+      body: 'A private LifeStreak reminder is ready.',
+      tag: 'lifestreak-settings-test',
+    });
+    if (shown) toast.success('Test reminder sent');
+    else toast.error('Test reminder could not be shown. Check system notification settings.');
   };
 
   const handleToggleNotification = (key: string) => {
@@ -78,9 +129,13 @@ function Settings() {
   };
 
   const handleClearData = () => {
-    if (confirm('This will clear all data. Continue?')) {
+    if (
+      confirm(
+        'Clear Daily Text, prayer, worship, Bible-reading, and meeting-preparation progress? Habits, goals, service, reading, memories, settings, diagnostics, and notification schedules are not changed.'
+      )
+    ) {
       clearAll();
-      toast.success('Data cleared');
+      toast.success('Spiritual progress cleared; other LifeStreak stores were preserved');
       window.location.reload();
     }
   };
@@ -89,7 +144,7 @@ function Settings() {
     try {
       if ('caches' in window) {
         const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
       }
       toast.success('Checking for updates...');
       window.location.reload();
@@ -100,6 +155,10 @@ function Settings() {
   };
 
   const handleTestAi = async () => {
+    if (!aiTransmissionConfirmed || ai.provider !== 'ollama') {
+      toast.error('Review and confirm the connection-test data flow first');
+      return;
+    }
     setAiTestStatus('testing');
     try {
       const baseUrl = ai.ollamaBaseUrl || 'https://ollama.com';
@@ -140,27 +199,9 @@ function Settings() {
     }
   };
 
-  const STORAGE_KEYS = BACKUP_STORAGE_KEYS;
-
   const handleExportData = () => {
     try {
-      const storeData: Record<string, unknown> = {};
-      STORAGE_KEYS.forEach((key) => {
-        const raw = localStorage.getItem(key);
-        if (!raw) return;
-        try {
-          const parsed = JSON.parse(raw);
-          storeData[key] =
-            key === 'ls-progress-settings' ? redactSettingsSecrets(parsed) : parsed;
-        } catch {
-          // Skip corrupt keys rather than failing the whole export
-        }
-      });
-      const exportData = {
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        data: storeData,
-      };
+      const exportData = createPortableBackup();
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -171,11 +212,28 @@ function Settings() {
       toast.success('Data exported (API keys excluded)');
     } catch (error) {
       console.error('Export failed:', error);
-      toast.error('Could not export data');
+      toast.error(error instanceof Error ? error.message : 'Could not export data');
     }
   };
 
-  const [importModal, setImportModal] = useState<{ data: any; isOldFormat: boolean; versionMismatch: boolean } | null>(null);
+  const handleExportDiagnostics = () => {
+    const blob = new Blob([JSON.stringify(createDiagnosticsExport(), null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `lifestreak-diagnostics-${new Date().toISOString().split('T')[0]}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success('Sanitized local diagnostics exported');
+  };
+
+  const [importModal, setImportModal] = useState<{
+    data: any;
+    isOldFormat: boolean;
+    storeCount: number;
+  } | null>(null);
   const pendingImportData = useRef<any>(null);
 
   const handleImportData = () => {
@@ -191,17 +249,31 @@ function Settings() {
       }
       try {
         const text = await file.text();
-        const parsed = JSON.parse(text);
+        const parsed = parseJsonWithoutDuplicateKeys(text);
 
-        // Detect versioned format (version + data wrapper)
+        if (parsed.product === 'LifeStreak' && parsed.formatVersion !== undefined) {
+          const portable = validatePortableBackup(parsed);
+          if (!portable.ok) {
+            toast.error(portable.reason);
+            return;
+          }
+          pendingImportData.current = parsed;
+          setImportModal({
+            data: parsed,
+            isOldFormat: false,
+            storeCount: Object.keys(portable.sanitized).length,
+          });
+          return;
+        }
+
+        // Support the previous versioned wrapper and legacy progress/settings shape.
         let isOldFormat = false;
-        let versionMismatch = false;
         let storeData = parsed;
 
         if (parsed.version !== undefined && parsed.data !== undefined) {
-          // New versioned format
           if (parsed.version !== 1) {
-            versionMismatch = true;
+            toast.error(`Unsupported older backup wrapper version ${String(parsed.version)}`);
+            return;
           }
           storeData = parsed.data;
         } else {
@@ -215,27 +287,31 @@ function Settings() {
             toast.error(legacy.reason);
             return;
           }
-          pendingImportData.current = {
-            storeData: legacy.sanitized,
-            isOldFormat: true,
-            versionMismatch,
-          };
+          storeData = {};
+          if (legacy.sanitized.progress) {
+            storeData['ls-progress-storage'] = legacy.sanitized.progress;
+          }
+          if (legacy.sanitized.settings) {
+            storeData['ls-progress-settings'] = legacy.sanitized.settings;
+          }
         } else {
           const validated = validateBackupStoreData(storeData);
           if (!validated.ok) {
             toast.error(validated.reason);
             return;
           }
-          pendingImportData.current = {
-            storeData: validated.sanitized,
-            isOldFormat: false,
-            versionMismatch,
-          };
+          storeData = validated.sanitized;
         }
 
-        setImportModal({ data: parsed, isOldFormat, versionMismatch });
-      } catch {
-        toast.error('Failed to import data');
+        pendingImportData.current = {
+          product: 'LifeStreak',
+          formatVersion: 1,
+          exportedAt: parsed.exportedAt,
+          stores: storeData,
+        };
+        setImportModal({ data: parsed, isOldFormat, storeCount: Object.keys(storeData).length });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to import data');
       }
     };
     input.click();
@@ -243,33 +319,15 @@ function Settings() {
 
   const confirmImport = () => {
     if (!pendingImportData.current) return;
-    const { storeData, isOldFormat } = pendingImportData.current;
-
-    if (isOldFormat) {
-      if (storeData.progress) {
-        localStorage.setItem('ls-progress-storage', JSON.stringify(storeData.progress));
-      }
-      if (storeData.settings) {
-        localStorage.setItem(
-          'ls-progress-settings',
-          JSON.stringify(redactSettingsSecrets(storeData.settings))
-        );
-      }
-    } else {
-      STORAGE_KEYS.forEach((key) => {
-        if (!storeData[key]) return;
-        const payload =
-          key === 'ls-progress-settings'
-            ? redactSettingsSecrets(storeData[key])
-            : storeData[key];
-        localStorage.setItem(key, JSON.stringify(payload));
-      });
+    try {
+      restorePortableBackup(pendingImportData.current);
+      setImportModal(null);
+      pendingImportData.current = null;
+      toast.success('Validated backup restored atomically. Refreshing...');
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Import failed. No data was changed.');
     }
-
-    setImportModal(null);
-    pendingImportData.current = null;
-    toast.success('Data imported successfully! Refreshing...');
-    setTimeout(() => window.location.reload(), 1000);
   };
 
   const cancelImport = () => {
@@ -283,37 +341,98 @@ function Settings() {
       <PageHeader
         title="Settings"
         subtitle="Customize your experience"
-        gradient="from-primary via-primary to-blue-700"
+        gradient="from-primary via-primary to-secondary"
         shadow
         noBlurs
       />
       <div className="container mx-auto px-4 py-6 space-y-4 max-w-2xl">
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-lg"><Bell className="w-5 h-5" /> Notifications</h2>
+            <h2 className="card-title text-lg">
+              <Bell className="w-5 h-5" /> Notifications
+            </h2>
             <div className="divider my-2"></div>
             {!notificationSupported ? (
               <div className="alert alert-warning">Notifications not supported.</div>
             ) : notificationPermission === 'denied' ? (
-              <div className="alert alert-error">Notifications blocked.</div>
+              <div className="alert alert-error" role="status">
+                Notifications are blocked in system settings. LifeStreak will not ask again; enable
+                them from the browser or device settings if you change your mind.
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
-                  <div><p className="font-medium">Enable Reminders</p></div>
+                  <div>
+                    <p className="font-medium">Enable Reminders</p>
+                    <p className="text-xs text-base-content/60">
+                      Permission is requested only after Enable. Lock-screen text stays generic.
+                    </p>
+                  </div>
                   {notificationsEnabled ? (
-                    <button onClick={handleDisableNotifications} className="btn btn-sm btn-outline">Disable</button>
+                    <button onClick={handleDisableNotifications} className="btn btn-sm btn-outline">
+                      Disable
+                    </button>
                   ) : (
-                    <button onClick={handleEnableNotifications} className="btn btn-sm btn-primary">Enable</button>
+                    <button onClick={handleEnableNotifications} className="btn btn-sm btn-primary">
+                      Enable
+                    </button>
                   )}
                 </div>
                 {notificationsEnabled && (
                   <div className="space-y-2">
-                    <NotificationItem icon={BookOpen} label="Daily Text" enabled={notifications?.dailyText?.enabled ?? true} onToggle={() => handleToggleNotification('dailyText')} onTimeChange={(time) => handleSetNotificationTime('dailyText', time)} time={notifications?.dailyText?.time ?? '07:00'} />
-                    <NotificationItem icon={Heart} label="Bible Reading" enabled={notifications?.bibleReading?.enabled ?? true} onToggle={() => handleToggleNotification('bibleReading')} onTimeChange={(time) => handleSetNotificationTime('bibleReading', time)} time={notifications?.bibleReading?.time ?? '20:00'} />
+                    <button
+                      type="button"
+                      onClick={handleTestNotification}
+                      className="btn btn-sm btn-outline w-full"
+                    >
+                      Send private test reminder
+                    </button>
+                    <NotificationItem
+                      icon={BookOpen}
+                      label="Daily Text"
+                      enabled={notifications?.dailyText?.enabled ?? true}
+                      onToggle={() => handleToggleNotification('dailyText')}
+                      onTimeChange={(time) => handleSetNotificationTime('dailyText', time)}
+                      time={notifications?.dailyText?.time ?? '07:00'}
+                    />
+                    <NotificationItem
+                      icon={Heart}
+                      label="Bible Reading"
+                      enabled={notifications?.bibleReading?.enabled ?? true}
+                      onToggle={() => handleToggleNotification('bibleReading')}
+                      onTimeChange={(time) => handleSetNotificationTime('bibleReading', time)}
+                      time={notifications?.bibleReading?.time ?? '20:00'}
+                    />
                   </div>
                 )}
               </div>
             )}
+          </div>
+        </div>
+        <div className="card bg-base-100 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title text-lg">Private Diagnostics</h2>
+            <p className="text-sm text-base-content/70">
+              Up to 20 sanitized failures are kept locally for 30 days. Raw messages, stacks, full
+              URLs, user-agent strings, habits, notes, and values are excluded.
+            </p>
+            <button
+              type="button"
+              onClick={handleExportDiagnostics}
+              className="btn btn-outline w-full justify-start"
+            >
+              <Download className="w-5 h-5" /> Export Sanitized Diagnostics
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearDiagnostics();
+                toast.success('Local diagnostics deleted');
+              }}
+              className="btn btn-outline w-full justify-start"
+            >
+              <Trash2 className="w-5 h-5" /> Delete Local Diagnostics
+            </button>
           </div>
         </div>
         <div className="card bg-base-100 shadow-xl">
@@ -330,24 +449,43 @@ function Settings() {
           <div className="card-body">
             <h2 className="card-title text-lg">Data Management</h2>
             <div className="divider my-2"></div>
-            <button onClick={handleExportData} className="btn btn-outline w-full justify-start"><Download className="w-5 h-5" /> Export Data</button>
-            <button onClick={handleImportData} className="btn btn-outline w-full justify-start"><Upload className="w-5 h-5" /> Import Data</button>
-            <button onClick={handleClearData} className="btn btn-error btn-outline w-full justify-start"><Trash2 className="w-5 h-5" /> Clear All Data</button>
+            <button onClick={handleExportData} className="btn btn-outline w-full justify-start">
+              <Download className="w-5 h-5" /> Export Data
+            </button>
+            <button onClick={handleImportData} className="btn btn-outline w-full justify-start">
+              <Upload className="w-5 h-5" /> Import Data
+            </button>
+            <button
+              onClick={handleClearData}
+              className="btn btn-error btn-outline w-full justify-start"
+            >
+              <Trash2 className="w-5 h-5" /> Clear Spiritual Progress
+            </button>
           </div>
         </div>
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-lg"><Bot className="w-5 h-5" /> AI Assistant</h2>
+            <h2 className="card-title text-lg">
+              <Bot className="w-5 h-5" /> AI Assistant
+            </h2>
             <div className="divider my-2"></div>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
-                <div><p className="font-medium">AI Provider</p></div>
+                <div>
+                  <p className="font-medium">AI Provider</p>
+                </div>
                 <select
                   id="ai-provider"
                   aria-label="AI provider"
                   className="select select-sm select-bordered"
                   value={ai.provider}
-                  onChange={(e) => setAiSettings({ provider: e.target.value as 'ollama' | 'none' })}
+                  onChange={(e) => {
+                    const provider = e.target.value as 'ollama' | 'none';
+                    setAiTransmissionConfirmed(false);
+                    setAiSettings(
+                      provider === 'none' ? { provider, ollamaApiKey: '' } : { provider }
+                    );
+                  }}
                 >
                   <option value="none">Disabled</option>
                   <option value="ollama">Ollama Cloud / Local</option>
@@ -356,13 +494,21 @@ function Settings() {
               {ai.provider === 'ollama' && (
                 <>
                   <div className="space-y-1">
-                    <label htmlFor="ollama-base-url" className="text-sm font-medium text-base-content/70">Base URL</label>
+                    <label
+                      htmlFor="ollama-base-url"
+                      className="text-sm font-medium text-base-content/70"
+                    >
+                      Base URL
+                    </label>
                     <input
                       id="ollama-base-url"
                       type="text"
                       className="input input-bordered input-sm w-full"
                       value={ai.ollamaBaseUrl}
-                      onChange={(e) => setAiSettings({ ollamaBaseUrl: e.target.value })}
+                      onChange={(e) => {
+                        setAiTransmissionConfirmed(false);
+                        setAiSettings({ ollamaBaseUrl: e.target.value });
+                      }}
                       onBlur={() => {
                         const check = validateOllamaBaseUrl(ai.ollamaBaseUrl);
                         if (ai.ollamaBaseUrl && !check.ok) {
@@ -371,10 +517,17 @@ function Settings() {
                       }}
                       placeholder="https://ollama.com or http://localhost:11434"
                     />
-                    <p className="text-xs text-base-content/50">Allowed: ollama.com (HTTPS) or localhost / 127.0.0.1</p>
+                    <p className="text-xs text-base-content/50">
+                      Allowed: ollama.com (HTTPS) or localhost / 127.0.0.1
+                    </p>
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor="ollama-api-key" className="text-sm font-medium text-base-content/70">API Key</label>
+                    <label
+                      htmlFor="ollama-api-key"
+                      className="text-sm font-medium text-base-content/70"
+                    >
+                      API Key
+                    </label>
                     <div className="flex gap-2">
                       <input
                         id="ollama-api-key"
@@ -398,24 +551,52 @@ function Settings() {
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor="ollama-model" className="text-sm font-medium text-base-content/70">Model</label>
+                    <label
+                      htmlFor="ollama-model"
+                      className="text-sm font-medium text-base-content/70"
+                    >
+                      Model
+                    </label>
                     <input
                       id="ollama-model"
                       type="text"
                       className="input input-bordered input-sm w-full"
                       value={ai.ollamaModel}
-                      onChange={(e) => setAiSettings({ ollamaModel: e.target.value })}
+                      onChange={(e) => {
+                        setAiTransmissionConfirmed(false);
+                        setAiSettings({ ollamaModel: e.target.value });
+                      }}
                       placeholder="llama3.2, mistral-small3.1, deepseek-r1, etc."
                     />
-                    <p className="text-xs text-base-content/50">Cloud models: llama3.2, llama3.3, mistral-small3.1, qwen3, gemma3, phi4, deepseek-r1</p>
+                    <p className="text-xs text-base-content/50">
+                      Cloud models: llama3.2, llama3.3, mistral-small3.1, qwen3, gemma3, phi4,
+                      deepseek-r1
+                    </p>
                   </div>
+                  <label className="flex items-start gap-3 rounded-xl border border-base-300 p-3 text-sm">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-sm mt-0.5"
+                      checked={aiTransmissionConfirmed}
+                      onChange={(event) => setAiTransmissionConfirmed(event.target.checked)}
+                    />
+                    <span>
+                      I understand that Test Connection sends the selected model name and the fixed
+                      text “Say OK in one word” to the validated Base URL. If entered, the API key
+                      is sent as an authorization header. No habit, note, service, reading, goal, or
+                      memory data is included.
+                    </span>
+                  </label>
                   <button
+                    type="button"
                     onClick={handleTestAi}
-                    disabled={aiTestStatus === 'testing'}
+                    disabled={aiTestStatus === 'testing' || !aiTransmissionConfirmed}
                     className="btn btn-outline btn-sm w-full gap-2"
                   >
                     {aiTestStatus === 'testing' && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {aiTestStatus === 'success' && <CheckCircle2 className="w-4 h-4 text-success" />}
+                    {aiTestStatus === 'success' && (
+                      <CheckCircle2 className="w-4 h-4 text-success" />
+                    )}
                     {aiTestStatus === 'error' && <XCircle className="w-4 h-4 text-error" />}
                     Test Connection
                   </button>
@@ -426,9 +607,13 @@ function Settings() {
         </div>
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-lg"><RefreshCw className="w-5 h-5" /> App Updates</h2>
+            <h2 className="card-title text-lg">
+              <RefreshCw className="w-5 h-5" /> App Updates
+            </h2>
             <div className="divider my-2"></div>
-            <button onClick={handleUpdateApp} className="btn btn-primary w-full justify-start"><RefreshCw className="w-5 h-5" /> Check for Updates</button>
+            <button onClick={handleUpdateApp} className="btn btn-primary w-full justify-start">
+              <RefreshCw className="w-5 h-5" /> Check for Updates
+            </button>
           </div>
         </div>
       </div>
@@ -436,31 +621,42 @@ function Settings() {
       {/* Import Confirmation Modal */}
       {importModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="card bg-base-100 shadow-2xl w-full max-w-md">
+          <div
+            className="card bg-base-100 shadow-2xl w-full max-w-md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="collections-import-heading"
+          >
             <div className="card-body">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-lg flex items-center gap-2">
+                <h3
+                  id="collections-import-heading"
+                  className="font-bold text-lg flex items-center gap-2"
+                >
                   <AlertTriangle className="w-5 h-5 text-warning" />
                   Import Data
                 </h3>
-                <button onClick={cancelImport} className="btn btn-ghost btn-sm btn-circle">
+                <button
+                  type="button"
+                  onClick={cancelImport}
+                  className="btn btn-ghost btn-sm btn-circle"
+                  aria-label="Cancel import"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="divider my-1"></div>
-              {importModal.versionMismatch && (
-                <div className="alert alert-warning mb-3">
-                  <AlertTriangle className="w-5 h-5" />
-                  <span className="text-sm">This backup was created by a different version of the app. Some data may not import correctly.</span>
-                </div>
-              )}
               {importModal.isOldFormat && (
                 <div className="alert alert-info mb-3">
-                  <span className="text-sm">This is a legacy backup file. Only progress and settings data will be imported.</span>
+                  <span className="text-sm">
+                    This is a legacy backup file. Only progress and settings data will be imported.
+                  </span>
                 </div>
               )}
               <p className="text-base-content/70 mb-4">
-                This will <strong>replace all your current data</strong> with the imported backup. This action cannot be undone.
+                {importModal.storeCount} validated LifeStreak store
+                {importModal.storeCount === 1 ? '' : 's'} will be restored. A verified local
+                recovery snapshot is created first; any failed write rolls every store back.
               </p>
               {importModal.data.exportedAt && (
                 <p className="text-xs text-base-content/50 mb-4">
@@ -468,8 +664,12 @@ function Settings() {
                 </p>
               )}
               <div className="flex gap-2 justify-end">
-                <button onClick={cancelImport} className="btn btn-ghost">Cancel</button>
-                <button onClick={confirmImport} className="btn btn-error">Replace Data</button>
+                <button onClick={cancelImport} className="btn btn-ghost">
+                  Cancel
+                </button>
+                <button onClick={confirmImport} className="btn btn-error">
+                  Replace Data
+                </button>
               </div>
             </div>
           </div>

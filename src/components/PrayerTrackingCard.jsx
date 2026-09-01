@@ -10,24 +10,24 @@ const PRAYER_TIMES = [
     label: 'Morning Prayer',
     icon: Sun,
     description: 'Start your day with Jehovah',
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
+    color: 'text-warning',
+    bgColor: 'bg-warning/10',
   },
   {
     id: 'afternoon',
     label: 'Afternoon Prayer',
     icon: CloudSun,
     description: 'Pray during the day',
-    color: 'text-sky-500',
-    bgColor: 'bg-sky-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'evening',
     label: 'Evening Prayer',
     icon: Moon,
     description: 'End your day in prayer',
-    color: 'text-indigo-500',
-    bgColor: 'bg-indigo-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
 ];
 
@@ -69,8 +69,8 @@ function PrayerTrackingCard() {
     <article className="card bg-base-100 shadow-sm rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 p-4">
-        <div className={`p-3 rounded-2xl ${allComplete ? 'bg-success/10' : 'bg-pink-500/10'}`}>
-          <Heart className={`w-6 h-6 ${allComplete ? 'text-success' : 'text-pink-500'}`} />
+        <div className={`p-3 rounded-2xl ${allComplete ? 'bg-success/10' : 'bg-secondary/10'}`}>
+          <Heart className={`w-6 h-6 ${allComplete ? 'text-success' : 'text-secondary'}`} />
         </div>
         <div className="flex-1">
           <h3 className="font-bold">Daily Prayers</h3>

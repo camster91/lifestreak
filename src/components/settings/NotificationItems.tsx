@@ -22,7 +22,16 @@ export interface NotificationItemProps {
   color?: string;
 }
 
-export function NotificationItem({ icon: Icon, label, description = '', enabled, time, onToggle, onTimeChange, color = 'text-primary' }: NotificationItemProps) {
+export function NotificationItem({
+  icon: Icon,
+  label,
+  description = '',
+  enabled,
+  time,
+  onToggle,
+  onTimeChange,
+  color = 'text-primary',
+}: NotificationItemProps) {
   return (
     <div className="flex items-center justify-between py-3.5 border-b border-base-200/50 last:border-0">
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -40,6 +49,7 @@ export function NotificationItem({ icon: Icon, label, description = '', enabled,
             type="time"
             className="input input-sm input-bordered w-28 text-center font-medium"
             value={time}
+            aria-label={`${label} reminder time`}
             onChange={(e) => onTimeChange(e.target.value)}
           />
         )}
@@ -47,6 +57,7 @@ export function NotificationItem({ icon: Icon, label, description = '', enabled,
           type="checkbox"
           className="toggle toggle-primary"
           checked={enabled}
+          aria-label={`${enabled ? 'Disable' : 'Enable'} ${label} reminder`}
           onChange={onToggle}
         />
       </div>
@@ -83,7 +94,7 @@ export function WeeklyNotificationItem({
   onDayChange,
   onMeetingDaysChange,
   color = 'text-primary',
-  isMeetingPrep = false
+  isMeetingPrep = false,
 }: WeeklyNotificationItemProps) {
   return (
     <div className="py-3.5 border-b border-base-200/50 last:border-0">
@@ -103,6 +114,7 @@ export function WeeklyNotificationItem({
               type="time"
               className="input input-sm input-bordered w-28 text-center font-medium"
               value={time}
+              aria-label={`${label} reminder time`}
               onChange={(e) => onTimeChange(e.target.value)}
             />
           )}
@@ -110,6 +122,7 @@ export function WeeklyNotificationItem({
             type="checkbox"
             className="toggle toggle-primary"
             checked={enabled}
+            aria-label={`${enabled ? 'Disable' : 'Enable'} ${label} reminder`}
             onChange={onToggle}
           />
         </div>
@@ -124,10 +137,13 @@ export function WeeklyNotificationItem({
                 {DAYS_OF_WEEK.map((day) => (
                   <button
                     key={day.value}
+                    type="button"
+                    aria-pressed={(meetingDays || []).includes(day.value)}
+                    aria-label={`${day.fullLabel} meeting preparation reminder`}
                     onClick={() => {
                       const currentDays = meetingDays || [];
                       const newDays = currentDays.includes(day.value)
-                        ? currentDays.filter(d => d !== day.value)
+                        ? currentDays.filter((d) => d !== day.value)
                         : [...currentDays, day.value].sort((a, b) => a - b);
                       if (onMeetingDaysChange) onMeetingDaysChange(newDays);
                     }}
@@ -149,11 +165,12 @@ export function WeeklyNotificationItem({
                 {DAYS_OF_WEEK.map((day) => (
                   <button
                     key={day.value}
+                    type="button"
+                    aria-pressed={dayOfWeek === day.value}
+                    aria-label={`${day.fullLabel} ${label} reminder`}
                     onClick={() => onDayChange && onDayChange(day.value)}
                     className={`btn btn-sm min-w-[44px] ${
-                      dayOfWeek === day.value
-                        ? 'btn-primary'
-                        : 'btn-ghost bg-base-200'
+                      dayOfWeek === day.value ? 'btn-primary' : 'btn-ghost bg-base-200'
                     }`}
                   >
                     {day.label}

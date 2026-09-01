@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Stop JW Progress Tracker development servers.
+Stop LifeStreak development servers.
 
 .DESCRIPTION
 Stops any running Vite and API server processes, and cleans up background jobs.
@@ -26,7 +26,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Set-Location $projectRoot
 
-Write-Host "Stopping JW Progress Tracker development servers..." -ForegroundColor Yellow
+Write-Host "Stopping LifeStreak development servers..." -ForegroundColor Yellow
 
 # 1. Clean up background job if exists
 $jobFile = "..\dev-job.json"

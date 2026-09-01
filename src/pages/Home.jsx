@@ -7,6 +7,7 @@ import { useDrawer } from '../hooks/useDrawer';
 import PageHeader from '../components/PageHeader';
 import useServiceStore from '../stores/serviceStore.js';
 import useReadingStore from '../stores/readingStore.js';
+import { summarizeReadingProgress } from '../stores/readingStore.js';
 import { useNavigate } from 'react-router-dom';
 
 function Home() {
@@ -22,9 +23,9 @@ function Home() {
   });
 
   const { getWeeklyTotal, weeklyGoal } = useServiceStore();
-  const { getInProgress } = useReadingStore();
+  const { items: readingItems, quarantinedItems } = useReadingStore();
   const weeklyService = getWeeklyTotal();
-  const readingList = getInProgress();
+  const readingProgress = summarizeReadingProgress(readingItems, quarantinedItems);
   const servicePercent = Math.min((weeklyService / weeklyGoal) * 100, 100);
 
   return (
@@ -33,7 +34,7 @@ function Home() {
       <PageHeader
         title={greeting.text}
         subtitle="Track habits, service, reading, and goals"
-        gradient="from-primary via-primary to-blue-700"
+        gradient="from-primary via-primary to-secondary"
         titleSize="text-3xl"
         contentClass="pb-10"
         actions={
@@ -71,13 +72,13 @@ function Home() {
               <div className="card-body p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-bold uppercase text-base-content/60">Service</span>
-                  <Briefcase className="w-4 h-4 text-emerald-500" />
+                  <Briefcase className="w-4 h-4 text-success" />
                 </div>
                 <div className="text-2xl font-bold">{weeklyService.toFixed(1)}h</div>
                 <div className="text-xs text-base-content/60">Goal: {weeklyGoal}h</div>
                 <div className="w-full bg-base-200 rounded-full h-2 mt-2">
                   <div
-                    className="bg-emerald-500 h-2 rounded-full transition-all"
+                    className="bg-success h-2 rounded-full transition-all"
                     style={{ width: `${servicePercent}%` }}
                   />
                 </div>
@@ -91,18 +92,44 @@ function Home() {
               <div className="card-body p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-bold uppercase text-base-content/60">Reading</span>
-                  <Library className="w-4 h-4 text-amber-500" />
+                  <Library className="w-4 h-4 text-warning" />
                 </div>
-                <div className="text-2xl font-bold">{readingList.length}</div>
+                <div className="text-2xl font-bold">{readingProgress.activeCount}</div>
                 <div className="text-xs text-base-content/60">
-                  {readingList.length === 1 ? 'item in progress' : 'items in progress'}
+                  {readingProgress.activeCount === 1 ? 'item in progress' : 'items in progress'}
                 </div>
-                <div className="w-full bg-base-200 rounded-full h-2 mt-2">
-                  <div
-                    className="bg-amber-500 h-2 rounded-full transition-all"
-                    style={{ width: readingList.length > 0 ? '60%' : '0%' }}
-                  />
-                </div>
+                {readingProgress.percent === null ? (
+                  <div className="text-xs text-base-content/60 mt-2">
+                    {readingProgress.hasUnknownRecords
+                      ? 'Progress unknown — review preserved records'
+                      : 'No active reading progress'}
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-xs text-base-content/60 mt-2">
+                      Average across active items: {readingProgress.percent}%
+                    </div>
+                    <div
+                      className="w-full bg-base-200 rounded-full h-2 mt-1"
+                      role="progressbar"
+                      aria-label="Average progress across active reading items"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                      aria-valuenow={readingProgress.percent}
+                      aria-valuetext={`${readingProgress.percent}% average across ${readingProgress.activeCount} active ${readingProgress.activeCount === 1 ? 'item' : 'items'}`}
+                    >
+                      <div
+                        className="bg-warning h-2 rounded-full transition-all"
+                        style={{ width: `${readingProgress.percent}%` }}
+                      />
+                    </div>
+                    {readingProgress.hasUnknownRecords && (
+                      <div className="text-xs text-warning mt-1">
+                        Some preserved records have unknown progress.
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </button>
           </div>

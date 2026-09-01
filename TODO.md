@@ -1,6 +1,6 @@
 # LifeStreak - Improvement Roadmap
 
-> **Archived:** LifeStreak was consolidated into [JW Companion](https://github.com/camster91/jw-companion) on 2026-08-13. The roadmap is retained as historical context; new product work belongs in the canonical repository.
+> **Superseded planning snapshot:** LifeStreak is active as an independent app. Use [docs/ISSUE_ROADMAP.md](docs/ISSUE_ROADMAP.md) for current priorities; this checklist is retained only as historical context.
 
 ## High Priority
 

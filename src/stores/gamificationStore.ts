@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { format, differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
@@ -13,44 +13,310 @@ interface Achievement {
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
-  { id: 'first_text', name: 'First Steps', description: 'Complete your first Daily Text', icon: '🌱', points: 10, category: 'dailyText' },
-  { id: 'text_week', name: 'Dedicated Reader', description: 'Read Daily Text 7 days in a row', icon: '📖', points: 50, category: 'dailyText' },
-  { id: 'text_month', name: 'Daily Discipline', description: 'Read Daily Text 30 days in a row', icon: '📚', points: 200, category: 'dailyText' },
-  { id: 'first_prayer', name: 'First Prayer', description: 'Complete your first daily prayer', icon: '🙏', points: 10, category: 'prayer' },
-  { id: 'prayer_complete', name: 'Prayer Warrior', description: 'Complete all 3 prayers in a day', icon: '✨', points: 15, category: 'prayer' },
-  { id: 'prayer_week', name: 'Prayerful Week', description: '7-day prayer streak (all 3 daily)', icon: '💫', points: 75, category: 'prayer' },
-  { id: 'prayer_month', name: 'Prayer Master', description: '30-day prayer streak', icon: '🌟', points: 300, category: 'prayer' },
-  { id: 'first_worship', name: 'Family First', description: 'Complete your first family worship', icon: '👨‍👩‍👧', points: 25, category: 'familyWorship' },
-  { id: 'worship_month', name: 'Family Focused', description: '4 weeks of family worship', icon: '🏠', points: 100, category: 'familyWorship' },
-  { id: 'worship_quarter', name: 'Family Tradition', description: '12 weeks of family worship', icon: '💝', points: 300, category: 'familyWorship' },
-  { id: 'week_streak', name: 'Week Warrior', description: '7-day overall streak', icon: '🔥', points: 50, category: 'streak' },
-  { id: 'month_streak', name: 'Monthly Master', description: '30-day overall streak', icon: '⭐', points: 200, category: 'streak' },
-  { id: 'quarter_streak', name: 'Quarterly Champion', description: '90-day overall streak', icon: '🏆', points: 500, category: 'streak' },
-  { id: 'year_streak', name: 'Yearly Legend', description: '365-day overall streak', icon: '👑', points: 2000, category: 'streak' },
-  { id: 'first_reflection', name: 'Thoughtful', description: 'Write your first reflection', icon: '📝', points: 15, category: 'reflection' },
-  { id: 'reflections_10', name: 'Deep Thinker', description: 'Write 10 reflections', icon: '💭', points: 50, category: 'reflection' },
-  { id: 'reflections_50', name: 'Contemplative', description: 'Write 50 reflections', icon: '📚', points: 150, category: 'reflection' },
-  { id: 'reflections_100', name: 'Wisdom Keeper', description: 'Write 100 reflections', icon: '🦉', points: 300, category: 'reflection' },
-  { id: 'bible_reader', name: 'Bible Student', description: 'Complete daily Bible reading 7 times', icon: '📖', points: 50, category: 'study' },
-  { id: 'bible_scholar', name: 'Bible Scholar', description: 'Complete daily Bible reading 30 times', icon: '🎓', points: 200, category: 'study' },
-  { id: 'bible_master', name: 'Scripture Master', description: 'Complete daily Bible reading 100 times', icon: '🏛️', points: 500, category: 'study' },
-  { id: 'first_goal', name: 'Goal Setter', description: 'Complete your first goal', icon: '🎯', points: 20, category: 'goals' },
-  { id: 'goals_5', name: 'Achiever', description: 'Complete 5 goals', icon: '🏅', points: 75, category: 'goals' },
-  { id: 'goals_10', name: 'High Achiever', description: 'Complete 10 goals', icon: '🥇', points: 150, category: 'goals' },
-  { id: 'goals_20', name: 'Overachiever', description: 'Complete 20 goals', icon: '🌟', points: 250, category: 'goals' },
-  { id: 'first_project', name: 'Project Starter', description: 'Complete your first project', icon: '📋', points: 30, category: 'projects' },
-  { id: 'projects_5', name: 'Project Manager', description: 'Complete 5 projects', icon: '📊', points: 100, category: 'projects' },
-  { id: 'projects_10', name: 'Project Master', description: 'Complete 10 projects', icon: '🗂️', points: 250, category: 'projects' },
-  { id: 'first_meeting', name: 'Prepared', description: 'Prepare for your first meeting', icon: '📝', points: 15, category: 'meetings' },
-  { id: 'meeting_prepared', name: 'Well Prepared', description: 'Prepare for 10 meetings', icon: '✅', points: 50, category: 'meetings' },
-  { id: 'meeting_master', name: 'Meeting Master', description: 'Prepare for 50 meetings', icon: '🎖️', points: 200, category: 'meetings' },
-  { id: 'level_5', name: 'Rising Star', description: 'Reach level 5', icon: '⭐', points: 0, category: 'level' },
-  { id: 'level_10', name: 'Dedicated', description: 'Reach level 10', icon: '🌟', points: 0, category: 'level' },
-  { id: 'level_25', name: 'Committed', description: 'Reach level 25', icon: '💫', points: 0, category: 'level' },
-  { id: 'level_50', name: 'Spiritual Giant', description: 'Reach level 50', icon: '👑', points: 0, category: 'level' },
-  { id: 'early_bird', name: 'Early Bird', description: 'Complete Daily Text before 7am', icon: '🌅', points: 25, category: 'special' },
-  { id: 'weekend_warrior', name: 'Weekend Warrior', description: 'Complete all activities on a weekend', icon: '🎉', points: 30, category: 'special' },
-  { id: 'perfect_day', name: 'Perfect Day', description: 'Complete Daily Text, all prayers, and Bible reading in one day', icon: '💯', points: 50, category: 'special' },
+  {
+    id: 'first_text',
+    name: 'First Steps',
+    description: 'Complete your first Daily Text',
+    icon: '🌱',
+    points: 10,
+    category: 'dailyText',
+  },
+  {
+    id: 'text_week',
+    name: 'Dedicated Reader',
+    description: 'Read Daily Text 7 days in a row',
+    icon: '📖',
+    points: 50,
+    category: 'dailyText',
+  },
+  {
+    id: 'text_month',
+    name: 'Daily Discipline',
+    description: 'Read Daily Text 30 days in a row',
+    icon: '📚',
+    points: 200,
+    category: 'dailyText',
+  },
+  {
+    id: 'first_prayer',
+    name: 'First Prayer',
+    description: 'Complete your first daily prayer',
+    icon: '🙏',
+    points: 10,
+    category: 'prayer',
+  },
+  {
+    id: 'prayer_complete',
+    name: 'Prayer Warrior',
+    description: 'Complete all 3 prayers in a day',
+    icon: '✨',
+    points: 15,
+    category: 'prayer',
+  },
+  {
+    id: 'prayer_week',
+    name: 'Prayerful Week',
+    description: '7-day prayer streak (all 3 daily)',
+    icon: '💫',
+    points: 75,
+    category: 'prayer',
+  },
+  {
+    id: 'prayer_month',
+    name: 'Prayer Master',
+    description: '30-day prayer streak',
+    icon: '🌟',
+    points: 300,
+    category: 'prayer',
+  },
+  {
+    id: 'first_worship',
+    name: 'Family First',
+    description: 'Complete your first family worship',
+    icon: '👨‍👩‍👧',
+    points: 25,
+    category: 'familyWorship',
+  },
+  {
+    id: 'worship_month',
+    name: 'Family Focused',
+    description: '4 weeks of family worship',
+    icon: '🏠',
+    points: 100,
+    category: 'familyWorship',
+  },
+  {
+    id: 'worship_quarter',
+    name: 'Family Tradition',
+    description: '12 weeks of family worship',
+    icon: '💝',
+    points: 300,
+    category: 'familyWorship',
+  },
+  {
+    id: 'week_streak',
+    name: 'Week Warrior',
+    description: '7-day overall streak',
+    icon: '🔥',
+    points: 50,
+    category: 'streak',
+  },
+  {
+    id: 'month_streak',
+    name: 'Monthly Master',
+    description: '30-day overall streak',
+    icon: '⭐',
+    points: 200,
+    category: 'streak',
+  },
+  {
+    id: 'quarter_streak',
+    name: 'Quarterly Champion',
+    description: '90-day overall streak',
+    icon: '🏆',
+    points: 500,
+    category: 'streak',
+  },
+  {
+    id: 'year_streak',
+    name: 'Yearly Legend',
+    description: '365-day overall streak',
+    icon: '👑',
+    points: 2000,
+    category: 'streak',
+  },
+  {
+    id: 'first_reflection',
+    name: 'Thoughtful',
+    description: 'Write your first reflection',
+    icon: '📝',
+    points: 15,
+    category: 'reflection',
+  },
+  {
+    id: 'reflections_10',
+    name: 'Deep Thinker',
+    description: 'Write 10 reflections',
+    icon: '💭',
+    points: 50,
+    category: 'reflection',
+  },
+  {
+    id: 'reflections_50',
+    name: 'Contemplative',
+    description: 'Write 50 reflections',
+    icon: '📚',
+    points: 150,
+    category: 'reflection',
+  },
+  {
+    id: 'reflections_100',
+    name: 'Wisdom Keeper',
+    description: 'Write 100 reflections',
+    icon: '🦉',
+    points: 300,
+    category: 'reflection',
+  },
+  {
+    id: 'bible_reader',
+    name: 'Bible Student',
+    description: 'Complete daily Bible reading 7 times',
+    icon: '📖',
+    points: 50,
+    category: 'study',
+  },
+  {
+    id: 'bible_scholar',
+    name: 'Bible Scholar',
+    description: 'Complete daily Bible reading 30 times',
+    icon: '🎓',
+    points: 200,
+    category: 'study',
+  },
+  {
+    id: 'bible_master',
+    name: 'Scripture Master',
+    description: 'Complete daily Bible reading 100 times',
+    icon: '🏛️',
+    points: 500,
+    category: 'study',
+  },
+  {
+    id: 'first_goal',
+    name: 'Goal Setter',
+    description: 'Complete your first goal',
+    icon: '🎯',
+    points: 20,
+    category: 'goals',
+  },
+  {
+    id: 'goals_5',
+    name: 'Achiever',
+    description: 'Complete 5 goals',
+    icon: '🏅',
+    points: 75,
+    category: 'goals',
+  },
+  {
+    id: 'goals_10',
+    name: 'High Achiever',
+    description: 'Complete 10 goals',
+    icon: '🥇',
+    points: 150,
+    category: 'goals',
+  },
+  {
+    id: 'goals_20',
+    name: 'Overachiever',
+    description: 'Complete 20 goals',
+    icon: '🌟',
+    points: 250,
+    category: 'goals',
+  },
+  {
+    id: 'first_project',
+    name: 'Project Starter',
+    description: 'Complete your first project',
+    icon: '📋',
+    points: 30,
+    category: 'projects',
+  },
+  {
+    id: 'projects_5',
+    name: 'Project Manager',
+    description: 'Complete 5 projects',
+    icon: '📊',
+    points: 100,
+    category: 'projects',
+  },
+  {
+    id: 'projects_10',
+    name: 'Project Master',
+    description: 'Complete 10 projects',
+    icon: '🗂️',
+    points: 250,
+    category: 'projects',
+  },
+  {
+    id: 'first_meeting',
+    name: 'Prepared',
+    description: 'Prepare for your first meeting',
+    icon: '📝',
+    points: 15,
+    category: 'meetings',
+  },
+  {
+    id: 'meeting_prepared',
+    name: 'Well Prepared',
+    description: 'Prepare for 10 meetings',
+    icon: '✅',
+    points: 50,
+    category: 'meetings',
+  },
+  {
+    id: 'meeting_master',
+    name: 'Meeting Master',
+    description: 'Prepare for 50 meetings',
+    icon: '🎖️',
+    points: 200,
+    category: 'meetings',
+  },
+  {
+    id: 'level_5',
+    name: 'Rising Star',
+    description: 'Reach level 5',
+    icon: '⭐',
+    points: 0,
+    category: 'level',
+  },
+  {
+    id: 'level_10',
+    name: 'Dedicated',
+    description: 'Reach level 10',
+    icon: '🌟',
+    points: 0,
+    category: 'level',
+  },
+  {
+    id: 'level_25',
+    name: 'Committed',
+    description: 'Reach level 25',
+    icon: '💫',
+    points: 0,
+    category: 'level',
+  },
+  {
+    id: 'level_50',
+    name: 'Spiritual Giant',
+    description: 'Reach level 50',
+    icon: '👑',
+    points: 0,
+    category: 'level',
+  },
+  {
+    id: 'early_bird',
+    name: 'Early Bird',
+    description: 'Complete Daily Text before 7am',
+    icon: '🌅',
+    points: 25,
+    category: 'special',
+  },
+  {
+    id: 'weekend_warrior',
+    name: 'Weekend Warrior',
+    description: 'Complete all activities on a weekend',
+    icon: '🎉',
+    points: 30,
+    category: 'special',
+  },
+  {
+    id: 'perfect_day',
+    name: 'Perfect Day',
+    description: 'Complete Daily Text, all prayers, and Bible reading in one day',
+    icon: '💯',
+    points: 50,
+    category: 'special',
+  },
 ];
 
 interface UserAchievement {
@@ -170,7 +436,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
         set({
           currentStreak: newStreak,
           longestStreak: Math.max(state.longestStreak, newStreak),
-          lastActivityDate: date
+          lastActivityDate: date,
         });
         get().checkAndUnlockAchievements();
       },
@@ -193,7 +459,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
         set({
           prayerStreak: newStreak,
           longestPrayerStreak: Math.max(state.longestPrayerStreak, newStreak),
-          lastPrayerDate: date
+          lastPrayerDate: date,
         });
         get().checkAndUnlockAchievements();
       },
@@ -204,7 +470,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
           familyWorshipStreak: completed ? state.familyWorshipStreak + 1 : 0,
           longestFamilyWorshipStreak: completed
             ? Math.max(state.longestFamilyWorshipStreak, state.familyWorshipStreak + 1)
-            : state.longestFamilyWorshipStreak
+            : state.longestFamilyWorshipStreak,
         });
         get().checkAndUnlockAchievements();
       },
@@ -258,7 +524,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
       getAllAchievements: () => {
         const state = get();
         return ACHIEVEMENTS.map((achievement) => {
-          const unlocked = state.unlockedAchievements.find(a => a.id === achievement.id);
+          const unlocked = state.unlockedAchievements.find((a) => a.id === achievement.id);
           return {
             ...achievement,
             unlocked: !!unlocked,
@@ -278,7 +544,6 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
         get().incrementActivity('reflection');
         get().addPoints(5);
       },
-
 
       recordBibleReading: () => {
         get().incrementActivity('bibleReading');
@@ -364,11 +629,11 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
           level_50: state.points >= 4900,
         };
 
-        const alreadyUnlocked = new Set(state.unlockedAchievements.map(a => a.id));
+        const alreadyUnlocked = new Set(state.unlockedAchievements.map((a) => a.id));
 
         for (const [id, met] of Object.entries(checks)) {
           if (met && !alreadyUnlocked.has(id)) {
-            const achievement = ACHIEVEMENTS.find(a => a.id === id);
+            const achievement = ACHIEVEMENTS.find((a) => a.id === id);
             if (achievement) {
               newAchievements.push({ id, unlockedAt: new Date().toISOString() });
               if (achievement.points > 0) {
@@ -379,7 +644,9 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
         }
 
         if (newAchievements.length > 0) {
-          const achievementDetails = newAchievements.map(a => ACHIEVEMENTS.find(ach => ach.id === a.id)!);
+          const achievementDetails = newAchievements.map((a) =>
+            ACHIEVEMENTS.find((ach) => ach.id === a.id)!
+          );
           set((s) => ({
             unlockedAchievements: [...s.unlockedAchievements, ...newAchievements],
             recentAchievements: [...s.recentAchievements, ...achievementDetails],
@@ -391,7 +658,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
     }),
     {
       name: 'ls-gamification-storage',
-      storage: createSafeStorage('ls-gamification-storage') as any,
+      storage: createJSONStorage(() => createSafeStorage('ls-gamification-storage')),
       version: 1,
       migrate: (persistedState, version) => {
         if (version === undefined || version === 0) {

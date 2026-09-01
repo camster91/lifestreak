@@ -4,14 +4,13 @@
  * Supports both Ollama Cloud (ollama.com) and local Ollama servers.
  * Uses the native /api/chat endpoint format.
  *
- * Prefer Settings AI config at runtime. Build-time VITE_* keys are fallbacks only
- * and should not be used for production secrets (they ship in the client bundle).
+ * Credentials must be supplied by an explicit session-only caller. Build-time secrets are never
+ * read because Vite variables ship in the public client bundle.
  */
 
 import { validateOllamaBaseUrl } from './safeNavigation.js';
 
 const OLLAMA_BASE_URL = import.meta.env.VITE_OLLAMA_BASE_URL || 'https://ollama.com';
-const OLLAMA_API_KEY = import.meta.env.VITE_OLLAMA_API_KEY || '';
 const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'llama3.2';
 
 function resolveBaseUrl(override) {
@@ -27,19 +26,19 @@ function resolveBaseUrl(override) {
  * Check if Ollama Cloud is configured (has an API key)
  */
 export function isOllamaConfigured() {
-  return !!OLLAMA_API_KEY || OLLAMA_BASE_URL.includes('localhost');
+  return OLLAMA_BASE_URL.includes('localhost');
 }
 
 /**
  * Get the list of available models from Ollama
  */
-export async function listModels() {
+export async function listModels(options = {}) {
   const headers = { 'Content-Type': 'application/json' };
-  if (OLLAMA_API_KEY) {
-    headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`;
+  if (options.apiKey) {
+    headers['Authorization'] = `Bearer ${options.apiKey}`;
   }
 
-  const base = resolveBaseUrl();
+  const base = resolveBaseUrl(options.baseUrl);
   const response = await fetch(`${base}/api/tags`, { headers });
 
   if (!response.ok) {
@@ -61,8 +60,8 @@ export async function listModels() {
 export async function chatWithOllama(messages, userMessage, options = {}) {
   const model = options.model || OLLAMA_MODEL;
   const headers = { 'Content-Type': 'application/json' };
-  if (OLLAMA_API_KEY) {
-    headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`;
+  if (options.apiKey) {
+    headers['Authorization'] = `Bearer ${options.apiKey}`;
   }
 
   const contents = [];
@@ -123,8 +122,8 @@ export async function chatWithOllama(messages, userMessage, options = {}) {
 export async function chatWithOllamaOpenAI(messages, options = {}) {
   const model = options.model || OLLAMA_MODEL;
   const headers = { 'Content-Type': 'application/json' };
-  if (OLLAMA_API_KEY) {
-    headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`;
+  if (options.apiKey) {
+    headers['Authorization'] = `Bearer ${options.apiKey}`;
   }
 
   const base = resolveBaseUrl(options.baseUrl);

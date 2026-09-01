@@ -30,13 +30,13 @@ function SharePage() {
     <div className="min-h-screen bg-base-200 pb-24">
       {/* Header */}
       <header
-        className="relative bg-linear-to-br from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg"
+        className="relative bg-linear-to-br from-primary via-primary to-secondary text-primary-content shadow-lg"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         {/* Decorative blurs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-4 right-4 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-300/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
         </div>
         <div className="relative p-6">
           <div className="flex items-center gap-3">
@@ -122,8 +122,8 @@ function SharePage() {
         ) : (
           /* Empty State */
           <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-linear-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-              <Share2 className="w-10 h-10 text-blue-400" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-linear-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+              <Share2 className="w-10 h-10 text-primary" />
             </div>
             <h2 className="text-xl font-bold text-base-content/70">No Shared Content</h2>
             <p className="text-sm text-base-content/50 mt-2 max-w-xs mx-auto">

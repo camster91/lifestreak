@@ -1,11 +1,11 @@
 // Mapping of blur color keys to Tailwind classes
 // Full class strings must be present in source for JIT compiler
 const BLUR_VARIANTS = {
-  blue: 'bg-blue-300/10',
-  indigo: 'bg-indigo-300/10',
-  orange: 'bg-orange-300/10',
-  pink: 'bg-pink-300/10',
-  emerald: 'bg-emerald-300/10',
+  blue: 'bg-primary/10',
+  indigo: 'bg-primary/10',
+  orange: 'bg-warning/10',
+  pink: 'bg-secondary/10',
+  emerald: 'bg-success/10',
 };
 
 /**
@@ -14,7 +14,7 @@ const BLUR_VARIANTS = {
  * @param {string}   title         - Page title
  * @param {string}   [subtitle]     - Optional subtitle text
  * @param {object}   [icon]        - Lucide icon component
- * @param {string}   [gradient]    - Tailwind gradient classes (e.g. "from-primary via-primary to-blue-700")
+ * @param {string}   [gradient]    - Semantic gradient classes (e.g. "from-primary via-primary to-secondary")
  * @param {node}     [actions]     - JSX for top area (e.g. greeting row with menu button)
  * @param {node}     [children]    - Extra content below title/subtitle (e.g. stats row)
  * @param {string}   [blurColor]   - Key into BLUR_VARIANTS (blue|indigo|orange|pink|emerald)
@@ -29,7 +29,7 @@ export default function PageHeader({
   title,
   subtitle,
   icon: Icon,
-  gradient = 'from-primary via-primary to-blue-700',
+  gradient = 'from-primary via-primary to-secondary',
   actions,
   children,
   blurColor = 'blue',

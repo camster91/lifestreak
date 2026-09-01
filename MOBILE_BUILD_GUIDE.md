@@ -1,6 +1,6 @@
-# JW Progress - Mobile App Build & Publishing Guide
+# LifeStreak - Mobile App Build & Publishing Guide
 
-This guide covers building and publishing the JW Progress app for iOS and Android.
+This guide covers building and publishing LifeStreak for iOS and Android. Canonical identity values are defined in `docs/product-identity.md`.
 
 ## Prerequisites
 
@@ -63,7 +63,7 @@ Then in Xcode:
 
 1. **Generate a keystore:**
 ```bash
-keytool -genkey -v -keystore jw-progress-release.keystore -alias jw-progress -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkey -v -keystore lifestreak-release.keystore -alias lifestreak -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 2. **Configure signing in `android/app/build.gradle`:**
@@ -71,9 +71,9 @@ keytool -genkey -v -keystore jw-progress-release.keystore -alias jw-progress -ke
 android {
     signingConfigs {
         release {
-            storeFile file('jw-progress-release.keystore')
+            storeFile file('lifestreak-release.keystore')
             storePassword System.getenv('KEYSTORE_PASSWORD') ?: 'your-password'
-            keyAlias 'jw-progress'
+            keyAlias 'lifestreak'
             keyPassword System.getenv('KEY_PASSWORD') ?: 'your-password'
         }
     }
@@ -113,7 +113,7 @@ android {
 #### Publishing Steps
 1. **Create App in Play Console**
    - Go to Play Console → Create App
-   - Enter app name: "JW Progress"
+   - Enter app name: "LifeStreak"
    - Select language and app type
 
 2. **App Content**

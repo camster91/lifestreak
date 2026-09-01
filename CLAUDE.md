@@ -91,9 +91,9 @@ All stores use Zustand with `persist` middleware to localStorage:
 
 | Store | Storage Key | Purpose |
 |-------|------------|---------|
-| progressStore | `jw-progress-storage` | Daily texts, prayers, family worship, Bible reading, meetings |
+| progressStore | `ls-progress-storage` | Daily texts, prayers, family worship, Bible reading, meetings |
 | gamificationStore | `jw-gamification-storage` | Points (100/level), 38 achievements, streaks |
-| settingsStore | `jw-progress-settings` | Notifications, theme, Bible reading pace |
+| settingsStore | `ls-progress-settings` | Notifications, theme, Bible reading pace |
 | newsStore | `jw-news-store` | Daily check-in streak (simplified) |
 | goalsStore | `jw-goals-storage` | Goals and projects with tasks |
 | memoriesStore | `jw-memories-storage` | Reflections indexed by date |

@@ -1,0 +1,12 @@
+{
+  "state": {
+    "dailyTexts": {
+      "2024-02-29": { "readScripture": true, "progress": 100 },
+      "2024-02-29": { "readScripture": false, "progress": 0 }
+    },
+    "prayers": {},
+    "bibleReadings": {},
+    "weeklyReadings": {}
+  },
+  "version": 0
+}

@@ -24,34 +24,50 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '22'
+          node-version-file: '.nvmrc'
           cache: 'npm'
+
+      - name: Setup supported npm
+        run: npm install --global npm@11.17.0 && npm run toolchain:check
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check (if configured)
-        run: |
-          if grep -q '"typecheck"\|"type-check"\|"tsc"' package.json; then
-            echo "Running typecheck..."
-            npm run typecheck || npm run type-check || npx tsc --noEmit
-          else
-            echo "No typecheck script found, skipping."
-          fi
+      - name: Type check
+        run: npm run typecheck
 
-      - name: Lint (if configured)
-        run: |
-          if grep -q '"lint"' package.json; then
-            echo "Running lint..."
-            npm run lint
-          else
-            echo "No lint script found, skipping."
-          fi
+      - name: Product identity check
+        run: npm run identity:check
+
+      - name: Design-system contract check
+        run: npm run design-system:check
+
+      - name: Permission and capability check
+        run: npm run permissions:check
+
+      - name: Android signing contract check
+        run: npm run signing:check
+
+      - name: Supply-chain contract and advisory gate
+        run: npm run supply-chain:check && npm audit --audit-level=high
+
+      - name: Scan source dependencies, secrets, and configuration
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Lint
+        run: npm run lint
 
       - name: Test
         run: npm test
@@ -65,3 +81,6 @@ jobs:
           # CI-safe defaults so the build doesn't depend on real env vars
           NODE_ENV: production
           CI: true
+
+      - name: Sync native shells and reject generated drift
+        run: npm run cap:sync && git diff --exit-code -- android ios

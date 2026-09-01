@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
 interface Reflection {
@@ -86,7 +86,7 @@ const useMemoriesStore = create<MemoriesState & MemoriesActions>()(
     {
       name: 'ls-memories-storage',
       version: 1,
-      storage: createSafeStorage('ls-memories-storage') as any,
+      storage: createJSONStorage(() => createSafeStorage('ls-memories-storage')),
       partialize: (state) => ({
         reflections: state.reflections,
       }),

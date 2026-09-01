@@ -3,7 +3,7 @@
 # Stage 2: serve dist/ via nginx
 
 # ─── Stage 1: build ─────────────────────────────────────────────────────
-FROM node:22.22.0-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34 AS build
+FROM node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS build
 
 ARG LIFESTREAK_BUILD_REVISION=unknown
 ENV LIFESTREAK_BUILD_REVISION=$LIFESTREAK_BUILD_REVISION

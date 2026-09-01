@@ -4,7 +4,9 @@
 
 Every third-party GitHub Action is pinned to a reviewed 40-character commit SHA with its readable release tag in a comment. Every Docker base is pinned to a multi-architecture manifest digest while retaining the readable tag. `npm run supply-chain:check` fails when either contract drifts, when a workflow lacks a read-only default token, when `pull_request_target` or named secrets appear in a pull-request workflow, when Dependabot loses npm/Actions/Docker coverage, or when release provenance is removed.
 
-Write permissions are declared only on the job that publishes packages/attestations, signs native artifacts, uploads CodeQL results, or manages sanitized synthetic incidents. Signing workflows run only for protected `v*` tags or manual dispatch through the `production` environment. The container publisher runs only on trusted main/master pushes, tags, or explicitly trusted reusable-workflow callers. Fork pull requests receive read-only tokens and no package, environment, signing, deployment, or store credential path.
+Write permissions are declared only on the job that publishes packages/attestations, signs native artifacts, or manages sanitized synthetic incidents. Signing workflows run only for protected `v*` tags or manual dispatch through the `production` environment. The container publisher runs only on trusted main/master pushes, tags, or explicitly trusted reusable-workflow callers. Fork pull requests receive read-only tokens and no package, environment, signing, deployment, or store credential path.
+
+GitHub Code Scanning is not enabled for this private repository, so a CodeQL workflow cannot upload results and is not treated as a working gate. The supported source-security gates are the high-severity npm advisory check, pinned Trivy source scan, repository supply-chain contract, and GitGuardian; published image digests receive a separate pinned Trivy vulnerability/secret/misconfiguration scan. Reintroduce CodeQL only after the repository has an eligible Code Scanning entitlement and a successful upload is verified.
 
 ## Update and release gates
 

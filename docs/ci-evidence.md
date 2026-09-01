@@ -14,6 +14,8 @@ This register separates source/workflow evidence from account, installed-app, an
 | Ashbi Local CI               | Current checks execute with Node 22.23/npm 10.9 instead of exact Node 22.22/npm 11.17                                                                       | Runner contract mismatch, not product evidence          | Align the runner or remove it from required checks under #60/#64                      |
 | GitGuardian                  | Finding `36683862` cites an environment-variable requirement, not a secret value; subsequent release PR checks passed                                       | Documented false positive                               | Owner may resolve the historical workspace finding                                    |
 
+The former CodeQL workflow completed analysis but failed every result upload because Code Scanning is not enabled for this private repository (run `33500716397`). It was removed as a misleading non-gate. Reintroduction requires an eligible repository entitlement and a successful SARIF upload; npm, Trivy, the supply-chain checker, and GitGuardian remain the supported automated security layers.
+
 ## GitGuardian triage: finding 36683862
 
 **Verdict:** `not_actionable` with high static confidence for the scanner’s hardcoded-secret claim.

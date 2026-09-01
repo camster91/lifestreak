@@ -1,7 +1,8 @@
 /* global document, window */
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
+import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -9,6 +10,8 @@ let port;
 let origin;
 let server;
 let serverOutput = '';
+const visualBaselineDirectory = resolve('artifacts/visual-baselines');
+const visualBaselineManifest = [];
 const viewports = [
   { name: 'small-phone', width: 320, height: 568 },
   { name: 'phone', width: 390, height: 844 },
@@ -82,6 +85,7 @@ async function inspectPage(page, viewportName, stateName) {
     const interactive = [
       ...document.querySelectorAll('button, a[href], input, select, textarea'),
     ].filter((element) => {
+      if (element.closest('[inert]')) return false;
       const rect = element.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     });
@@ -141,11 +145,59 @@ async function inspectPage(page, viewportName, stateName) {
       )
       .join('; ')}`
   );
+
+  const originalTheme = await page.evaluate(() => document.documentElement.dataset.theme || null);
+  const themes = viewportName.includes('forced-colours') ? ['forced-colours'] : ['light', 'dark'];
+  for (const theme of themes) {
+    if (theme === 'forced-colours') {
+      const filename = `${viewportName}-${stateName}-${theme}`
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-');
+      const path = `${visualBaselineDirectory}/${filename}.png`;
+      await page.screenshot({ path, animations: 'disabled', caret: 'hide' });
+      visualBaselineManifest.push({
+        viewport: viewportName,
+        state: stateName,
+        theme,
+        file: `${filename}.png`,
+      });
+      continue;
+    }
+    await page.evaluate((nextTheme) => {
+      document.documentElement.dataset.theme = nextTheme;
+    }, theme);
+    await page.evaluate(() => document.fonts.ready);
+    const filename = `${viewportName}-${stateName}-${theme}`
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-');
+    const path = `${visualBaselineDirectory}/${filename}.png`;
+    await page.screenshot({ path, animations: 'disabled', caret: 'hide' });
+    visualBaselineManifest.push({
+      viewport: viewportName,
+      state: stateName,
+      theme,
+      file: `${filename}.png`,
+    });
+  }
+  if (!viewportName.includes('forced-colours')) {
+    await page.evaluate((theme) => {
+      if (theme) document.documentElement.dataset.theme = theme;
+      else document.documentElement.dataset.theme = 'light';
+    }, originalTheme);
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          window.requestAnimationFrame(() => window.requestAnimationFrame(resolve))
+        )
+    );
+  }
 }
 
 async function main() {
   let browser;
   try {
+    await rm(visualBaselineDirectory, { recursive: true, force: true });
+    await mkdir(visualBaselineDirectory, { recursive: true });
     port = await availablePort();
     origin = `http://127.0.0.1:${port}`;
     server = startPreview(port);
@@ -1461,6 +1513,40 @@ async function main() {
     );
     await pwaUpgradeContext.close();
 
+    const achievementContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      reducedMotion: 'reduce',
+      serviceWorkers: 'block',
+    });
+    await achievementContext.addInitScript(() => {
+      localStorage.setItem(
+        'ls-gamification-storage',
+        JSON.stringify({
+          state: {
+            points: 10,
+            recentAchievements: [
+              {
+                id: 'first_text',
+                name: 'First Steps',
+                description: 'Complete your first Daily Text',
+                icon: '🌱',
+                points: 10,
+                category: 'dailyText',
+              },
+            ],
+            unlockedAchievements: [{ id: 'first_text', unlockedAt: '2026-09-01T00:00:00.000Z' }],
+          },
+          version: 1,
+        })
+      );
+    });
+    const achievementPage = await achievementContext.newPage();
+    await achievementPage.goto(`${origin}/?legacy=1`, { waitUntil: 'networkidle' });
+    await achievementPage.getByRole('heading', { name: 'First Steps' }).waitFor();
+    await inspectPage(achievementPage, 'phone', 'achievement-earned');
+    await achievementPage.getByLabel('Dismiss achievement dialog').click();
+    await achievementContext.close();
+
     const offlineContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
     });
@@ -1492,8 +1578,20 @@ async function main() {
       localStorage.getItem('lifestreak-habit-tracker-v1')
     );
     assert(afterOffline === beforeOffline, 'Offline restart changed the persisted habit database.');
+    await inspectPage(offlinePage, 'phone', 'offline-restart');
     await offlineContext.close();
 
+    await writeFile(
+      `${visualBaselineDirectory}/manifest.json`,
+      `${JSON.stringify(
+        {
+          product: 'LifeStreak',
+          matrix: visualBaselineManifest,
+        },
+        null,
+        2
+      )}\n`
+    );
     console.log(
       `LifeStreak UI contract verified across ${viewports.length} responsive viewports plus populated 200%-equivalent forced-colour coverage.`
     );

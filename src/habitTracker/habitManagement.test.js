@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { habitStore } from './store';
-import { addDays, toLocalDate } from './engine';
+import { addDays, dailyResult, toLocalDate } from './engine';
 
 const input = (name = 'Walk') => ({
   name,
@@ -145,6 +145,73 @@ describe('habit management', () => {
       type: 'error',
       message: expect.stringMatching(/clear that day|future date/i),
     });
+  });
+
+  it.each([
+    ['count', 'reps'],
+    ['duration', 'min'],
+    ['distance', 'km'],
+    ['volume', 'mL'],
+    ['weight', 'kg'],
+    ['energy', 'kcal'],
+    ['custom', 'pages'],
+  ])('round-trips complete source-entry operations for %s tracking', (trackingType, unit) => {
+    const today = toLocalDate();
+    const habitId = habitStore.createHabit({
+      ...input(`${trackingType} habit`),
+      startDate: today,
+      schedule: { type: 'daily', anchorDate: today },
+      tracking: { type: trackingType, target: 10, stretchTarget: 15, unit },
+    });
+
+    expect(
+      habitStore.updateHabit(habitId, {
+        tracking: { type: trackingType, target: 12, stretchTarget: 18, unit },
+      })
+    ).toBe(true);
+    expect(habitStore.addValue(habitId, today, 5)).toBe(true);
+    expect(habitStore.addValue(habitId, today, 7)).toBe(true);
+
+    let snapshot = habitStore.getSnapshot();
+    let habit = snapshot.habits.find(({ id }) => id === habitId);
+    let log = snapshot.logs.find((item) => item.habitId === habitId && item.date === today);
+    expect(log.entries).toHaveLength(2);
+    expect(log.entries.every((entry) => entry.unit === unit)).toBe(true);
+    expect(dailyResult(habit, log, today)).toMatchObject({
+      status: 'completed',
+      value: 12,
+      target: 12,
+      tracking: { type: trackingType, unit, stretchTarget: 18 },
+    });
+
+    const exported = habitStore.exportData();
+    expect(exported.product).toBe('LifeStreak');
+    const exportedHabit = exported.data.habits.find(({ id }) => id === habitId);
+    const exportedLog = exported.data.logs.find(
+      (item) => item.habitId === habitId && item.date === today
+    );
+    expect(exportedHabit.tracking).toMatchObject({ type: trackingType, unit });
+    expect(exportedHabit.revisions.at(-1).tracking).toMatchObject({
+      type: trackingType,
+      target: 12,
+      stretchTarget: 18,
+      unit,
+    });
+    expect(exportedLog.entries).toEqual(log.entries);
+
+    expect(habitStore.updateValue(habitId, today, log.entries[0].id, 6)).toBe(true);
+    expect(habitStore.removeValue(habitId, today, log.entries[1].id)).toBe(true);
+    snapshot = habitStore.getSnapshot();
+    habit = snapshot.habits.find(({ id }) => id === habitId);
+    log = snapshot.logs.find((item) => item.habitId === habitId && item.date === today);
+    expect(dailyResult(habit, log, today)).toMatchObject({
+      status: 'partial',
+      value: 6,
+      target: 12,
+    });
+
+    expect(habitStore.clearDay(habitId, today)).toBe(true);
+    expect(habitStore.getSnapshot().logs).toEqual([]);
   });
 
   it.each([

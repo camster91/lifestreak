@@ -1,43 +1,28 @@
 version: 2
 updates:
-  - package-ecosystem: 'npm'
-    directory: '/'
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-    open-pull-requests-limit: 5
-    labels:
-      - 'dependencies'
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 2
     groups:
-      compatible-npm-minor-patches:
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
+      production-dependencies:
+        dependency-type: "production"
+      development-dependencies:
+        dependency-type: "development"
     ignore:
-      - dependency-name: 'vite'
-        update-types: ['version-update:semver-major']
-      - dependency-name: '@vitejs/plugin-react'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'react'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'react-dom'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'typescript'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'http-proxy-middleware'
-        update-types: ['version-update:semver-major']
-      - dependency-name: '@capacitor/*'
-        update-types: ['version-update:semver-major']
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-  - package-ecosystem: 'docker'
-    directory: '/'
+      interval: "monthly"
+    open-pull-requests-limit: 1
+
+  - package-ecosystem: "docker"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-    labels:
-      - 'dependencies'
-    ignore:
-      - dependency-name: 'node'
+      interval: "monthly"
+    open-pull-requests-limit: 1

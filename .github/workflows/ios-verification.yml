@@ -3,10 +3,20 @@ name: Verify iOS shell
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'ios/**'
+      - 'capacitor.config.*'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ios-verification.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ios-shell-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   unsigned-build:

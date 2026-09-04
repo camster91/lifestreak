@@ -2,11 +2,15 @@ name: Production Smoke
 
 on:
   schedule:
-    - cron: '17 * * * *'
+    - cron: '17 */6 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: true
 
 jobs:
   smoke:

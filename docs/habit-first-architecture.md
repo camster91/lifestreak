@@ -118,4 +118,8 @@ Simulate storage read, write, quota, parse, interrupted import, malformed backup
 
 ## Rollback
 
-The implementation is isolated on `codex/lifestreak-habit-first`. Reverting the integration commit restores the original `src/App.jsx`; `src/LegacyApp.jsx` remains an exact copy of that original shell. The new habit storage key is separate from existing specialist keys, so rollback does not mutate or remove either data set.
+The habit-first transition from pull request #106 merged to `main` on September 1, 2026. The former branch-only rollback instruction is therefore historical and must not be treated as the current production rollback procedure.
+
+Current rollback planning must start from the exact released source/artifact and production evidence recorded in `docs/product-control.md` and current release/operations material. Preserve the separate versioned habit store and existing specialist Collections stores across any rollback or upgrade path; neither data set may be silently deleted or reinterpreted.
+
+If an application change alters storage schema, native packaging, release identity, or upgrade compatibility, document and verify the forward/rollback compatibility for that exact change before release. Do not claim rollback readiness unless the applicable previous artifact/route backup and data compatibility have actually been verified.

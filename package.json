@@ -51,7 +51,9 @@
     "ios:build": "npm run build && npx cap sync ios",
     "dev:server": "node simple-api-server.js",
     "dev:vite": "vite",
-    "dev:full": "concurrently \"npm run dev:vite\" \"npm run dev:server\" --names \"VITE,API\" --prefix-colors \"blue,green\""
+    "dev:full": "concurrently \"npm run dev:vite\" \"npm run dev:server\" --names \"VITE,API\" --prefix-colors \"blue,green\"",
+    "setup": "npm run toolchain:check && npm ci",
+    "verify": "npm run typecheck && npm run identity:check && npm run design-system:check && npm run permissions:check && npm run signing:check && npm run supply-chain:check && npm run lint && npm test && npm run format:check && npm run build"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

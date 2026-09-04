@@ -18,6 +18,8 @@ Export a JSON backup before clearing browser or installed-app data. The reset wo
 
 ## Development
 
+Use the exact Node/npm versions declared by the repository, then:
+
 ```bash
 npm ci
 npm run lint
@@ -25,13 +27,13 @@ npm test -- --run
 npm run build
 ```
 
-The habit-first architecture, calendar rules, migration policy, representative responsive QA, accessibility checks, and rollback plan are documented in [docs/habit-first-architecture.md](docs/habit-first-architecture.md).
+Coding agents should read [AGENTS.md](AGENTS.md) first for the authoritative execution, verification, privacy, production, and handoff contract. The habit-first architecture, calendar rules, migration policy, representative responsive QA, accessibility checks, and data-safety constraints are documented in [docs/habit-first-architecture.md](docs/habit-first-architecture.md).
 
-## Implementation status
+## Current status
 
-The habit-first transition is under review in pull request #106 on `codex/lifestreak-habit-first`. The original application shell is retained as `src/LegacyApp.jsx`, and the integration can be rolled back without altering either the new habit database or existing specialist storage.
+The habit-first transition from pull request #106 merged to `main` on September 1, 2026. Current product truth, release evidence, unresolved external/manual gates, and production status are maintained in [docs/product-control.md](docs/product-control.md) plus live GitHub issues and pull requests.
 
-The pull request must remain unmerged until hosted checks execute successfully and representative device, accessibility, import/export, upgrade, and legacy-data QA are complete.
+The independent web/PWA has been released, while native/store release, real-device evidence, customer validation, and other launch gates remain separate. Do not infer those outcomes from the merged source or a successful web build.
 
 The prioritized, reconciled backlog is maintained in [docs/ISSUE_ROADMAP.md](docs/ISSUE_ROADMAP.md).
 The product charter, evidence register, market position, metrics, and launch risks are maintained in [docs/product-control.md](docs/product-control.md).

@@ -18,12 +18,18 @@ Export a JSON backup before clearing browser or installed-app data. The reset wo
 
 ## Development
 
+Use Node.js 22.22.0 and npm 11.17.0. Both versions are pinned in the repository.
+The application does not require environment variables for its normal local-first
+web workflow, so no `.env.example` is needed.
+
 ```bash
-npm ci
-npm run lint
-npm test -- --run
-npm run build
+npm run setup
+npm run dev
+npm run verify
 ```
+
+`npm run verify` runs the portable local quality gate. CI additionally performs
+network-backed advisory scanning, filesystem scanning, and native-shell drift checks.
 
 The habit-first architecture, calendar rules, migration policy, representative responsive QA, accessibility checks, and rollback plan are documented in [docs/habit-first-architecture.md](docs/habit-first-architecture.md).
 

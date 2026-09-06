@@ -1417,9 +1417,9 @@
   background: var(--habit-primary);
 }
 
-/* Confirm dialog overlay polish */
+/* Confirm dialog must sit above nested history/edit dialogs (z-index 1000). */
 .habit-confirm-backdrop {
-  z-index: 80;
+  z-index: 1100;
 }
 
 .habit-confirm-scrim {

@@ -55,6 +55,28 @@ describe('validateBackupStoreData', () => {
   });
 });
 
+
+  it('accepts memories backups with reflections and migrates legacy memories key', () => {
+    const result = validateBackupStoreData({
+      'ls-memories-storage': {
+        state: {
+          memories: { '2026-01-01': { content: 'hi', updatedAt: '2026-01-01', createdAt: '2026-01-01' } },
+          studySessions: [
+            { id: 's1', date: '2026-01-01', topic: 'Matthew', minutes: 20, notes: '' },
+          ],
+        },
+        version: 1,
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const state = result.sanitized['ls-memories-storage'].state;
+      expect(state.reflections['2026-01-01'].content).toBe('hi');
+      expect(state.memories).toBeUndefined();
+      expect(state.studySessions).toHaveLength(1);
+    }
+  });
+
 describe('validateLegacyBackup', () => {
   it('accepts progress/settings shape', () => {
     const result = validateLegacyBackup({

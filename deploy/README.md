@@ -42,8 +42,10 @@ CI-built immutable images are the preferred release route.
 
 Existing CI Build and Build and Push Image workflows are manually disabled;
 activation approval is pending. Do not create replacement workflows to bypass
-this gate. Current main's dependency audit also reports high-severity advisories
-that must be resolved through review before publishing a release.
+this gate. This deployment branch updates compatible dependencies and replaces
+the development-only glob-matching proxy wrapper with its existing HTTP proxy
+engine. Local HTTP/body/WebSocket/error fixtures qualify that replacement; the
+updated lockfile must continue passing the existing high-severity audit gate.
 
 After source checks and immutable publication pass, provision/verify the image
 on the VPS, set its expected digest, and qualify actual guard attachment and

@@ -1,4 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs';
+import { dependabotEcosystems, hasReadOnlyWorkflowDefault } from './supply-chain-config.mjs';
 
 const workflowDirectory = new URL('../.github/workflows/', import.meta.url);
 const failures = [];
@@ -15,9 +16,7 @@ for (const name of readdirSync(workflowDirectory).filter((file) => /\.ya?ml$/.te
       failures.push(`${name}:${index + 1} pinned action needs a readable version comment`);
     }
   }
-  const jobsIndex = source.search(/^jobs:/m);
-  const permissionsIndex = source.search(/^permissions:\n\s+contents:\s+read/m);
-  if (permissionsIndex < 0 || (jobsIndex >= 0 && permissionsIndex > jobsIndex)) {
+  if (!hasReadOnlyWorkflowDefault(source)) {
     failures.push(`${name} must default the workflow token to contents: read before jobs`);
   }
   if (/pull_request_target\s*:/.test(source)) {
@@ -36,8 +35,9 @@ for (const [index, line] of dockerfile.split('\n').entries()) {
 }
 
 const dependabot = readFileSync(new URL('../.github/dependabot.yml', import.meta.url), 'utf8');
+const ecosystems = dependabotEcosystems(dependabot);
 for (const ecosystem of ['npm', 'github-actions', 'docker']) {
-  if (!dependabot.includes(`package-ecosystem: '${ecosystem}'`)) {
+  if (!ecosystems.has(ecosystem)) {
     failures.push(`Dependabot does not cover ${ecosystem}`);
   }
 }

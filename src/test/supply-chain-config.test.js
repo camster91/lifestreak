@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { dependabotEcosystems, hasReadOnlyWorkflowDefault } from '../../scripts/supply-chain-config.mjs';
+import {
+  dependabotEcosystems,
+  hasReadOnlyWorkflowDefault,
+} from '../../scripts/supply-chain-config.mjs';
 
 describe('workflow default permissions', () => {
   it('accepts read-only defaults with LF and CRLF', () => {

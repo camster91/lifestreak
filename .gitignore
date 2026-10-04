@@ -77,3 +77,6 @@ index.cjs
 # User data
 history.json
 android/app/debug.keystore
+
+# Android signing metadata
+*.idsig

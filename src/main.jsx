@@ -6,6 +6,7 @@ import { logWebVitals } from './utils/webVitals.js';
 import { initializeNative, isNative, appLifecycle } from './utils/native.js';
 import { sanitizeSameOriginPath } from './utils/safeNavigation.js';
 import { recordDiagnostic } from './utils/diagnostics.js';
+import useSettingsStore from './stores/settingsStore';
 
 function logGlobalError(type, error) {
   recordDiagnostic(type, error);
@@ -26,6 +27,23 @@ window.onunhandledrejection = function (event) {
   const error = event.reason;
   logGlobalError('unhandled_rejection', error);
 };
+
+
+function applyPersistedTheme(theme) {
+  if (theme !== 'light' && theme !== 'dark') return;
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+// Apply theme before first paint when possible, and keep it in sync after rehydrate.
+applyPersistedTheme(useSettingsStore.getState().theme);
+if (useSettingsStore.persist?.onFinishHydration) {
+  useSettingsStore.persist.onFinishHydration(() => {
+    applyPersistedTheme(useSettingsStore.getState().theme);
+  });
+}
+useSettingsStore.subscribe((state) => {
+  applyPersistedTheme(state.theme);
+});
 
 // Initialize native mobile features
 initializeNative().catch((error) => {

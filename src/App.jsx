@@ -8,6 +8,8 @@ import HabitTrackerRoot from './habitTracker/HabitTrackerRoot';
 import LegacyApp from './LegacyApp';
 import StorageRecoveryBanner from './components/StorageRecoveryBanner';
 import OfflineIndicator from './components/OfflineIndicator';
+import UpdatePrompt from './components/UpdatePrompt';
+import InstallPrompt from './components/InstallPrompt';
 
 function isLegacyMode() {
   if (typeof window === 'undefined') return false;
@@ -44,7 +46,9 @@ export default function App() {
   return (
     <>
       <OfflineIndicator />
+      <UpdatePrompt />
       <HabitTrackerRoot onOpenCollections={openLegacyCollections} />
+      <InstallPrompt />
     </>
   );
 }

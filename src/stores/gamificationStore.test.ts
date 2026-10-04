@@ -195,16 +195,26 @@ describe('gamificationStore', () => {
       expect(useGamificationStore.getState().points).toBe(5);
     });
 
-    it('should record prayer completed when allDone is true', () => {
+    it('should record prayer completed when allDone is true without double XP', () => {
       act(() => {
         useGamificationStore.getState().recordPrayerCompletion(true);
       });
 
-      // addPoints(5) from recordPrayerCompletion, then recordPrayerCompleted calls addPoints(5)
-      // prayersCompleted becomes 1, unlocking first_prayer (+10 bonus)
+      // +5 XP once for the prayer check-in; allDone updates streak/count and may unlock first_prayer (+10)
       const state = useGamificationStore.getState();
       expect(state.prayersCompleted).toBe(1);
-      expect(state.points).toBeGreaterThanOrEqual(10);
+      expect(state.points).toBe(30); // 5 completion + 10 first_prayer + 15 prayer_complete
+    });
+
+    it('unlocks prayer_complete after one full day of prayers', () => {
+      act(() => {
+        useGamificationStore.getState().recordPrayerCompletion(true);
+      });
+      const unlocked = useGamificationStore
+        .getState()
+        .unlockedAchievements.map((a) => a.id);
+      expect(unlocked).toContain('first_prayer');
+      expect(unlocked).toContain('prayer_complete');
     });
   });
 

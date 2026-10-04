@@ -8,8 +8,17 @@ interface Reflection {
   createdAt: string;
 }
 
+interface StudySession {
+  id: string;
+  date: string;
+  topic: string;
+  minutes: number;
+  notes: string;
+}
+
 interface MemoriesState {
   reflections: Record<string, Reflection>;
+  studySessions: StudySession[];
 }
 
 interface MemoriesActions {
@@ -20,12 +29,16 @@ interface MemoriesActions {
   deleteReflection: (date: string) => void;
   getReflectionCount: () => number;
   searchReflections: (query: string) => ({ date: string } & Reflection)[];
+  addStudySession: (session: Omit<StudySession, 'id'>) => StudySession;
+  getStudySessions: () => StudySession[];
+  deleteStudySession: (id: string) => void;
 }
 
 const useMemoriesStore = create<MemoriesState & MemoriesActions>()(
   persist(
     (set, get) => ({
       reflections: {},
+      studySessions: [],
 
       saveReflection: (date, content) =>
         set((state) => ({
@@ -82,6 +95,28 @@ const useMemoriesStore = create<MemoriesState & MemoriesActions>()(
           .map(([date, data]) => ({ date, ...data }))
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       },
+
+      addStudySession: (session) => {
+        const entry: StudySession = {
+          id:
+            typeof crypto !== 'undefined' && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `study-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          date: session.date,
+          topic: session.topic,
+          minutes: session.minutes,
+          notes: session.notes,
+        };
+        set((state) => ({ studySessions: [entry, ...state.studySessions] }));
+        return entry;
+      },
+
+      getStudySessions: () => get().studySessions,
+
+      deleteStudySession: (id) =>
+        set((state) => ({
+          studySessions: state.studySessions.filter((session) => session.id !== id),
+        })),
     }),
     {
       name: 'ls-memories-storage',
@@ -89,7 +124,21 @@ const useMemoriesStore = create<MemoriesState & MemoriesActions>()(
       storage: createJSONStorage(() => createSafeStorage('ls-memories-storage')),
       partialize: (state) => ({
         reflections: state.reflections,
+        studySessions: state.studySessions,
       }),
+      merge: (persisted, current) => {
+        const data = (persisted || {}) as Partial<MemoriesState>;
+        const reflections =
+          data.reflections ||
+          (data as { memories?: MemoriesState['reflections'] }).memories ||
+          {};
+        return {
+          ...current,
+          ...data,
+          reflections,
+          studySessions: Array.isArray(data.studySessions) ? data.studySessions : [],
+        };
+      },
     }
   )
 );

@@ -131,6 +131,7 @@ function defaultState() {
     onboarding: {
       completed: false,
       dismissedAt: null,
+      ftueSeen: false,
     },
     legacy: {
       detectedKeys: [],
@@ -341,6 +342,11 @@ function loadState() {
       onboarding: {
         completed: Boolean(onboarding.completed),
         dismissedAt: typeof onboarding.dismissedAt === 'string' ? onboarding.dismissedAt : null,
+        // Existing users who already finished/dismissed onboarding skip the welcome tour.
+        ftueSeen:
+          typeof onboarding.ftueSeen === 'boolean'
+            ? onboarding.ftueSeen
+            : Boolean(onboarding.completed),
       },
       legacy: {
         detectedKeys: Array.isArray(legacy.detectedKeys)
@@ -951,8 +957,20 @@ export const habitStore = {
         if (draft.onboarding.completed && draft.onboarding.dismissedAt) return false;
         draft.onboarding.completed = true;
         draft.onboarding.dismissedAt = new Date().toISOString();
+        draft.onboarding.ftueSeen = true;
       },
       'Starter suggestions were dismissed.',
+      { undoable: false }
+    );
+  },
+
+  completeFtue() {
+    return transact(
+      (draft) => {
+        if (draft.onboarding.ftueSeen) return false;
+        draft.onboarding.ftueSeen = true;
+      },
+      'Welcome tour completed.',
       { undoable: false }
     );
   },

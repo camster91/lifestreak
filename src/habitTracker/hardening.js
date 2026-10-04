@@ -403,6 +403,11 @@ export function sanitizeImportedState(payload) {
     onboarding: {
       completed: Boolean(raw.onboarding?.completed),
       dismissedAt: raw.onboarding?.dismissedAt ? safeTimestamp(raw.onboarding.dismissedAt) : null,
+      // Preserve welcome-tour completion across reopen/import; default for older backups.
+      ftueSeen:
+        typeof raw.onboarding?.ftueSeen === 'boolean'
+          ? raw.onboarding.ftueSeen
+          : Boolean(raw.onboarding?.completed),
     },
     legacy: {
       detectedKeys: Array.isArray(raw.legacy?.detectedKeys)

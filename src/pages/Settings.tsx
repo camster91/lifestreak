@@ -42,6 +42,7 @@ import {
   NotificationItem,
   WeeklyNotificationItem,
 } from '../components/settings/NotificationItems.js';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { validateOllamaBaseUrl } from '../utils/safeNavigation.js';
 import {
   MAX_BACKUP_BYTES,
@@ -76,6 +77,7 @@ function Settings() {
     'idle'
   );
   const [aiTransmissionConfirmed, setAiTransmissionConfirmed] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const [notificationPermission, setNotificationPermission] = useState(() =>
     getNotificationPermission()
@@ -129,15 +131,14 @@ function Settings() {
   };
 
   const handleClearData = () => {
-    if (
-      confirm(
-        'Clear Daily Text, prayer, worship, Bible-reading, and meeting-preparation progress? Habits, goals, service, reading, memories, settings, diagnostics, and notification schedules are not changed.'
-      )
-    ) {
-      clearAll();
-      toast.success('Spiritual progress cleared; other LifeStreak stores were preserved');
-      window.location.reload();
-    }
+    setShowClearConfirm(true);
+  };
+
+  const confirmClearData = () => {
+    clearAll();
+    setShowClearConfirm(false);
+    toast.success('Spiritual progress cleared; other LifeStreak stores were preserved');
+    window.location.reload();
   };
 
   const handleUpdateApp = async () => {
@@ -675,6 +676,16 @@ function Settings() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={showClearConfirm}
+        title="Clear spiritual progress?"
+        description="Clears Daily Text, prayer, worship, Bible-reading, and meeting-preparation progress. Habits, goals, service, reading, memories, settings, diagnostics, and notification schedules are not changed."
+        confirmLabel="Clear progress"
+        cancelLabel="Keep progress"
+        tone="danger"
+        onConfirm={confirmClearData}
+        onCancel={() => setShowClearConfirm(false)}
+      />
     </div>
   );
 }

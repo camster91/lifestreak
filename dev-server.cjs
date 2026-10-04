@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createDevProxy } = require('./dev-proxy.cjs');
 const path = require('path');
 const { createCorsOriginDelegate } = require('./cors-origins.cjs');
 
@@ -226,16 +226,10 @@ function getCuratedItems() {
 }
 
 // In development, proxy all other requests to Vite dev server
+let devProxy;
 if (process.env.NODE_ENV !== 'production') {
-  app.use(
-    '/',
-    createProxyMiddleware({
-      target: `http://localhost:${VITE_PORT}`,
-      changeOrigin: true,
-      ws: true, // Enable WebSocket proxying for HMR
-      logLevel: 'silent',
-    })
-  );
+  devProxy = createDevProxy(`http://localhost:${VITE_PORT}`);
+  app.use('/', devProxy.middleware);
   
   console.log(`Development mode: Proxying to Vite dev server on port ${VITE_PORT}`);
 } else {
@@ -250,7 +244,8 @@ if (process.env.NODE_ENV !== 'production') {
   console.log('Production mode: Serving static files from dist directory');
 }
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`API endpoint: http://localhost:${PORT}/api/news`);
 });
+if (devProxy) devProxy.attach(server);

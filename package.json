@@ -94,7 +94,7 @@
     "eslint-plugin-react-refresh": "^0.5.5",
     "express": "^5.2.1",
     "globals": "^17.7.0",
-    "http-proxy-middleware": "^3.0.5",
+    "http-proxy": "^1.18.1",
     "jsdom": "^27.4.0",
     "playwright": "^1.62.0",
     "prettier": "^3.9.6",

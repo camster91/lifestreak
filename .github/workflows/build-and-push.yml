@@ -16,6 +16,10 @@ on:
   push:
     branches: [main, master]
     tags: ['v*']
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+      - '**/*.md'
   workflow_call:
     inputs:
       image_name:

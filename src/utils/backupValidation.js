@@ -77,7 +77,10 @@ function validateGoalsState(state) {
 
 function validateMemoriesState(state) {
   if (!isPlainObject(state)) return false;
+  // Historical backups may use `memories`; current store persists `reflections`.
+  if (state.reflections !== undefined && !isPlainObject(state.reflections)) return false;
   if (state.memories !== undefined && !isPlainObject(state.memories)) return false;
+  if (state.studySessions !== undefined && !Array.isArray(state.studySessions)) return false;
   return true;
 }
 
@@ -200,6 +203,13 @@ export function validateBackupStoreData(storeData) {
     const validator = KEY_VALIDATORS[key];
     if (validator && state && !validator(state)) {
       return { ok: false, reason: `Schema validation failed for ${key}` };
+    }
+    if (key === 'ls-memories-storage' && isPlainObject(state)) {
+      if (state.reflections === undefined && isPlainObject(state.memories)) {
+        state.reflections = state.memories;
+      }
+      delete state.memories;
+      if (!Array.isArray(state.studySessions)) state.studySessions = [];
     }
 
     // Re-wrap if original was persist-shaped

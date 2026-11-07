@@ -42,6 +42,7 @@ interface MeetingPartData {
 interface BibleReadingData {
   progress: number;
   chaptersRead?: number[];
+  notes?: string;
   read: boolean;
   status: 'not_started' | 'in_progress' | 'completed';
   timestamp: string | null;
@@ -93,7 +94,7 @@ interface ProgressActions {
   getCompletionRate: (category: string, days: number) => number;
   toggleBibleChapter: (dateKey: string, chapterIndex: number) => void;
   getBibleChapterProgress: (dateKey: string) => Record<number, boolean>;
-  updateBibleReadingProgress: (dateKey: string, progress: number, chaptersRead?: number[]) => void;
+  updateBibleReadingProgress: (dateKey: string, progress: number, chaptersRead?: number[], notes?: string) => void;
   markBibleReadingComplete: (dateKey: string) => void;
   isBibleReadingComplete: (dateKey: string) => boolean;
   getBibleReadingProgress: (dateKey: string) => number;
@@ -469,21 +470,27 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
         return state.bibleChapters[dateKey] || {};
       },
 
-      updateBibleReadingProgress: (dateKey, progress, chaptersRead = []) => {
+      updateBibleReadingProgress: (dateKey, progress, chaptersRead = [], notes) => {
         if (!isValidProgressDateKey(dateKey)) return;
-        set((state) => ({
-          bibleReadings: {
-            ...state.bibleReadings,
-            [dateKey]: {
-              progress,
-              chaptersRead,
-              read: progress === 100,
-              status:
-                progress === 0 ? 'not_started' : progress === 100 ? 'completed' : 'in_progress',
-              timestamp: new Date().toISOString(),
+        set((state) => {
+          const existing = state.bibleReadings[dateKey];
+          const nextNotes =
+            typeof notes === 'string' ? notes : (existing?.notes || '');
+          return {
+            bibleReadings: {
+              ...state.bibleReadings,
+              [dateKey]: {
+                progress,
+                chaptersRead,
+                notes: nextNotes,
+                read: progress === 100,
+                status:
+                  progress === 0 ? 'not_started' : progress === 100 ? 'completed' : 'in_progress',
+                timestamp: new Date().toISOString(),
+              },
             },
-          },
-        }));
+          };
+        });
       },
 
       markBibleReadingComplete: (dateKey) => {

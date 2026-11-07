@@ -17,8 +17,10 @@ import useProgressStore from '../stores/progressStore';
 import useGamificationStore from '../stores/gamificationStore';
 import { haptics } from '../utils/native';
 import { validateExternalUrl } from '../utils/safeNavigation.js';
+import { useToast } from './Toast.jsx';
 
 function FamilyWorshipCard() {
+  const toast = useToast();
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
@@ -49,7 +51,7 @@ function FamilyWorshipCard() {
 
     if (!worship.completed) {
       haptics.success();
-      recordFamilyWorshipCompletion();
+      recordFamilyWorshipCompletion(weekKey);
     }
   };
 
@@ -58,7 +60,7 @@ function FamilyWorshipCard() {
       haptics.light();
       const check = validateExternalUrl(newLinkUrl.trim());
       if (!check.ok) {
-        console.warn('Blocked unsafe study link:', check.reason);
+        toast.error('Only jw.org and ashbi.ca links can be saved.');
         return;
       }
       addStudyLink(weekKey, { title: newLinkTitle.trim(), url: check.href });
@@ -77,7 +79,7 @@ function FamilyWorshipCard() {
     haptics.light();
     const check = validateExternalUrl(url);
     if (!check.ok) {
-      console.warn('Blocked unsafe URL:', check.reason, url);
+      toast.error('Only jw.org and ashbi.ca links can be opened.');
       return;
     }
     window.open(check.href, '_blank', 'noopener,noreferrer');

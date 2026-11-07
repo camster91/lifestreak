@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { format, differenceInDays, parseISO, startOfDay } from 'date-fns';
+import { format, differenceInDays, parseISO, startOfDay, startOfWeek } from 'date-fns';
 import { createSafeStorage } from '../utils/storageErrorHandler.js';
 
 interface Achievement {
@@ -334,6 +334,7 @@ interface GamificationState {
   lastPrayerDate: string | null;
   familyWorshipStreak: number;
   longestFamilyWorshipStreak: number;
+  lastFamilyWorshipWeek: string | null;
   dailyTextCompletions: number;
   reflectionsWritten: number;
   bibleReadingsCompleted: number;
@@ -386,7 +387,7 @@ interface GamificationActions {
   recordMeetingPrepared: () => void;
   recordPrayerCompleted: () => void;
   recordPrayerCompletion: (allDone: boolean) => void;
-  recordFamilyWorshipCompletion: () => void;
+  recordFamilyWorshipCompletion: (weekKey?: string) => void;
   checkAndUnlockAchievements: () => void;
   clearRecentAchievements: () => void;
 }
@@ -403,6 +404,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
       lastPrayerDate: null,
       familyWorshipStreak: 0,
       longestFamilyWorshipStreak: 0,
+      lastFamilyWorshipWeek: null,
       dailyTextCompletions: 0,
       reflectionsWritten: 0,
       bibleReadingsCompleted: 0,
@@ -466,11 +468,27 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
 
       updateFamilyWorshipStreak: (weekKey, completed) => {
         const state = get();
+        if (!completed) {
+          set({ familyWorshipStreak: 0 });
+          get().checkAndUnlockAchievements();
+          return;
+        }
+        if (state.lastFamilyWorshipWeek === weekKey) {
+          return;
+        }
+        let newStreak = 1;
+        if (state.lastFamilyWorshipWeek) {
+          const gap = differenceInDays(parseISO(weekKey), parseISO(state.lastFamilyWorshipWeek));
+          if (gap === 7) {
+            newStreak = state.familyWorshipStreak + 1;
+          } else if (gap === 0) {
+            return;
+          }
+        }
         set({
-          familyWorshipStreak: completed ? state.familyWorshipStreak + 1 : 0,
-          longestFamilyWorshipStreak: completed
-            ? Math.max(state.longestFamilyWorshipStreak, state.familyWorshipStreak + 1)
-            : state.longestFamilyWorshipStreak,
+          familyWorshipStreak: newStreak,
+          longestFamilyWorshipStreak: Math.max(state.longestFamilyWorshipStreak, newStreak),
+          lastFamilyWorshipWeek: weekKey,
         });
         get().checkAndUnlockAchievements();
       },
@@ -575,15 +593,22 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
       },
 
       recordPrayerCompletion: (allDone) => {
+        // +5 XP per checked prayer; completing all three updates streak/count without a second XP grant.
         get().addPoints(5);
         if (allDone) {
-          get().recordPrayerCompleted();
+          get().incrementActivity('prayer');
+          const today = format(new Date(), 'yyyy-MM-dd');
+          get().updatePrayerStreak(today);
+        } else {
+          get().checkAndUnlockAchievements();
         }
       },
 
-      recordFamilyWorshipCompletion: () => {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        get().updateFamilyWorshipStreak(today, true);
+      recordFamilyWorshipCompletion: (weekKey) => {
+        const key =
+          weekKey ||
+          format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        get().updateFamilyWorshipStreak(key, true);
         get().addPoints(25);
       },
 
@@ -596,7 +621,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
           text_week: state.currentStreak >= 7,
           text_month: state.currentStreak >= 30,
           first_prayer: state.prayersCompleted >= 1,
-          prayer_complete: state.prayersCompleted >= 3,
+          prayer_complete: state.prayersCompleted >= 1,
           prayer_week: state.prayerStreak >= 7,
           prayer_month: state.prayerStreak >= 30,
           first_worship: state.familyWorshipStreak >= 1,
@@ -676,6 +701,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
         lastPrayerDate: state.lastPrayerDate,
         familyWorshipStreak: state.familyWorshipStreak,
         longestFamilyWorshipStreak: state.longestFamilyWorshipStreak,
+        lastFamilyWorshipWeek: state.lastFamilyWorshipWeek,
         dailyTextCompletions: state.dailyTextCompletions,
         reflectionsWritten: state.reflectionsWritten,
         bibleReadingsCompleted: state.bibleReadingsCompleted,

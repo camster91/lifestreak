@@ -10,23 +10,23 @@ function Study() {
   const [topic, setTopic] = useState('');
   const [minutes, setMinutes] = useState('');
   const [notes, setNotes] = useState('');
-  const [entries, setEntries] = useState([]);
 
-  const { saveReflection } = useMemoriesStore();
+  const entries = useMemoriesStore((s) => s.studySessions);
+  const addStudySession = useMemoriesStore((s) => s.addStudySession);
   const { recordReflection } = useGamificationStore();
 
   const handleAddEntry = () => {
     if (!topic.trim() || !minutes.trim()) return;
+    const parsedMinutes = parseInt(minutes, 10);
+    if (!Number.isFinite(parsedMinutes) || parsedMinutes <= 0) return;
     haptics.success();
-    const entry = {
-      id: Date.now(),
+    addStudySession({
       date: format(new Date(), 'yyyy-MM-dd'),
       topic: topic.trim(),
-      minutes: parseInt(minutes, 10),
+      minutes: parsedMinutes,
       notes: notes.trim(),
-    };
-    setEntries([entry, ...entries]);
-    saveReflection(entry.date, `${entry.topic} (${entry.minutes} min)`);
+    });
+    // Study sessions are separate from daily reflections; award reflection XP for journaling effort.
     recordReflection();
     setTopic('');
     setMinutes('');
@@ -43,7 +43,6 @@ function Study() {
       />
 
       <main className="container mx-auto px-4 pt-4 space-y-4 max-w-2xl">
-        {/* Add Study Entry */}
         <div className="card bg-base-100 shadow-md">
           <div className="card-body p-4 space-y-3">
             <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -82,8 +81,9 @@ function Study() {
           </div>
         </div>
 
-        {/* Recent Entries */}
-        {entries.length > 0 && (
+        {entries.length === 0 ? (
+          <p className="text-center text-base-content/60 py-8">No study sessions yet.</p>
+        ) : (
           <div className="card bg-base-100 shadow-md">
             <div className="card-body p-4">
               <h3 className="font-semibold text-lg mb-3">Recent Sessions</h3>

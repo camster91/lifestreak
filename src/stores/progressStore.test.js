@@ -301,4 +301,20 @@ describe('progress persistence migration', () => {
     expect(migrated.bibleReadings['2024-02-29']).toEqual(reading);
     expect(migrated.bibleChapters[`${LEGACY_BIBLE_DAY_PREFIX}60`]).toEqual({ 1: true });
   });
+
+  describe('bible reading notes', () => {
+    it('persists chapter counts and notes through updateBibleReadingProgress', () => {
+      act(() => {
+        useProgressStore
+          .getState()
+          .updateBibleReadingProgress('2026-09-06', 100, [1, 2], 'Matthew 5');
+      });
+      const entry = useProgressStore.getState().bibleReadings['2026-09-06'];
+      expect(entry.progress).toBe(100);
+      expect(entry.chaptersRead).toEqual([1, 2]);
+      expect(entry.notes).toBe('Matthew 5');
+      expect(useProgressStore.getState().getBibleReadingProgress('2026-09-06')).toBe(100);
+    });
+  });
+
 });

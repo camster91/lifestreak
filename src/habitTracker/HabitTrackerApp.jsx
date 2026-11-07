@@ -28,6 +28,9 @@ import {
 } from '../utils/portableBackup';
 import { MAX_BACKUP_BYTES } from '../utils/backupValidation';
 import { clearDiagnostics, createDiagnosticsExport } from '../utils/diagnostics';
+import ConfirmDialog from '../components/ConfirmDialog';
+import FtueWelcome from './FtueWelcome';
+import useSettingsStore from '../stores/settingsStore';
 import { parseJsonWithoutDuplicateKeys } from '../utils/strictJson';
 import { reconcileHabitNotifications } from './habitReminders';
 import {
@@ -139,6 +142,7 @@ function useNativeHabitNotifications(snapshot) {
 
 export default function HabitTrackerApp({ onOpenCollections }) {
   const snapshot = useHabitState();
+  const theme = useSettingsStore((state) => state.theme);
   const [view, setView] = useState('today');
   const [selectedDate, setSelectedDate] = useState(toLocalDate());
   const [editingHabitId, setEditingHabitId] = useState(null);
@@ -148,6 +152,10 @@ export default function HabitTrackerApp({ onOpenCollections }) {
 
   useOpenAppNotifications(snapshot);
   useNativeHabitNotifications(snapshot);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+  }, [theme]);
 
   const openCreate = (defaults = null) => {
     setEditingHabitId(null);
@@ -424,7 +432,11 @@ function TodayView({
       )}
 
       {!snapshot.habits.length && !snapshot.onboarding?.completed ? (
-        <StarterPanel onCreate={onCreate} onCustomize={onCustomize} />
+        !snapshot.onboarding?.ftueSeen ? (
+          <FtueWelcome />
+        ) : (
+          <StarterPanel onCreate={onCreate} onCustomize={onCustomize} />
+        )
       ) : !snapshot.habits.length ? (
         <EmptyState
           title="No habits yet"
@@ -1174,6 +1186,8 @@ function ReviewActionColumn({ title, rows, empty, format, onEdit, onDismiss }) {
 }
 
 function SettingsView({ snapshot }) {
+  const theme = useSettingsStore((state) => state.theme);
+  const setTheme = useSettingsStore((state) => state.setTheme);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationPermission, setNotificationPermission] = useState('unknown');
   const [importMode, setImportMode] = useState('replace');
@@ -1253,10 +1267,8 @@ function SettingsView({ snapshot }) {
       habitStore.importData(parsed, importMode);
     } catch (error) {
       habitStore.dismissOperation();
-      window.setTimeout(
-        () =>
-          window.alert(`Import failed: ${error instanceof Error ? error.message : 'Invalid file'}`),
-        0
+      setBackupMessage(
+        `Import failed: ${error instanceof Error ? error.message : 'Invalid file'}`
       );
     } finally {
       event.target.value = '';
@@ -1275,6 +1287,17 @@ function SettingsView({ snapshot }) {
       <div className="habit-settings-grid">
         <section className="habit-settings-card" aria-labelledby="display-settings-heading">
           <h3 id="display-settings-heading">Routine preferences</h3>
+          <label className="habit-field">
+            <span>Appearance</span>
+            <select
+              value={theme}
+              onChange={(event) => setTheme(event.target.value === 'dark' ? 'dark' : 'light')}
+              aria-label="Color theme"
+            >
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
           <label className="habit-field">
             <span>Week starts on</span>
             <select
@@ -1447,7 +1470,11 @@ function SettingsView({ snapshot }) {
             Import LifeStreak JSON
             <input type="file" accept="application/json,.json" onChange={importFile} />
           </label>
-          {backupMessage && <p role="status">{backupMessage}</p>}
+          {backupMessage && (
+            <p role={backupMessage.startsWith('Import failed') ? 'alert' : 'status'}>
+              {backupMessage}
+            </p>
+          )}
           {pendingPortableImport && (
             <div
               className="habit-import-confirm"
@@ -2112,6 +2139,7 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
   const [editingEntryId, setEditingEntryId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
   const [firstValue, setFirstValue] = useState('');
+  const [pendingConfirm, setPendingConfirm] = useState(null);
   const config = configurationForDate(habit, selectedDate);
   const log = logForDate(snapshot.logs, habit.id, selectedDate);
   const dayState = getDayState(habit, snapshot.logs, selectedDate, {
@@ -2128,6 +2156,7 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
   };
 
   return (
+    <>
     <Dialog title={habit.name} onClose={onClose} returnFocus={returnFocus} wide>
       <div className="habit-history-header">
         <div>
@@ -2238,9 +2267,12 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
                 <button
                   type="button"
                   onClick={() => {
-                    if (window.confirm(`Remove ${entry.value} ${entry.unit} from this date?`)) {
-                      habitStore.removeValue(habit.id, selectedDate, entry.id);
-                    }
+                    setPendingConfirm({
+                      title: 'Remove this entry?',
+                      description: `Remove ${entry.value} ${entry.unit} from ${selectedDate}.`,
+                      confirmLabel: 'Remove entry',
+                      onConfirm: () => habitStore.removeValue(habit.id, selectedDate, entry.id),
+                    });
                   }}
                 >
                   Remove
@@ -2272,10 +2304,15 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
             type="button"
             className="habit-button habit-button-secondary"
             onClick={() => {
-              if (window.confirm(`Clear all status, progress, and notes for ${selectedDate}?`)) {
-                habitStore.clearDay(habit.id, selectedDate);
-                setNote('');
-              }
+              setPendingConfirm({
+                title: 'Clear this day?',
+                description: `Clear all status, progress, and notes for ${selectedDate}.`,
+                confirmLabel: 'Clear day',
+                onConfirm: () => {
+                  habitStore.clearDay(habit.id, selectedDate);
+                  setNote('');
+                },
+              });
             }}
           >
             Clear this date
@@ -2312,6 +2349,20 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
         </div>
       </section>
     </Dialog>
+      <ConfirmDialog
+        open={Boolean(pendingConfirm)}
+        title={pendingConfirm?.title || ''}
+        description={pendingConfirm?.description}
+        confirmLabel={pendingConfirm?.confirmLabel || 'Confirm'}
+        cancelLabel="Keep"
+        tone="danger"
+        onCancel={() => setPendingConfirm(null)}
+        onConfirm={() => {
+          pendingConfirm?.onConfirm?.();
+          setPendingConfirm(null);
+        }}
+      />
+    </>
   );
 }
 
@@ -2376,7 +2427,7 @@ function Dialog({ title, onClose, children, returnFocus = null, wide = false }) 
 
 function EmptyState({ title, description, actionLabel, onAction }) {
   return (
-    <div className="habit-empty-state">
+    <div className="habit-empty-state habit-enter" role="status" aria-live="polite">
       <h2>{title}</h2>
       <p>{description}</p>
       {actionLabel && onAction && (

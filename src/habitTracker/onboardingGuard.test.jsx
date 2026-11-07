@@ -219,3 +219,47 @@ describe('starter suggestion onboarding', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
 });
+
+describe('first-time welcome tour', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    habitStore.resetAllData();
+  });
+
+  it('shows a 3-step welcome before starter suggestions on a fresh install', async () => {
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Build habits that fit real life' })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Choose only the habits that fit your life' })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      screen.getByRole('heading', { name: 'Check in when it matters' })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Choose habits' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Choose only the habits that fit your life' })
+      ).toBeInTheDocument();
+    });
+    expect(habitStore.getSnapshot().onboarding.ftueSeen).toBe(true);
+  });
+
+  it('lets users skip the welcome tour and reach starter suggestions', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip intro' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Choose only the habits that fit your life' })
+      ).toBeInTheDocument();
+    });
+  });
+});

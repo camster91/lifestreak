@@ -44,6 +44,9 @@
       html {
         background-color: #e5e7eb;
       }
+      html[data-theme='dark'] {
+        background-color: #10131b;
+      }
 
       /* Safe area handling for notched devices */
       :root {
@@ -84,6 +87,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      try {
+        var raw = localStorage.getItem('ls-progress-settings');
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          var theme = (parsed && parsed.state && parsed.state.theme) || parsed.theme;
+          if (theme === 'dark' || theme === 'light') {
+            document.documentElement.setAttribute('data-theme', theme);
+          }
+        }
+      } catch (e) {}
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

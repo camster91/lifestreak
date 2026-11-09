@@ -316,5 +316,4 @@ describe('progress persistence migration', () => {
       expect(useProgressStore.getState().getBibleReadingProgress('2026-09-06')).toBe(100);
     });
   });
-
 });

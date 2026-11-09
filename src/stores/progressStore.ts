@@ -94,7 +94,12 @@ interface ProgressActions {
   getCompletionRate: (category: string, days: number) => number;
   toggleBibleChapter: (dateKey: string, chapterIndex: number) => void;
   getBibleChapterProgress: (dateKey: string) => Record<number, boolean>;
-  updateBibleReadingProgress: (dateKey: string, progress: number, chaptersRead?: number[], notes?: string) => void;
+  updateBibleReadingProgress: (
+    dateKey: string,
+    progress: number,
+    chaptersRead?: number[],
+    notes?: string
+  ) => void;
   markBibleReadingComplete: (dateKey: string) => void;
   isBibleReadingComplete: (dateKey: string) => boolean;
   getBibleReadingProgress: (dateKey: string) => number;
@@ -474,8 +479,7 @@ const useProgressStore = create<ProgressState & ProgressActions>()(
         if (!isValidProgressDateKey(dateKey)) return;
         set((state) => {
           const existing = state.bibleReadings[dateKey];
-          const nextNotes =
-            typeof notes === 'string' ? notes : (existing?.notes || '');
+          const nextNotes = typeof notes === 'string' ? notes : existing?.notes || '';
           return {
             bibleReadings: {
               ...state.bibleReadings,

@@ -210,9 +210,7 @@ describe('gamificationStore', () => {
       act(() => {
         useGamificationStore.getState().recordPrayerCompletion(true);
       });
-      const unlocked = useGamificationStore
-        .getState()
-        .unlockedAchievements.map((a) => a.id);
+      const unlocked = useGamificationStore.getState().unlockedAchievements.map((a) => a.id);
       expect(unlocked).toContain('first_prayer');
       expect(unlocked).toContain('prayer_complete');
     });

@@ -80,7 +80,23 @@ function validateMemoriesState(state) {
   // Historical backups may use `memories`; current store persists `reflections`.
   if (state.reflections !== undefined && !isPlainObject(state.reflections)) return false;
   if (state.memories !== undefined && !isPlainObject(state.memories)) return false;
-  if (state.studySessions !== undefined && !Array.isArray(state.studySessions)) return false;
+  if (state.studySessions !== undefined) {
+    if (!Array.isArray(state.studySessions)) return false;
+    if (
+      !state.studySessions.every(
+        (session) =>
+          isPlainObject(session) &&
+          typeof session.id === 'string' &&
+          session.id.length > 0 &&
+          typeof session.date === 'string' &&
+          typeof session.topic === 'string' &&
+          typeof session.notes === 'string' &&
+          Number.isSafeInteger(session.minutes) &&
+          session.minutes > 0
+      )
+    )
+      return false;
+  }
   return true;
 }
 

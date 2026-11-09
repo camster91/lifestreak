@@ -605,9 +605,7 @@ const useGamificationStore = create<GamificationState & GamificationActions>()(
       },
 
       recordFamilyWorshipCompletion: (weekKey) => {
-        const key =
-          weekKey ||
-          format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const key = weekKey || format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         get().updateFamilyWorshipStreak(key, true);
         get().addPoints(25);
       },

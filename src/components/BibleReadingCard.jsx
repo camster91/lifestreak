@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Book, CheckCircle2, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { haptics } from '../utils/native';
@@ -14,11 +13,7 @@ function BibleReadingCard() {
   const chapterCount = Array.isArray(bibleReading?.chaptersRead)
     ? bibleReading.chaptersRead.length
     : 0;
-  const [notes, setNotes] = useState(bibleReading?.notes || '');
-
-  useEffect(() => {
-    setNotes(bibleReading?.notes || '');
-  }, [bibleReading?.notes, today]);
+  const notes = bibleReading?.notes || '';
 
   const persist = (count, nextNotes = notes) => {
     const chaptersRead = Array.from({ length: count }, (_, i) => i + 1);
@@ -91,7 +86,6 @@ function BibleReadingCard() {
             value={notes}
             onChange={(e) => {
               const value = e.target.value;
-              setNotes(value);
               persist(chapterCount, value);
             }}
             placeholder="What did you read? (optional)"

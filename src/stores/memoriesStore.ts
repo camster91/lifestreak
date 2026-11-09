@@ -129,9 +129,7 @@ const useMemoriesStore = create<MemoriesState & MemoriesActions>()(
       merge: (persisted, current) => {
         const data = (persisted || {}) as Partial<MemoriesState>;
         const reflections =
-          data.reflections ||
-          (data as { memories?: MemoriesState['reflections'] }).memories ||
-          {};
+          data.reflections || (data as { memories?: MemoriesState['reflections'] }).memories || {};
         return {
           ...current,
           ...data,

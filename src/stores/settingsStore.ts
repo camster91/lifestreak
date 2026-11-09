@@ -235,7 +235,10 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
         if (sessionKey) {
           state.ai.ollamaApiKey = sessionKey;
         }
-        if (typeof document !== 'undefined' && (state.theme === 'light' || state.theme === 'dark')) {
+        if (
+          typeof document !== 'undefined' &&
+          (state.theme === 'light' || state.theme === 'dark')
+        ) {
           document.documentElement.setAttribute('data-theme', state.theme);
         }
       },

@@ -28,7 +28,6 @@ window.onunhandledrejection = function (event) {
   logGlobalError('unhandled_rejection', error);
 };
 
-
 function applyPersistedTheme(theme) {
   if (theme !== 'light' && theme !== 'dark') return;
   document.documentElement.setAttribute('data-theme', theme);

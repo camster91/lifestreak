@@ -6,6 +6,7 @@
 const DEFAULT_PRODUCTION_ORIGINS = [
   'https://ashbi.ca',
   'https://www.ashbi.ca',
+  'https://lifestreak.ashbi.ca',
 ];
 
 const CAPACITOR_ORIGINS = [

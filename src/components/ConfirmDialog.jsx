@@ -26,12 +26,13 @@ export default function ConfirmDialog({
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopImmediatePropagation();
         onCancel?.();
       }
     };
-    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown, true);
     return () => {
-      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keydown', onKeyDown, true);
       if (previous instanceof HTMLElement) previous.focus();
     };
   }, [open, onCancel]);
@@ -72,7 +73,11 @@ export default function ConfirmDialog({
             </p>
           )}
           <div className="habit-dialog-actions">
-            <button type="button" className="habit-button habit-button-secondary" onClick={onCancel}>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={onCancel}
+            >
               {cancelLabel}
             </button>
             <button

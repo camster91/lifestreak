@@ -237,9 +237,7 @@ describe('first-time welcome tour', () => {
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(
-      screen.getByRole('heading', { name: 'Check in when it matters' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Check in when it matters' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Choose habits' }));

@@ -1267,9 +1267,7 @@ function SettingsView({ snapshot }) {
       habitStore.importData(parsed, importMode);
     } catch (error) {
       habitStore.dismissOperation();
-      setBackupMessage(
-        `Import failed: ${error instanceof Error ? error.message : 'Invalid file'}`
-      );
+      setBackupMessage(`Import failed: ${error instanceof Error ? error.message : 'Invalid file'}`);
     } finally {
       event.target.value = '';
     }
@@ -2157,198 +2155,200 @@ function HabitHistoryDialog({ habit, snapshot, onClose, onEdit, returnFocus }) {
 
   return (
     <>
-    <Dialog title={habit.name} onClose={onClose} returnFocus={returnFocus} wide>
-      <div className="habit-history-header">
-        <div>
-          <span className={`habit-status status-${dayState.status}`}>
-            {statusLabel(dayState.status)}
-          </span>
-          <p>
-            {describeSchedule(config.schedule)} · {trackingDescription(config.tracking)}
-          </p>
-        </div>
-        <button type="button" className="habit-button habit-button-secondary" onClick={onEdit}>
-          Edit habit
-        </button>
-      </div>
-      <label className="habit-field">
-        <span>Review date</span>
-        <input
-          type="date"
-          max={today}
-          value={selectedDate}
-          onChange={(event) => selectDate(event.target.value)}
-        />
-      </label>
-      <section className="habit-history-day" aria-labelledby="selected-history-heading">
-        <h3 id="selected-history-heading">{formatDate(selectedDate)}</h3>
-        {canGuideFirstCheckIn && (
-          <div className="habit-empty-state">
-            <h4>Your habit is ready</h4>
-            <p>Record the first check-in now. You can correct or clear it at any time.</p>
-            {config.tracking.type === 'binary' ? (
-              <button
-                type="button"
-                className="habit-button habit-button-primary"
-                onClick={() => habitStore.setDayStatus(habit.id, selectedDate, 'completed')}
-              >
-                Complete first check-in
-              </button>
-            ) : (
-              <form
-                className="habit-value-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (habitStore.addValue(habit.id, selectedDate, firstValue)) setFirstValue('');
-                }}
-              >
-                <label>
-                  <span>First value in {config.tracking.unit}</span>
-                  <input
-                    inputMode="decimal"
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={firstValue}
-                    onChange={(event) => setFirstValue(event.target.value)}
-                  />
-                </label>
-                <button type="submit" className="habit-button habit-button-primary">
-                  Save first check-in
-                </button>
-              </form>
-            )}
+      <Dialog title={habit.name} onClose={onClose} returnFocus={returnFocus} wide>
+        <div className="habit-history-header">
+          <div>
+            <span className={`habit-status status-${dayState.status}`}>
+              {statusLabel(dayState.status)}
+            </span>
+            <p>
+              {describeSchedule(config.schedule)} · {trackingDescription(config.tracking)}
+            </p>
           </div>
-        )}
-        {log?.entries?.length ? (
-          <ul className="habit-entry-list">
-            {log.entries.map((entry) => (
-              <li key={entry.id}>
-                {editingEntryId === entry.id ? (
-                  <form
-                    className="habit-inline-actions"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      if (habitStore.updateValue(habit.id, selectedDate, entry.id, editingValue)) {
-                        setEditingEntryId(null);
-                      }
-                    }}
-                  >
-                    <label>
-                      <span className="habit-visually-hidden">Correct value in {entry.unit}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        value={editingValue}
-                        onChange={(event) => setEditingValue(event.target.value)}
-                      />
-                    </label>
-                    <span>{entry.unit}</span>
-                    <button type="submit">Save correction</button>
-                    <button type="button" onClick={() => setEditingEntryId(null)}>
-                      Cancel
-                    </button>
-                  </form>
-                ) : (
-                  <span>
-                    {entry.value} {entry.unit}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingEntryId(entry.id);
-                    setEditingValue(String(entry.value));
-                  }}
-                >
-                  Correct
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPendingConfirm({
-                      title: 'Remove this entry?',
-                      description: `Remove ${entry.value} ${entry.unit} from ${selectedDate}.`,
-                      confirmLabel: 'Remove entry',
-                      onConfirm: () => habitStore.removeValue(habit.id, selectedDate, entry.id),
-                    });
-                  }}
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No individual numeric entries for this date.</p>
-        )}
+          <button type="button" className="habit-button habit-button-secondary" onClick={onEdit}>
+            Edit habit
+          </button>
+        </div>
         <label className="habit-field">
-          <span>Private note</span>
-          <textarea
-            rows="4"
-            maxLength="2000"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
+          <span>Review date</span>
+          <input
+            type="date"
+            max={today}
+            value={selectedDate}
+            onChange={(event) => selectDate(event.target.value)}
           />
         </label>
-        <div className="habit-button-row">
-          <button
-            type="button"
-            className="habit-button habit-button-primary"
-            onClick={() => habitStore.setNote(habit.id, selectedDate, note)}
-          >
-            Save note
-          </button>
-          <button
-            type="button"
-            className="habit-button habit-button-secondary"
-            onClick={() => {
-              setPendingConfirm({
-                title: 'Clear this day?',
-                description: `Clear all status, progress, and notes for ${selectedDate}.`,
-                confirmLabel: 'Clear day',
-                onConfirm: () => {
-                  habitStore.clearDay(habit.id, selectedDate);
-                  setNote('');
-                },
-              });
-            }}
-          >
-            Clear this date
-          </button>
-        </div>
-      </section>
-      <section aria-labelledby="recent-log-heading">
-        <h3 id="recent-log-heading">Recent records</h3>
-        <div className="habit-history-list">
-          {eachDate(addDays(today, -29), today)
-            .reverse()
-            .map((dateKey) => {
-              const state = getDayState(habit, snapshot.logs, dateKey, {
-                today,
-                weekStartsOn: snapshot.preferences.weekStartsOn,
-              });
-              return (
+        <section className="habit-history-day" aria-labelledby="selected-history-heading">
+          <h3 id="selected-history-heading">{formatDate(selectedDate)}</h3>
+          {canGuideFirstCheckIn && (
+            <div className="habit-empty-state">
+              <h4>Your habit is ready</h4>
+              <p>Record the first check-in now. You can correct or clear it at any time.</p>
+              {config.tracking.type === 'binary' ? (
                 <button
                   type="button"
-                  key={dateKey}
-                  className={selectedDate === dateKey ? 'is-selected' : ''}
-                  onClick={() => selectDate(dateKey)}
+                  className="habit-button habit-button-primary"
+                  onClick={() => habitStore.setDayStatus(habit.id, selectedDate, 'completed')}
                 >
-                  <span>{formatDate(dateKey, { month: 'short', day: 'numeric' })}</span>
-                  <span>{statusLabel(state.status)}</span>
-                  {state.value > 0 && (
+                  Complete first check-in
+                </button>
+              ) : (
+                <form
+                  className="habit-value-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (habitStore.addValue(habit.id, selectedDate, firstValue)) setFirstValue('');
+                  }}
+                >
+                  <label>
+                    <span>First value in {config.tracking.unit}</span>
+                    <input
+                      inputMode="decimal"
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={firstValue}
+                      onChange={(event) => setFirstValue(event.target.value)}
+                    />
+                  </label>
+                  <button type="submit" className="habit-button habit-button-primary">
+                    Save first check-in
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+          {log?.entries?.length ? (
+            <ul className="habit-entry-list">
+              {log.entries.map((entry) => (
+                <li key={entry.id}>
+                  {editingEntryId === entry.id ? (
+                    <form
+                      className="habit-inline-actions"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        if (
+                          habitStore.updateValue(habit.id, selectedDate, entry.id, editingValue)
+                        ) {
+                          setEditingEntryId(null);
+                        }
+                      }}
+                    >
+                      <label>
+                        <span className="habit-visually-hidden">Correct value in {entry.unit}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={editingValue}
+                          onChange={(event) => setEditingValue(event.target.value)}
+                        />
+                      </label>
+                      <span>{entry.unit}</span>
+                      <button type="submit">Save correction</button>
+                      <button type="button" onClick={() => setEditingEntryId(null)}>
+                        Cancel
+                      </button>
+                    </form>
+                  ) : (
                     <span>
-                      {state.value} {state.tracking.unit}
+                      {entry.value} {entry.unit}
                     </span>
                   )}
-                </button>
-              );
-            })}
-        </div>
-      </section>
-    </Dialog>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingEntryId(entry.id);
+                      setEditingValue(String(entry.value));
+                    }}
+                  >
+                    Correct
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingConfirm({
+                        title: 'Remove this entry?',
+                        description: `Remove ${entry.value} ${entry.unit} from ${selectedDate}.`,
+                        confirmLabel: 'Remove entry',
+                        onConfirm: () => habitStore.removeValue(habit.id, selectedDate, entry.id),
+                      });
+                    }}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No individual numeric entries for this date.</p>
+          )}
+          <label className="habit-field">
+            <span>Private note</span>
+            <textarea
+              rows="4"
+              maxLength="2000"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </label>
+          <div className="habit-button-row">
+            <button
+              type="button"
+              className="habit-button habit-button-primary"
+              onClick={() => habitStore.setNote(habit.id, selectedDate, note)}
+            >
+              Save note
+            </button>
+            <button
+              type="button"
+              className="habit-button habit-button-secondary"
+              onClick={() => {
+                setPendingConfirm({
+                  title: 'Clear this day?',
+                  description: `Clear all status, progress, and notes for ${selectedDate}.`,
+                  confirmLabel: 'Clear day',
+                  onConfirm: () => {
+                    habitStore.clearDay(habit.id, selectedDate);
+                    setNote('');
+                  },
+                });
+              }}
+            >
+              Clear this date
+            </button>
+          </div>
+        </section>
+        <section aria-labelledby="recent-log-heading">
+          <h3 id="recent-log-heading">Recent records</h3>
+          <div className="habit-history-list">
+            {eachDate(addDays(today, -29), today)
+              .reverse()
+              .map((dateKey) => {
+                const state = getDayState(habit, snapshot.logs, dateKey, {
+                  today,
+                  weekStartsOn: snapshot.preferences.weekStartsOn,
+                });
+                return (
+                  <button
+                    type="button"
+                    key={dateKey}
+                    className={selectedDate === dateKey ? 'is-selected' : ''}
+                    onClick={() => selectDate(dateKey)}
+                  >
+                    <span>{formatDate(dateKey, { month: 'short', day: 'numeric' })}</span>
+                    <span>{statusLabel(state.status)}</span>
+                    {state.value > 0 && (
+                      <span>
+                        {state.value} {state.tracking.unit}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+          </div>
+        </section>
+      </Dialog>
       <ConfirmDialog
         open={Boolean(pendingConfirm)}
         title={pendingConfirm?.title || ''}

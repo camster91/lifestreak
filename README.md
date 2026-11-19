@@ -1,42 +1,108 @@
 # LifeStreak
 
-LifeStreak is a private, local-first habit and routine tracker. It is a general-purpose product for health, learning, planning, family, spiritual, and other personal routines. Spiritual habits are optional templates rather than the app's only identity.
+A private, local-first habit and routine tracker for the web, iOS and Android.
 
-## Primary experience
+## What it does
 
-- **Today** shows habits expected on the selected local date and supports completion, quantitative progress, intentional skip, failure, correction, notes, and undo.
-- **Habits** creates and manages binary or measurable routines with flexible schedules, time-of-day groups, lifecycle controls, and editable starter templates.
-- **Insights** uses schedule-aware denominators and distinguishes completed, partial, failed, skipped, missed, future, paused, archived, and unscheduled states.
-- **Settings** provides explicit reminder permission, private notification copy, export/import, recovery copies, legacy-store inspection, and safe reset controls.
-- **Collections** opens the original specialist LifeStreak interface so existing study, service, reading, goal, memory, and other richer records remain accessible.
+LifeStreak tracks personal routines of any kind: health, learning, planning, family, spiritual and more. Spiritual habits are offered as optional starter templates rather than the app's only focus. Everything is stored on the device; there is no account and no cloud sync. The web app is an installable PWA and the same build is packaged for iOS and Android with Capacitor.
+
+## Features
+
+- **Today**: habits due on the selected local date, with completion, quantitative progress, intentional skip, failure, correction, notes and undo
+- **Habits**: binary or measurable routines with flexible schedules, time-of-day groups, pause/archive lifecycle and editable starter templates
+- **Insights**: schedule-aware stats that separate completed, partial, failed, skipped, missed, future, paused, archived and unscheduled days
+- **Settings**: opt-in reminders (permission requested only from an explicit action, habit names hidden from notifications by default), JSON export/import, recovery copies and a safe reset
+- **Effective-dated edits**: changing a schedule, target, unit or lifecycle state does not rewrite past history
+- **Collections**: the original LifeStreak interface (study, reading, service, goals, reflections) stays available so older records are never lost or silently reinterpreted
+- **Offline-ready PWA** with a Workbox service worker and update prompt
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| UI | React 19, React Router 7 |
+| Build | Vite 7, TypeScript (type-checked domain and stores) |
+| State | Zustand 5 and versioned `localStorage` stores |
+| Styling | Tailwind CSS 4, DaisyUI 5, lucide-react icons |
+| Dates | date-fns |
+| Mobile | Capacitor 8 (iOS + Android), local notifications, haptics |
+| PWA | vite-plugin-pwa, Workbox |
+| Testing | Vitest, Testing Library, Playwright with axe-core |
+| Dev API | Small Express server for local development |
+| Container | Multi-stage Docker build (Node builder, nginx runtime) |
+
+## Getting started
+
+Requires Node 22 and npm 11 (see `.nvmrc` and `package.json` engines).
+
+```bash
+git clone https://github.com/camster91/lifestreak.git
+cd lifestreak
+npm ci
+npm run dev        # Vite dev server only
+npm start          # Vite plus the local Express API (port 3009)
+```
+
+### Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run build` | Production build to `dist/` |
+| `npm run preview` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript check (`tsc --noEmit`) |
+| `npm run format:check` | Prettier check |
+| `npm run design-system:check` | Checks UI code against the design-system rules |
+| `npm run permissions:check` | Checks declared native permissions |
+| `npm run supply-chain:check` | Dependency and lockfile policy checks |
+
+### Mobile
+
+```bash
+npm run mobile:ios           # build, sync and open Xcode
+npm run mobile:android       # build, sync and open Android Studio
+npm run android:build:debug  # debug APK via Gradle
+```
+
+See [MOBILE_BUILD_GUIDE.md](MOBILE_BUILD_GUIDE.md) for native build details.
+
+## Testing
+
+```bash
+npm test               # Vitest unit and component tests
+npm run test:coverage  # with v8 coverage
+npm run ui:check       # Playwright + axe accessibility and visual checks across viewports
+```
+
+Tests cover the habit engine (including time-zone edge cases), domain rules, storage, legacy-data migration, reminders and UI guards.
+
+## Project structure
+
+```
+src/
+├── App.jsx            # Chooses the habit tracker or the legacy Collections view
+├── habitTracker/      # Habit engine, domain model, store, reminders, migration, UI
+├── LegacyApp.jsx      # Original specialist interface (Collections)
+├── pages/             # Legacy pages: study, reading, service, goals, stats, settings
+├── stores/            # Zustand stores for legacy collections
+└── sw.js              # Service worker
+docs/                  # Architecture, design system, privacy and QA notes
+scripts/               # Project checks and build helpers
+android/  ios/         # Capacitor native projects
+```
+
+## Documentation
+
+- [Habit-first architecture](docs/habit-first-architecture.md): calendar rules, migration policy, QA and rollback plan
+- [Habit domain](docs/habit-domain.md)
+- [Design system](docs/design-system.md)
+- [Permissions and data flows](docs/permissions-and-data-flows.md)
+- [Privacy policy](PRIVACY_POLICY.md)
 
 ## Data and privacy
 
-Habit data is stored locally under a separate, versioned key. Existing specialist stores are not deleted or silently reinterpreted. Schedule, target, unit, and lifecycle changes are effective-dated so edits do not rewrite history. Notification permission is requested only from a deliberate Settings action, and habit names are hidden from notification surfaces by default.
+Habit data is stored locally under a separate, versioned key. Export a JSON backup before clearing browser or app data. The reset flow makes a local recovery copy first and does not remove Collections data.
 
-Export a JSON backup before clearing browser or installed-app data. The reset workflow creates a local recovery copy first and does not remove specialist Collections data.
+## License
 
-## Development
-
-```bash
-npm ci
-npm run lint
-npm test -- --run
-npm run build
-```
-
-The habit-first architecture, calendar rules, migration policy, representative responsive QA, accessibility checks, and rollback plan are documented in [docs/habit-first-architecture.md](docs/habit-first-architecture.md).
-
-## Implementation status
-
-The habit-first transition is under review in pull request #106 on `codex/lifestreak-habit-first`. The original application shell is retained as `src/LegacyApp.jsx`, and the integration can be rolled back without altering either the new habit database or existing specialist storage.
-
-The pull request must remain unmerged until hosted checks execute successfully and representative device, accessibility, import/export, upgrade, and legacy-data QA are complete.
-
-The prioritized, reconciled backlog is maintained in [docs/ISSUE_ROADMAP.md](docs/ISSUE_ROADMAP.md).
-The product charter, evidence register, market position, metrics, and launch risks are maintained in [docs/product-control.md](docs/product-control.md).
-Canonical product, bundle, version, origin, and release identity values are maintained in [docs/product-identity.md](docs/product-identity.md).
-
-## Licence
-
-MIT.
+MIT, see [LICENSE](LICENSE).

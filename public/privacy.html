@@ -15,78 +15,81 @@
         margin: 0 auto;
         padding: 2rem 1rem 4rem;
       }
-      h1,
-      h2 {
-        line-height: 1.2;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-      }
-      th,
-      td {
-        border: 1px solid currentColor;
-        padding: 0.5rem;
-        text-align: left;
-      }
+      h1, h2, h3 { line-height: 1.2; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid currentColor; padding: 0.5rem; text-align: left; }
     </style>
   </head>
   <body>
     <main>
       <h1>Privacy Policy — LifeStreak</h1>
-      <p><strong>Effective Date:</strong> May 24, 2026</p>
-      <p>
-        <strong>Developer:</strong> Ashbi Design (<a href="mailto:cameron@ashbi.ca"
-          >cameron@ashbi.ca</a
-        >)
-      </p>
+      <p><strong>Effective date:</strong> August 17, 2026  </p>
+      <p><strong>App:</strong> LifeStreak  </p>
+      <p><strong>Developer:</strong> Ashbi Design (cameron@ashbi.ca)</p>
+      <hr />
       <h2>Summary</h2>
-      <p>
-        LifeStreak is a private, local-first habit and goal tracker. Ashbi Design does not receive
-        your habit records, notes, service records, reading records, goals, or settings.
-      </p>
-      <h2>Data Collection</h2>
-      <p>
-        LifeStreak does not collect, sell, or share personal information with the developer for
-        analytics or advertising. No account, analytics, tracking, advertising, crash reporting, or
-        data-collecting third-party SDKs are required.
-      </p>
-      <h2>Data Storage</h2>
-      <p>
-        Your progress, settings, habits, notes, service hours, and reading list are stored locally
-        on your device and are not uploaded by default. We cannot access or restore them.
-      </p>
+      <p>LifeStreak is a private, local-first habit and routine tracker. LifeStreak does not require an account and does not send the developer your habit names, schedules, completion history, quantitative values, notes, service records, reading records, goals, or settings. Optional actions that contact a destination you choose are described below.</p>
+      <h2>Data collection</h2>
+      <p>LifeStreak does <strong>not</strong> collect, sell, or share personal information with the developer for advertising or analytics. Specifically:</p>
+      <ul>
+      <li>No account is required.</li>
+      <ul>
+      <li>No advertising is included.</li>
+      <ul>
+      <li>No behavioural analytics or cross-app tracking is included.</li>
+      <ul>
+      <li>No crash reports are intentionally sent to the developer by LifeStreak.</li>
+      <ul>
+      <li>No habit, spiritual, service, reading, health, or planning data is uploaded by default.</li>
       <h2>Optional network actions</h2>
-      <p>
-        Opening an allowlisted external resource sends normal browser request metadata to that
-        website. Collections settings can also optionally test a local or Ollama Cloud endpoint.
-        This is disabled by default and requires an inline confirmation identifying the destination
-        and payload before transmission.
-      </p>
-      <p>
-        The connection test sends only the selected model, fixed connectivity-test text, and an
-        optional session-only API key to the user-selected Ollama destination. It does not send
-        habits, notes, service, reading, goal, or memory records. The destination provider's privacy
-        terms apply. Disabling Ollama clears the session credential; keys are not stored in backups
-        or local storage.
-      </p>
+      <p>LifeStreak uses the network to load/update the web app and only for these additional user-directed actions:</p>
+      <ul>
+      <li>Opening an allowlisted external resource sends ordinary browser request metadata to that website. LifeStreak does not attach the local database.</li>
+      <ul>
+      <li>Collections settings can optionally enable a local or Ollama Cloud connection test. This feature is disabled by default. Before the test can run, LifeStreak identifies the validated destination and requires confirmation that it will send the selected model name, the fixed text `Say &quot;OK&quot; in one word.`, and any session-only API key as an authorization header. It does not include habits, notes, service, reading, goal, or memory records.</li>
+      </ul>
+      <p>The Ollama destination is a provider selected by the user, not Ashbi Design. Its privacy terms apply to information deliberately sent there. Disabling the provider clears the session credential. API keys are not written to local storage, backups, migrations, logs, or build-time client variables.</p>
+      <h2>Local data storage</h2>
+      <p>LifeStreak stores data locally using the browser or installed app&#x27;s device storage.</p>
+      <p>The general habit database is versioned and stored separately from the original specialist <strong>Collections</strong> stores. Existing study, service, reading, goal, memory, spiritual, and related records are not silently converted, merged, deleted, or uploaded when the habit tracker is opened.</p>
+      <p>LifeStreak may create local recovery copies before a validated import or reset. These recovery copies remain in the same browser or installed app storage. Clearing site data, resetting the device, or uninstalling the app may remove local data and local recovery copies.</p>
+      <p>Ashbi Design cannot view or restore data that exists only on your device.</p>
+      <h2>Notifications</h2>
+      <p>LifeStreak requests notification permission only after you deliberately select the notification-permission control in Settings.</p>
+      <ul>
+      <li>Notification permission is optional and can be changed in device or browser settings.</li>
+      <ul>
+      <li>Habit names are hidden from notification text by default.</li>
+      <ul>
+      <li>You may explicitly choose to show habit names on notification surfaces.</li>
+      <ul>
+      <li>Browser reminders operate while LifeStreak is open. Installed-app background behaviour depends on the native platform and app configuration.</li>
+      </ul>
+      <p>Notification content may be visible on a lock screen or to anyone who can view notifications on the device. Keep generic notification text enabled when privacy is important.</p>
+      <h2>Export and import</h2>
+      <p>You may export the habit database as a JSON file. You may also export detected legacy Collections stores without LifeStreak reinterpreting their original values.</p>
+      <p>Exports and imports happen only after a user action. Once an exported file is saved, shared, backed up, or opened in another app, that destination&#x27;s privacy and security practices apply.</p>
+      <p>Before a replace import, LifeStreak attempts to create a local recovery copy. Imported files are validated and bounded before supported records are stored. Unsupported fields are not intentionally retained.</p>
+      <h2>Data deletion</h2>
+      <p>You may delete individual habits and their history, or reset the general habit tracker from Settings. The reset workflow attempts to create a local recovery copy first and does not delete the separate specialist Collections stores.</p>
+      <p>Uninstalling the installed app or clearing its local browser/app storage may permanently remove all locally stored LifeStreak data, including recovery copies.</p>
       <h2>Permissions</h2>
-      <p>
-        LifeStreak may request local notification permission for reminders. This permission is
-        optional and can be disabled in device settings.
-      </p>
-      <h2>Data Export</h2>
-      <p>
-        You can export your data from Settings as a JSON file. You control where the exported file
-        is saved or shared.
-      </p>
+      <p>LifeStreak may request the following optional permission:</p>
+      <table>
+      <tr><th>Permission</th><th>Purpose</th></tr>
+      <tr><td>Local notifications</td><td>Reminders for habits and scheduled routines</td></tr>
+      </table>
+      <p>LifeStreak should not request notification permission automatically during startup.</p>
+      <h2>Security and limitations</h2>
+      <p>LifeStreak validates supported backup records and limits import sizes, but device security still matters. Use device authentication, install operating-system updates, and store exported backups somewhere appropriate for the sensitivity of their contents.</p>
+      <p>LifeStreak is a personal tracking tool. It is not a medical device and does not provide medical advice or emergency monitoring.</p>
       <h2>Contact</h2>
-      <p>
-        Questions about this policy can be sent to
-        <a href="mailto:cameron@ashbi.ca">cameron@ashbi.ca</a>.
-      </p>
+      <p>Questions about this policy may be sent to:</p>
+      <p><strong>Ashbi Design</strong>  </p>
+      <p>Email: cameron@ashbi.ca</p>
       <h2>Changes</h2>
-      <p>Changes to this policy will be posted within the app and on this page.</p>
+      <p>This policy may be updated when LifeStreak&#x27;s storage, permissions, integrations, or distribution methods change. The effective date above identifies the current version in this repository.</p>
+      </ul>
     </main>
   </body>
 </html>

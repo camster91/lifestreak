@@ -9,7 +9,9 @@ const FOCUSABLE_SELECTOR = [
 
 function activeHabitDialog() {
   if (typeof document === 'undefined') return null;
-  const dialogs = [...document.querySelectorAll('.habit-dialog[role="dialog"]')];
+  const dialogs = [
+    ...document.querySelectorAll('.habit-dialog[role="dialog"], .habit-dialog[role="alertdialog"]'),
+  ];
   return dialogs.at(-1) || null;
 }
 

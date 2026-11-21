@@ -1361,3 +1361,112 @@
     forced-color-adjust: auto;
   }
 }
+
+/* First-time welcome tour */
+.habit-ftue {
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+}
+
+.habit-ftue-card {
+  width: min(100%, 34rem);
+  background: var(--habit-surface);
+  border: 1px solid var(--habit-border);
+  border-radius: calc(var(--habit-radius) + 4px);
+  box-shadow: var(--habit-shadow);
+  padding: 1.5rem;
+}
+
+.habit-ftue-body {
+  color: var(--habit-text-muted);
+  line-height: 1.55;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.habit-ftue-dots {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.habit-ftue-dots button {
+  width: 0.65rem;
+  height: 0.65rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  position: relative;
+}
+
+.habit-ftue-dots button::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: var(--habit-border);
+}
+
+.habit-ftue-dots button.is-active::after {
+  width: 1.6rem;
+  background: var(--habit-primary);
+}
+
+/* Confirm dialog must sit above nested history/edit dialogs (z-index 1000). */
+.habit-confirm-backdrop {
+  z-index: 1100;
+}
+
+.habit-confirm-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.habit-confirm-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 26rem);
+}
+
+.habit-confirm-copy {
+  color: var(--habit-text-muted);
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+/* Subtle entrance for empty states and cards */
+.habit-enter {
+  animation: habit-enter 280ms ease-out;
+}
+
+@keyframes habit-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.habit-today-card,
+.habit-starter-panel {
+  animation: habit-enter 320ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .habit-enter,
+  .habit-today-card,
+  .habit-starter-panel {
+    animation: none !important;
+  }
+}

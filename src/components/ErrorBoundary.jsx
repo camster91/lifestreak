@@ -2,6 +2,7 @@ import { Component } from 'react';
 import { AlertTriangle, Download, RefreshCw, Home, Trash2 } from 'lucide-react';
 import { recordDiagnostic } from '../utils/diagnostics';
 import { createPortableBackup } from '../utils/portableBackup';
+import ConfirmDialog from './ConfirmDialog';
 
 /**
  * Error Boundary component to catch JavaScript errors in child components.
@@ -15,6 +16,7 @@ class ErrorBoundary extends Component {
       error: null,
       errorInfo: null,
       recoveryMessage: '',
+      showClearConfirm: false,
     };
   }
 
@@ -64,10 +66,13 @@ class ErrorBoundary extends Component {
   };
 
   handleClearAllAndReload = () => {
-    if (window.confirm('This will clear all app data including your progress. Continue?')) {
-      localStorage.clear();
-      this.handleClearAndReload();
-    }
+    this.setState({ showClearConfirm: true });
+  };
+
+  confirmClearAll = () => {
+    localStorage.clear();
+    this.setState({ showClearConfirm: false });
+    this.handleClearAndReload();
   };
 
   handleDownloadRecovery = () => {
@@ -173,6 +178,16 @@ class ErrorBoundary extends Component {
               </p>
             </div>
           </div>
+          <ConfirmDialog
+            open={this.state.showClearConfirm}
+            title="Clear all app data?"
+            description="This permanently removes progress, habits, and settings on this device."
+            confirmLabel="Clear everything"
+            cancelLabel="Keep my data"
+            tone="danger"
+            onConfirm={this.confirmClearAll}
+            onCancel={() => this.setState({ showClearConfirm: false })}
+          />
         </div>
       );
     }

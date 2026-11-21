@@ -7,6 +7,7 @@ habitStore.reopenOnboarding = () => {
     onboarding: {
       completed: false,
       dismissedAt: null,
+      ftueSeen: true,
     },
     updatedAt: new Date().toISOString(),
   };

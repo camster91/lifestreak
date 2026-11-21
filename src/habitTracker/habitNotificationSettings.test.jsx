@@ -92,7 +92,6 @@ describe('habit reminder settings', () => {
 
   it('rejects oversized and duplicate-key imports before changing local data', async () => {
     notifications.check.mockResolvedValue('unsupported');
-    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     const input = await screen.findByLabelText('Import LifeStreak JSON');
@@ -103,7 +102,7 @@ describe('habit reminder settings', () => {
         files: [{ name: 'oversized.json', size: MAX_BACKUP_BYTES + 1, text: vi.fn() }],
       },
     });
-    await waitFor(() => expect(alert).toHaveBeenCalledWith(expect.stringMatching(/5 MB limit/i)));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/5 MB limit/i);
 
     fireEvent.change(input, {
       target: {
@@ -121,7 +120,7 @@ describe('habit reminder settings', () => {
       },
     });
     await waitFor(() =>
-      expect(alert).toHaveBeenCalledWith(expect.stringMatching(/duplicate object keys/i))
+      expect(screen.getByRole('alert')).toHaveTextContent(/duplicate object keys/i)
     );
     expect(window.localStorage.getItem('lifestreak-habit-tracker-v1')).toBe(before);
   });
